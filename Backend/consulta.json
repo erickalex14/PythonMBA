@@ -1,0 +1,110 @@
+{
+  "info": {
+    "name": "MBA3 - Consulta Externa",
+    "description": "Coleccion automatizada para consumir la API de Consulta Externa de MBA3. Flujo: Login -> Consulta.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://181.168.104.181:8020",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Autenticacion (Login)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Parsear la respuesta del servidor a formato JSON",
+              "var jsonData = pm.response.json();",
+              "",
+              "// Validar la existencia del token y asignarlo a la variable de coleccion",
+              "if (jsonData.jwt) {",
+              "    pm.collectionVariables.set(\"jwt_token\", jsonData.jwt);",
+              "    console.log(\"Token JWT capturado y almacenado correctamente.\");",
+              "} else {",
+              "    console.log(\"Advertencia: No se encontro el parametro 'jwt' en la respuesta del servidor.\");",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"codigo\": \"SERIALES\",\n  \"pwd\": \"Admin2026@@\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/ws2_mba3_serv_/login_servicio",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "ws2_mba3_serv_",
+            "login_servicio"
+          ]
+        }
+      }
+    },
+    {
+      "name": "2. Ejecutar Consulta SQL",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "{{jwt_token}}",
+            "description": "Token JWT enviado sin prefijo Bearer, tomado de la variable de coleccion."
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "select",
+              "value": "TRANS_DATE, PRODUCT_NAME, Codigo_producto_convertido, ORIGINAL_QTY, ORIGIN_MEMO, ORIGIN_REF, BASE_COMISION, Info_Seriales, Codigo_Sucursal, BaseImponibleReal_1, COD_SALESMAN",
+              "type": "text"
+            },
+            {
+              "key": "from",
+              "value": "INVT_Producto_Movimientos",
+              "type": "text"
+            },
+            {
+              "key": "where",
+              "value": "TRANS_DATE >= '2026-01-01' AND TRANS_DATE <= '2026-04-17'",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{base_url}}/ws_Consulta_externa_MBA3/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "ws_Consulta_externa_MBA3",
+            ""
+          ]
+        }
+      }
+    }
+  ]
+}

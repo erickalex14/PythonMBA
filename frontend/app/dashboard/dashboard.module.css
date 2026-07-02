@@ -1,0 +1,1356 @@
+/* Contenedor Principal (Tema Claro) */
+.dashboardContainer {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-family: 'Inter', 'Outfit', sans-serif;
+}
+
+/* Sidebar Styling (Fondo Blanco) */
+.sidebar {
+  width: 240px;
+  background-color: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 1.25rem;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.logo {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 38px;
+  height: 38px;
+  background: linear-gradient(135deg, #005daa 0%, #70b92b 100%);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 1.1rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 93, 170, 0.2);
+}
+
+.sidebarHeader h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0;
+  color: #0f172a;
+}
+
+.navMenu {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex-grow: 1;
+}
+
+.navItem {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.75rem 0.875rem;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  transition: all 0.15s ease-in-out;
+  width: 100%;
+}
+
+.navItem:hover {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+.navItem.active {
+  background-color: #ebf5ff;
+  color: #005daa;
+  font-weight: 600;
+  border-left: 3px solid #005daa;
+  padding-left: calc(0.875rem - 3px);
+}
+
+.sidebarFooter {
+  border-top: 1px solid #f1f5f9;
+  padding-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.userInfo {
+  background-color: #f8fafc;
+  padding: 0.875rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.userName {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+  margin: 0 0 0.15rem 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userRole {
+  font-size: 0.75rem;
+  color: #005daa;
+  margin: 0 0 0.15rem 0;
+  font-weight: 600;
+}
+
+.userCedula {
+  font-size: 0.7rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.logoutBtn {
+  background-color: transparent;
+  border: 1px solid #fca5a5;
+  color: #ef4444;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.65rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  width: 100%;
+}
+
+.logoutBtn:hover {
+  background-color: #fef2f2;
+  border-color: #f87171;
+}
+
+/* Área de Contenido Principal */
+.mainContent {
+  flex-grow: 1;
+  padding: 2rem 2.25rem;
+  box-sizing: border-box;
+  overflow-y: auto;
+  max-height: 100vh;
+  background-color: #f8fafc;
+}
+
+.contentHeader {
+  margin-bottom: 1.75rem;
+}
+
+.contentHeader h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem 0;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.subtext {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Sección de Filtros de Consulta */
+.filtersSection {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: flex-end;
+}
+
+.dateFilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.filterGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.filterGroup label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.filterGroup input[type="date"],
+.filterGroup select,
+.selectFilter {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  outline: none;
+  font-size: 0.85rem;
+  transition: border-color 0.15s ease;
+  min-width: 140px;
+  font-family: inherit;
+}
+
+.filterGroup input[type="date"]:focus,
+.filterGroup select:focus,
+.selectFilter:focus {
+  border-color: #005daa;
+}
+
+.queryBtn {
+  background: linear-gradient(135deg, #005daa 0%, #007cc2 100%);
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  padding: 0.55rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 10px rgba(0, 93, 170, 0.15);
+}
+
+.queryBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 93, 170, 0.25);
+}
+
+.queryBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.searchFilter {
+  flex-grow: 1;
+  min-width: 200px;
+}
+
+.searchFilter input {
+  width: 100%;
+  box-sizing: border-box;
+  background-color: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  padding: 0.55rem 0.875rem;
+  border-radius: 8px;
+  outline: none;
+  font-size: 0.85rem;
+  transition: all 0.15s ease;
+}
+
+.searchFilter input:focus {
+  background-color: #ffffff;
+  border-color: #005daa;
+}
+
+/* Tarjeta de Progreso por lotes */
+.progressCard {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.progressHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.5rem;
+}
+
+.progressPercentage {
+  color: #70b92b;
+  font-weight: 700;
+}
+
+.progressBarBg {
+  background-color: #f1f5f9;
+  height: 6px;
+  border-radius: 9999px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.progressBarFill {
+  background-color: #70b92b;
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.progressMeta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.progressMeta p {
+  margin: 0;
+}
+
+/* KPI Cards Grid */
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .kpiGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.kpiCard {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.kpiCard h3 {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  margin: 0;
+  letter-spacing: 0.05em;
+}
+
+.kpiValue {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.kpiCard span {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+/* Gráficos Grid */
+.chartsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+  .chartsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chartCard {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  display: flex;
+  flex-direction: column;
+}
+
+.chartCard h3 {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  color: #0f172a;
+  border-left: 3px solid #005daa;
+  padding-left: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.svgContainer {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: auto;
+}
+
+.svgChart {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* Progress List (Distribución) */
+.branchProgressList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  width: 100%;
+  margin-top: auto;
+}
+
+.branchProgressItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.branchMetaInfo {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.branchName {
+  color: #64748b;
+}
+
+.branchQty {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.branchProgressBarBg {
+  background-color: #f1f5f9;
+  height: 5px;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.branchProgressBarFill {
+  background-color: #70b92b;
+  height: 100%;
+  border-radius: 9999px;
+}
+
+/* Filtros locales de tabla */
+.localFiltersCard {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.localFiltersCard h3 {
+  margin: 0 0 1rem 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #0f172a;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.localFiltersRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: flex-end;
+}
+
+.clearFiltersBtn {
+  background: none;
+  border: 1px solid #cbd5e1;
+  color: #005daa;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.clearFiltersBtn:hover {
+  background-color: #f8fafc;
+  border-color: #005daa;
+}
+
+/* Barra de Exportación y Acciones */
+.actionsBar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.downloadBtn {
+  background-color: #005daa;
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  padding: 0.55rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(0, 93, 170, 0.15);
+}
+
+.downloadBtn:hover:not(:disabled) {
+  background-color: #004b8a;
+  transform: translateY(-1px);
+}
+
+.pdfBtn {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #64748b;
+  font-weight: 600;
+  padding: 0.55rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s ease;
+}
+
+.pdfBtn:hover:not(:disabled) {
+  background-color: #f8fafc;
+  color: #0f172a;
+  border-color: #94a3b8;
+}
+
+.btnWarning {
+  font-size: 0.8rem;
+  color: #d97706;
+  font-weight: 500;
+}
+
+/* Tarjeta de Tabla */
+.tableCard {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  overflow: hidden;
+  margin-bottom: 2rem;
+}
+
+.errorAlert {
+  background-color: #fef2f2;
+  border-bottom: 1px solid #fca5a5;
+  color: #b91c1c;
+  padding: 0.875rem 1.25rem;
+  font-size: 0.85rem;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  position: relative;
+}
+
+.tableLoader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  gap: 1rem;
+}
+
+.spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid rgba(0, 93, 170, 0.1);
+  border-top-color: #005daa;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.emptyTable {
+  padding: 4rem;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.table th {
+  background-color: #f8fafc;
+  color: #94a3b8;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.72rem;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.table tbody tr {
+  transition: background-color 0.1s ease;
+}
+
+.table tbody tr:hover {
+  background-color: #f0f9ff !important;
+}
+
+.table tbody tr:nth-child(even) {
+  background-color: #fafafa;
+}
+
+/* Badges de Estado */
+.badgeActivo {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: #f0fdf4;
+  color: #15803d;
+}
+
+.badgeAnulado {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background-color: #fef2f2;
+  color: #b91c1c;
+}
+
+.reportTypeBadge {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background-color: #f1f5f9;
+  color: #475569;
+}
+
+/* Controles de Paginación */
+.paginationRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #e2e8f0;
+  background-color: #ffffff;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.paginationInfo {
+  font-size: 0.8rem;
+  color: #64748b;
+}
+
+.paginationButtons {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.pageBtn {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: all 0.15s ease;
+  font-weight: 500;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background-color: #f1f5f9;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pageNumber {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #334155;
+  margin: 0 0.5rem;
+}
+
+.itemsPerPageSelect select {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  background-color: #ffffff;
+  outline: none;
+}
+
+/* Pantalla de Carga Inicial */
+.loadingScreen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  color: #0f172a;
+  gap: 1rem;
+}
+
+.loadingScreen p {
+  margin: 0;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+/* Panel de Administración */
+.adminGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+@media (max-width: 1024px) {
+  .adminGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.adminCard {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.adminCard h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 1.25rem 0;
+  color: #0f172a;
+  border-left: 3px solid #005daa;
+  padding-left: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.adminFormGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.adminFormGroup label {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.adminFormRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.adminBtnSave {
+  background: linear-gradient(135deg, #005daa 0%, #007cc2 100%);
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  padding: 0.65rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 10px rgba(0, 93, 170, 0.15);
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.adminBtnSave:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 93, 170, 0.25);
+}
+
+.adminBtnSave:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.adminSelectEnv {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  padding: 0.55rem;
+  border-radius: 8px;
+  outline: none;
+  font-size: 0.85rem;
+  transition: border-color 0.15s ease;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.adminSelectEnv:focus {
+  border-color: #005daa;
+}
+
+.envIndicatorRow {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 0.5rem;
+}
+
+.envIndicatorDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.envIndicatorActive {
+  background-color: #10b981;
+  box-shadow: 0 0 6px #10b981;
+}
+
+.envIndicatorTesting {
+  background-color: #f59e0b;
+  box-shadow: 0 0 6px #f59e0b;
+}
+
+/* User & Roles UI */
+.adminCardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+}
+
+.adminCardHeader h3 {
+  margin: 0;
+}
+
+.createUserBtn {
+  background-color: #ebf5ff;
+  color: #005daa;
+  border: 1px solid rgba(0, 93, 170, 0.15);
+  padding: 0.45rem 0.875rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.8rem;
+  transition: all 0.15s ease;
+}
+
+.createUserBtn:hover {
+  background-color: #005daa;
+  color: #ffffff;
+}
+
+.actionBtn {
+  background: none;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  transition: all 0.15s ease;
+}
+
+.btnEdit {
+  color: #2563eb;
+}
+
+.btnEdit:hover {
+  color: #1d4ed8;
+}
+
+.btnDelete {
+  color: #dc2626;
+  margin-left: 0.4rem;
+}
+
+.btnDelete:hover {
+  color: #b91c1c;
+}
+
+.roleBadge {
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.badgeAdmin {
+  background-color: #ebf5ff;
+  color: #005daa;
+  border-color: rgba(0, 93, 170, 0.15);
+}
+
+.badgeUser {
+  background-color: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
+/* Modal Windows & Form styling */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.modalContent {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  width: 480px;
+  max-width: 90%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  animation: modalSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalSlide {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modalHeader {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modalHeader h2 {
+  font-size: 1.1rem;
+  margin: 0;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.modalClose {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  line-height: 1;
+}
+
+.modalClose:hover {
+  color: #0f172a;
+}
+
+.modalBody {
+  padding: 1.5rem;
+}
+
+.modalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+}
+
+.btnCancel {
+  background-color: #f1f5f9;
+  color: #334155;
+  border: 1px solid #e2e8f0;
+  padding: 0.55rem 1.1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.15s ease;
+  font-size: 0.85rem;
+}
+
+.btnCancel:hover {
+  background-color: #e2e8f0;
+  color: #0f172a;
+}
+
+.btnConfirm {
+  background: linear-gradient(135deg, #005daa 0%, #007cc2 100%);
+  color: #ffffff;
+  border: none;
+  padding: 0.55rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 4px 10px rgba(0, 93, 170, 0.15);
+  transition: all 0.15s ease;
+  font-size: 0.85rem;
+}
+
+.btnConfirm:hover:not(:disabled) {
+  box-shadow: 0 6px 14px rgba(0, 93, 170, 0.25);
+  transform: translateY(-1px);
+}
+
+.btnConfirm:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.modalErrorAlert {
+  background-color: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: #b91c1c;
+  font-size: 0.8rem;
+  padding: 0.65rem 0.875rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+}
+
+.permissionTagsList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.permissionTag {
+  background-color: #f4fbef;
+  color: #559b1a;
+  border: 1px solid rgba(112, 185, 43, 0.15);
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 5px;
+  font-weight: 600;
+}
+
+/* DISEÑO PRESIDENCIAL DE IMPRESIÓN (PDF) */
+.printOnlyHeader {
+  display: none;
+}
+
+.printOnlyFooter {
+  display: none;
+}
+
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 9pt !important;
+  }
+
+  .sidebar {
+    display: none !important;
+  }
+
+  .mainContent {
+    padding: 0 !important;
+    overflow: visible !important;
+    max-height: none !important;
+    background-color: #ffffff !important;
+    width: 100% !important;
+  }
+
+  .filtersSection,
+  .localFiltersCard,
+  .actionsBar,
+  .paginationRow,
+  .progressCard,
+  .adminGrid {
+    display: none !important;
+  }
+
+  /* Encabezado Formal para PDF */
+  .printOnlyHeader {
+    display: block !important;
+    margin-bottom: 2rem !important;
+    page-break-after: avoid !important;
+  }
+
+  .printHeaderTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .printBrand {
+    font-size: 10pt;
+    font-weight: 800;
+    color: #005daa !important;
+  }
+
+  .printConfidentiality {
+    font-size: 8pt;
+    font-weight: 700;
+    color: #dc2626 !important;
+    border: 1px solid #dc2626;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+  }
+
+  .printDivider {
+    border: none;
+    border-top: 2px solid #005daa !important;
+    margin: 0.25rem 0 1rem 0;
+  }
+
+  .printTitle {
+    font-size: 14pt !important;
+    font-weight: 800;
+    text-align: center;
+    margin: 0 0 1.25rem 0 !important;
+    color: #000000 !important;
+    letter-spacing: -0.01em;
+  }
+
+  .printMetaGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    background-color: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    padding: 0.75rem 1rem !important;
+    border-radius: 6px !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  .printMetaGrid p {
+    margin: 0 0 0.25rem 0;
+    font-size: 8pt;
+    color: #334155;
+  }
+
+  .printMetaGrid span {
+    font-weight: 700;
+    color: #000000;
+  }
+
+  .printExecutiveSummary {
+    border-left: 3px solid #70b92b !important;
+    padding-left: 0.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .printExecutiveSummary h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 9pt;
+    font-weight: 700;
+    color: #000000;
+    text-transform: uppercase;
+  }
+
+  .printExecutiveSummary p {
+    margin: 0;
+    font-size: 8pt;
+    color: #475569;
+    text-align: justify;
+    line-height: 1.4;
+  }
+
+  /* KPIs para impresión */
+  .kpiGrid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 1rem !important;
+    margin-bottom: 1.5rem !important;
+    page-break-inside: avoid !important;
+  }
+
+  .kpiCard {
+    background-color: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    padding: 0.75rem 1rem !important;
+  }
+
+  .kpiValue {
+    font-size: 14pt !important;
+  }
+
+  /* Gráficos para impresión */
+  .chartsGrid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 1rem !important;
+    margin-bottom: 2rem !important;
+    page-break-inside: avoid !important;
+  }
+
+  .chartCard {
+    background-color: #f8fafc !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    padding: 0.75rem 1rem !important;
+    min-height: auto !important;
+  }
+
+  .chartCard h3 {
+    color: #000000 !important;
+    border-left: 3px solid #005daa !important;
+    font-size: 8pt !important;
+  }
+
+  .svgChart {
+    filter: contrast(1.1) !important;
+  }
+
+  .branchName {
+    color: #334155 !important;
+  }
+
+  .branchQty {
+    color: #000000 !important;
+  }
+
+  .branchProgressBarBg {
+    background-color: #e2e8f0 !important;
+  }
+
+  /* Tablas para impresión */
+  .tableCard {
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+    background-color: #ffffff !important;
+    overflow: visible !important;
+    border-radius: 8px !important;
+  }
+
+  .tableWrapper {
+    overflow: visible !important;
+  }
+
+  .table {
+    font-size: 7.5pt !important;
+  }
+
+  .table th {
+    background-color: #f1f5f9 !important;
+    color: #000000 !important;
+    border-bottom: 2px solid #cbd5e1 !important;
+    padding: 0.5rem 0.6rem !important;
+  }
+
+  .table td {
+    color: #000000 !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 0.5rem 0.6rem !important;
+    white-space: normal !important;
+  }
+
+  .badgeAnulado {
+    border: 1px solid #f87171 !important;
+    color: #b91c1c !important;
+    background-color: #fef2f2 !important;
+  }
+
+  .badgeActivo {
+    border: 1px solid #34d399 !important;
+    color: #047857 !important;
+    background-color: #ecfdf5 !important;
+  }
+
+  /* Mostrar Firmas al final */
+  .printOnlyFooter {
+    display: block !important;
+    margin-top: 2.5rem !important;
+    page-break-inside: avoid !important;
+  }
+
+  .printSignatureArea {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .printSignatureLine p {
+    margin: 0 0 0.2rem 0;
+    font-size: 7.5pt;
+    color: #334155;
+  }
+
+  .signatureTitle {
+    font-weight: 700;
+    color: #000000;
+  }
+
+  .printDisclaimer {
+    border-top: 1px solid #cbd5e1;
+    padding-top: 0.5rem;
+    font-size: 6.5pt;
+    color: #64748b;
+    text-align: justify;
+    line-height: 1.3;
+  }
+}
