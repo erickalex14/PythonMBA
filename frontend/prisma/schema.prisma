@@ -1,0 +1,46 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String        @id @default(uuid())
+  cedula       String        @unique // Número de Cédula
+  name         String?
+  password     String        // Contraseña cifrada con bcrypt
+  roleId       String
+  role         Role          @relation(fields: [roleId], references: [id])
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  downloadLogs DownloadLog[]
+}
+
+model Role {
+  id          String       @id @default(uuid())
+  name        String       @unique // e.g. "Admin", "Visitante"
+  permissions Permission[] // Muchos a muchos implícito en Prisma
+  users       User[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model Permission {
+  id          String   @id @default(uuid())
+  action      String   @unique // e.g. "VIEW_MOVIMIENTOS", "VIEW_LIQUIDACIONES", "VIEW_ATS", "VIEW_LOGS", "DOWNLOAD_EXCEL", "MANAGE_USERS", "MANAGE_CONFIG"
+  description String?
+  roles       Role[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model DownloadLog {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reportType String   // Tipo de reporte
+  dateRange  String   // Rango de fechas
+  timestamp  DateTime @default(now())
+}
