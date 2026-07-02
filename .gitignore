@@ -1,0 +1,97 @@
+# ==============================================================================
+# ARCHIVO DE CONFIGURACIÓN GITIGNORE PARA EL MONOREPO MBA3 BI (NOVICOMPU)
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. ARCHIVOS DE CREDENCIALES, LLAVES Y VARIABLES DE ENTORNO (¡CRÍTICO!)
+# ------------------------------------------------------------------------------
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+*.pem
+*.key
+*.pub
+*.cert
+*.p12
+*.pfx
+secrets/
+config/secrets.*
+
+# ------------------------------------------------------------------------------
+# 2. DIRECTORIOS DE DEPENDENCIAS Y PAQUETES
+# ------------------------------------------------------------------------------
+node_modules/
+jspm_packages/
+.pnpm-debug.log*
+pnpm-debug.log*
+
+# ------------------------------------------------------------------------------
+# 3. ENTORNOS VIRTUALES Y CACHÉ DE PYTHON (Backend)
+# ------------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+pip-log.txt
+pip-delete-this-directory.txt
+*.egg-info/
+.eggs/
+dist/
+build/
+eggs/
+parts/
+develop-eggs/
+sdist/
+var/
+share/python-wheels/
+
+# ------------------------------------------------------------------------------
+# 4. COMPILACIÓN Y SALIDA DE NEXT.JS (Frontend)
+# ------------------------------------------------------------------------------
+.next/
+out/
+.open-next/
+next-env.d.ts
+
+# ------------------------------------------------------------------------------
+# 5. ENTORNO LOCAL DE EJECUCIÓN (Herramientas Portables)
+# ------------------------------------------------------------------------------
+node-win/
+
+# ------------------------------------------------------------------------------
+# 6. BASES DE DATOS LOCALES Y TEMPORALES
+# ------------------------------------------------------------------------------
+*.db
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.log
+
+# ------------------------------------------------------------------------------
+# 7. ARCHIVOS DE CONFIGURACIÓN DE IDEs, EDITORES Y SISTEMA OPERATIVO
+# ------------------------------------------------------------------------------
+.idea/
+.vscode/
+*.suo
+*.sln
+*.user
+*.userosscache
+*.sln.docstates
+Thumbs.db
+ehthumbs.db
+desktop.ini
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
