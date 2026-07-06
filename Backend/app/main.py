@@ -12,6 +12,7 @@ from fastapi.openapi.utils import get_openapi
 from app.core.database import engine, Base
 from app.models.movimiento import MovimientoStaging
 from app.models.liquidacion import LiquidacionPrincipalStaging, LiquidacionProductoStaging
+from app.models.ats import AtsFacturaStaging, AtsProveedorStaging, AtsFiscalStaging
 from sqlalchemy import text
 
 @asynccontextmanager
@@ -22,9 +23,9 @@ async def lifespan(app: FastAPI):
         Base.metadata.create_all(bind=engine)
         logging.info("Base de datos inicializada: tablas creadas correctamente.")
         
-        # 2. Crear o actualizar la vista SQL de liquidaciones
+        # 2. Crear o actualizar las vistas SQL
         with engine.begin() as connection:
-            sql_view_ddl = """
+            sql_view_liq = """
             CREATE OR REPLACE VIEW view_liquidaciones_reporte AS
             SELECT
                 p.corp,
@@ -60,8 +61,38 @@ async def lifespan(app: FastAPI):
             INNER JOIN liquidaciones_productos_staging d 
                 ON p.liquidacion_id_corp = d.liquidacion_id_corp;
             """
-            connection.execute(text(sql_view_ddl))
-            logging.info("Vista relacional SQL 'view_liquidaciones_reporte' creada o actualizada correctamente.")
+            connection.execute(text(sql_view_liq))
+            logging.info("Vista relacional SQL 'view_liquidaciones_reporte' creada o actualizada.")
+
+            sql_view_ats = """
+            CREATE OR REPLACE VIEW view_ats_reporte AS
+            SELECT
+                f.invoice_date,
+                f.corp,
+                f.vendor_id,
+                p.vendor_name,
+                p.ruc_or_fed_id,
+                f.memo,
+                f.invoice_total,
+                f.doc_reference,
+                fi.mf_nume1,
+                fi.mf_alfa2,
+                fi.mf_lista2,
+                (f.total_productos_con_iva + f.total_servicios_con_iva) AS suma_con_iva,
+                (f.total_productos_sin_iva + f.total_servicios_sin_iva) AS suma_sin_iva,
+                CASE WHEN f.void = true THEN 1 ELSE 0 END AS es_anulado,
+                fi.mf_bool5,
+                f.doc_id_corp,
+                fi.id_relacionado,
+                f.confirmed,
+                f.void
+            FROM ats_facturas_staging f
+            INNER JOIN ats_proveedores_staging p ON f.vendor_id = p.vendor_id
+            INNER JOIN ats_fiscal_staging fi ON f.doc_id_corp = fi.id_relacionado;
+            """
+            connection.execute(text(sql_view_ats))
+            logging.info("Vista relacional SQL 'view_ats_reporte' creada o actualizada.")
+            
     except Exception as e:
         logging.error(f"Error al inicializar la base de datos PostgreSQL: {e}")
     yield

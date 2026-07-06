@@ -68,13 +68,14 @@ def download_liquidaciones(
 def download_ats(
     inicio: str = Query(...),
     fin: str = Query(...),
+    db: Session = Depends(get_db),
     ats_service: AtsService = Depends(get_ats_service),
     excel_service: ExcelService = Depends(get_excel_service)
 ):
     """
     Descarga el reporte de facturación fiscal ATS en formato Excel para el rango dado.
     """
-    df = ats_service.obtener_ats(inicio, fin)
+    df = ats_service.obtener_ats(inicio, fin, db)
     if df.empty:
         raise HTTPException(status_code=404, detail="No hay facturas fiscales registradas para exportar en este rango.")
     

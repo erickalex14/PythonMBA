@@ -62,3 +62,31 @@ def sync_liquidaciones(
         
     return res
 
+@router.post("/ats")
+def sync_ats(
+    inicio: str = Query(..., description="Fecha de inicio en formato YYYY-MM-DD"),
+    fin: str = Query(..., description="Fecha de fin en formato YYYY-MM-DD"),
+    api_key_valid: bool = Depends(verify_api_key),
+    db: Session = Depends(get_db),
+    sync_service: SyncService = Depends(get_sync_service)
+):
+    """
+    Endpoint administrativo para forzar la sincronización de facturas, proveedores e información fiscal de ATS
+    desde el ERP MBA3 hacia la base de datos PostgreSQL local.
+    """
+    if not api_key_valid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales de API Key no válidas para acceder a este recurso."
+        )
+
+    res = sync_service.sync_ats(db, inicio, fin)
+    
+    if res.get("status") == "error":
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=res.get("message")
+        )
+        
+    return res
+
