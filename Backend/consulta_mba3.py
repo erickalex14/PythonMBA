@@ -19,7 +19,7 @@ BASE_URL = "http://181.198.104.181:8020"
 URL_LOGIN = f"{BASE_URL}/ws2_mba3_serv_/login_servicio"
 URL_CONSULTA = f"{BASE_URL}/ws2_mba3_serv_Consultas_Externas_/"
 
-CODIGO_SERVICIO = "SERIALES"
+CODIGO_SERVICIO = "ERICKDEV"
 PASSWORD_SERVICIO = "***REDACTED***"
 
 
