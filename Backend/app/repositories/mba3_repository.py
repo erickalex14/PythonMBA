@@ -27,8 +27,9 @@ def procesar_respuesta_erp(datos, context=""):
         
     # Si es un diccionario único
     if isinstance(datos, dict):
-        if datos.get("codigo") == "009": # Sin registros
-            logging.info(f"Repository: No se encontraron registros en {context}.")
+        error_val = datos.get("error") or datos.get("codigo")
+        if error_val == "009": # Sin registros
+            logging.info(f"Repository: No se encontraron registros en {context} (009).")
             return []
         elif "error" in datos or "codigo" in datos:
             logging.error(f"Repository: Error devuelto por ERP en {context}: {datos}")
@@ -42,8 +43,9 @@ def procesar_respuesta_erp(datos, context=""):
         # Comprobar si el primer registro es de error/información
         first = datos[0]
         if isinstance(first, dict):
-            if first.get("codigo") == "009":
-                logging.info(f"Repository: No se encontraron registros en {context}.")
+            error_val = first.get("error") or first.get("codigo")
+            if error_val == "009":
+                logging.info(f"Repository: No se encontraron registros en {context} (009).")
                 return []
             elif "error" in first or "codigo" in first:
                 logging.error(f"Repository: Error devuelto por ERP en lista para {context}: {first}")
@@ -58,8 +60,15 @@ class Mba3Repository(IMba3Repository):
     para consumir las APIs REST de MBA3.
     """
     
-    def obtener_token(self) -> Optional[str]:
-        logging.info("Repository: Iniciando sesión en MBA3...")
+    # Variable de clase para almacenar el token JWT en memoria y evitar logins repetidos
+    _cached_token: Optional[str] = None
+
+    def obtener_token(self, force_refresh: bool = False) -> Optional[str]:
+        if not force_refresh and Mba3Repository._cached_token:
+            logging.info("Repository: Utilizando token JWT almacenado en caché.")
+            return Mba3Repository._cached_token
+
+        logging.info("Repository: Iniciando sesión en MBA3 (Solicitud fresca)...")
         headers = {"Content-Type": "application/json"}
         payload = {
             "codigo": settings.ACTIVE_CODIGO_SERVICIO,
@@ -71,7 +80,8 @@ class Mba3Repository(IMba3Repository):
             datos = response.json()
             token = datos.get("jwt")
             if token:
-                logging.info("Repository: Token JWT obtenido correctamente.")
+                logging.info("Repository: Token JWT obtenido correctamente y almacenado en caché.")
+                Mba3Repository._cached_token = token
                 return token
             else:
                 logging.error("Repository: La respuesta no contiene la clave 'jwt'.")
@@ -94,9 +104,15 @@ class Mba3Repository(IMba3Repository):
             
         try:
             response = requests.post(settings.MBA3_URL_CONSULTA, headers=headers, data=payload, timeout=120)
+            if response.status_code == 401:
+                logging.warning("Repository: Recibido HTTP 401 Unauthorized. Invalidando token en caché...")
+                Mba3Repository._cached_token = None
             response.raise_for_status()
             datos = response.json()
             return procesar_respuesta_erp(datos, f"tabla {table}")
         except Exception as e:
             logging.error(f"Repository: Error de comunicación al consultar la tabla {table}: {e}")
+            # Si el código de estado indica unauthorized, limpiar token
+            if hasattr(e, 'response') and e.response is not None and e.response.status_code == 401:
+                Mba3Repository._cached_token = None
             return []

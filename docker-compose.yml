@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: mba3-bi-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: "123456"
+      POSTGRES_DB: MBAPruebas
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: mba3-bi-backend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8002:8000"
+    volumes:
+      - ./deploy/env/backend.env:/app/.env:ro
+    environment:
+      ROOT_PATH: "/apimbav1"
+    depends_on:
+      - db
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXTAUTH_URL=https://novitec.com.ec/reportesmba/api/auth
+    container_name: mba3-bi-frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8003:3001"
+    volumes:
+      - ./deploy/env/frontend.env:/app/.env:ro
+    environment:
+      DATABASE_URL: "postgresql://postgres:123456@db:5432/MBAPruebas"
+      BACKEND_API_URL: "http://backend:8000"
+      NEXTAUTH_URL: "https://novitec.com.ec/reportesmba/api/auth"
+    depends_on:
+      - db
+      - backend
+
+volumes:
+  pgdata:

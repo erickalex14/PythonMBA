@@ -44,3 +44,73 @@ model DownloadLog {
   dateRange  String   // Rango de fechas
   timestamp  DateTime @default(now())
 }
+
+model MovimientoStaging {
+  id                         Int      @id @default(autoincrement())
+  trans_date                 DateTime @db.Date
+  product_name               String?
+  codigo_producto_convertido String
+  original_qty               Decimal  @db.Decimal(18, 4)
+  origin_memo                String?
+  origin_ref                 String?
+  base_comision              Decimal  @db.Decimal(18, 4)
+  info_seriales              String?
+  codigo_sucursal            String?
+  base_imponible_real_1      Decimal  @db.Decimal(18, 4)
+  cod_salesman               String?
+  codigo_marca               String?
+  created_at                 DateTime @default(now())
+  updated_at                 DateTime @updatedAt
+
+  @@map("movimientos_staging")
+}
+
+model LiquidacionPrincipalStaging {
+  liquidacion_id_corp String   @id @db.VarChar(50)
+  corp                String   @db.VarChar(10)
+  liquidacion_fecha   DateTime @db.Date
+  observaciones       String?  @db.Text
+  antes_total_1       Decimal  @db.Decimal(18, 4)
+  antes_total_2       Decimal  @db.Decimal(18, 4)
+  antes_total_3       Decimal  @db.Decimal(18, 4)
+  despues_total_1     Decimal  @db.Decimal(18, 4)
+  despues_total_2     Decimal  @db.Decimal(18, 4)
+  despues_total_3     Decimal  @db.Decimal(18, 4)
+  liquidacion_estado  Boolean  @default(true)
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  @@map("liquidaciones_principal_staging")
+}
+
+model LiquidacionProductoStaging {
+  id                       Int      @id @default(autoincrement())
+  liquidacion_id_corp      String   @db.VarChar(50)
+  factura_id_corp          String?  @db.VarChar(50)
+  id_recepcion_relacionada String?  @db.VarChar(50)
+  valor_total_cif          Decimal  @db.Decimal(18, 4)
+  valor_subtotal_cif       Decimal  @db.Decimal(18, 4)
+  valor_antes_1            Decimal  @db.Decimal(18, 4)
+  valor_antes_2            Decimal  @db.Decimal(18, 4)
+  valor_antes_3            Decimal  @db.Decimal(18, 4)
+  valor_despues_1          Decimal  @db.Decimal(18, 4)
+  valor_despues_2          Decimal  @db.Decimal(18, 4)
+  valor_despues_3          Decimal  @db.Decimal(18, 4)
+  partida_id_corp          String?  @db.VarChar(50)
+  producto_id_corp         String?  @db.VarChar(50)
+  liquidacion_id           String?  @db.VarChar(50)
+  cantidad                 Decimal  @db.Decimal(18, 4)
+  precio                   Decimal  @db.Decimal(18, 4)
+  total                    Decimal  @db.Decimal(18, 4)
+  valor_total_cif_manual   Decimal  @db.Decimal(18, 4)
+  valor_total_cif_unidad   Decimal  @db.Decimal(18, 4)
+  created_at               DateTime @default(now())
+  updated_at               DateTime @updatedAt
+
+  @@map("liquidaciones_productos_staging")
+}
+
+// Vista SQL eliminada del esquema de Prisma para evitar que db push intente crearla.
+// El frontend consulta los datos normalizados a través de los endpoints de FastAPI.
+
+
