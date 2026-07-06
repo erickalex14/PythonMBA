@@ -113,4 +113,46 @@ model LiquidacionProductoStaging {
 // Vista SQL eliminada del esquema de Prisma para evitar que db push intente crearla.
 // El frontend consulta los datos normalizados a través de los endpoints de FastAPI.
 
+model AtsFacturaStaging {
+  doc_id_corp             String   @id @db.VarChar(50)
+  invoice_date            DateTime @db.Date
+  corp                    String   @db.VarChar(10)
+  vendor_id               String   @db.VarChar(50)
+  memo                    String?  @db.Text
+  invoice_total           Decimal  @db.Decimal(18, 4)
+  doc_reference           String?  @db.VarChar(100)
+  total_productos_con_iva Decimal  @db.Decimal(18, 4)
+  total_servicios_con_iva Decimal  @db.Decimal(18, 4)
+  total_productos_sin_iva Decimal  @db.Decimal(18, 4)
+  total_servicios_sin_iva Decimal  @db.Decimal(18, 4)
+  void                    Boolean  @default(false)
+  confirmed               Boolean  @default(true)
+  created_at              DateTime @default(now())
+  updated_at              DateTime @updatedAt
+
+  @@map("ats_facturas_staging")
+}
+
+model AtsProveedorStaging {
+  vendor_id     String   @id @db.VarChar(50)
+  vendor_name   String   @db.VarChar(200)
+  ruc_or_fed_id String?  @db.VarChar(50)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@map("ats_proveedores_staging")
+}
+
+model AtsFiscalStaging {
+  id_relacionado String   @id @db.VarChar(50)
+  mf_nume1       Decimal  @db.Decimal(18, 4)
+  mf_alfa2       String?  @db.VarChar(100)
+  mf_lista2      String?  @db.VarChar(100)
+  mf_bool5       Boolean  @default(false)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  @@map("ats_fiscal_staging")
+}
+
 

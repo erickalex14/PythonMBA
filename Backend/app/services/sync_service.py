@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from app.repositories.mba3_repository import IMba3Repository
 from app.models.movimiento import MovimientoStaging
 from app.models.liquidacion import LiquidacionPrincipalStaging, LiquidacionProductoStaging
+from app.models.ats import AtsFacturaStaging, AtsProveedorStaging, AtsFiscalStaging
 
 class SyncService:
     def __init__(self, repository: IMba3Repository):
@@ -323,3 +324,238 @@ class SyncService:
             db.rollback()
             logging.error(f"SyncService: Error escribiendo liquidaciones masivas en PostgreSQL: {e}")
             return {"status": "error", "message": f"Error persistiendo liquidaciones: {e}"}
+
+    def sync_ats(self, db: Session, fecha_inicio: str, fecha_fin: str) -> dict:
+        logging.info(f"SyncService: Iniciando sincronización masiva de ATS desde {fecha_inicio} hasta {fecha_fin}")
+        
+        try:
+            dt_inicio = datetime.datetime.strptime(fecha_inicio, "%Y-%m-%d")
+            dt_fin = datetime.datetime.strptime(fecha_fin, "%Y-%m-%d")
+        except Exception as e:
+            logging.error(f"SyncService: Formato de fechas inválido en ATS: {e}")
+            return {"status": "error", "message": "Formato de fechas inválido (esperado YYYY-MM-DD)"}
+
+        token_actual = self.repository.obtener_token()
+        if not token_actual:
+            logging.error("SyncService: No se pudo obtener el token inicial para ATS.")
+            return {"status": "error", "message": "No se pudo conectar al ERP para obtener el token."}
+
+        cols_factura = "INVOICE_DATE,CORP,VENDOR_ID,MEMO,INVOICE_TOTAL,DOC_REFERENCE,TotalProductosConIVa,TotalServiciosConIVa,TotalProductosSinIVa,TotalServiciosSinIVa,VOID,DOC_ID_CORP,CONFIRMED"
+        cols_proveedor = "VENDOR_ID,VENDOR_NAME,RUC_or_FED_ID"
+        cols_fiscal = "MF_Nume1,MF_Alfa2,MF_Lista2,MF_Bool5,ID_Relacionado"
+
+        def parse_float(val):
+            try:
+                return float(str(val).strip()) if val else 0.0
+            except:
+                return 0.0
+
+        def clean_str(val):
+            if val is None:
+                return None
+            return str(val).replace('\x00', '').replace('\u0000', '').strip()
+
+        def parse_bool(val):
+            if val is None: return False
+            return str(val).strip().lower() in ['true', '1', 't', 'y', 'yes']
+
+        # 1. Sincronizar Proveedores (Catálogo completo, Upsert)
+        logging.info("SyncService [ATS]: Descargando catálogo de proveedores del ERP...")
+        datos_prov = self.repository.ejecutar_consulta(
+            token=token_actual,
+            select=cols_proveedor,
+            table="PROV_Ficha_Principal",
+            limit=100000
+        )
+        if datos_prov is None:
+            token_actual = self.repository.obtener_token(force_refresh=True)
+            datos_prov = self.repository.ejecutar_consulta(
+                token=token_actual,
+                select=cols_proveedor,
+                table="PROV_Ficha_Principal",
+                limit=100000
+            )
+
+        if datos_prov:
+            # Procesar catálogo de proveedores en lotes de upsert para optimizar memoria y tiempo
+            dict_provs = {}
+            for p in datos_prov:
+                v_id = clean_str(p.get("VENDOR_ID"))
+                if v_id:
+                    v_id_clean = v_id.replace('.0', '').strip().upper()
+                    dict_provs[v_id_clean] = {
+                        "vendor_name": clean_str(p.get("VENDOR_NAME")),
+                        "ruc_or_fed_id": clean_str(p.get("RUC_or_FED_ID"))
+                    }
+            
+            # Guardar proveedores locales de forma masiva (Bulk)
+            try:
+                todos_locales = {p.vendor_id: p for p in db.query(AtsProveedorStaging).all()}
+                nuevos_provs = []
+                for v_id, p_info in dict_provs.items():
+                    if v_id in todos_locales:
+                        prov_db = todos_locales[v_id]
+                        prov_db.vendor_name = p_info["vendor_name"]
+                        prov_db.ruc_or_fed_id = p_info["ruc_or_fed_id"]
+                    else:
+                        new_prov = AtsProveedorStaging(
+                            vendor_id=v_id,
+                            vendor_name=p_info["vendor_name"],
+                            ruc_or_fed_id=p_info["ruc_or_fed_id"]
+                        )
+                        nuevos_provs.append(new_prov)
+                
+                if nuevos_provs:
+                    db.bulk_save_objects(nuevos_provs)
+                
+                db.commit()
+                logging.info(f"SyncService [ATS]: Catálogo de proveedores sincronizado en bloque. Total: {len(dict_provs)}, Nuevos: {len(nuevos_provs)}")
+            except Exception as e:
+                db.rollback()
+                logging.error(f"SyncService [ATS]: Error guardando proveedores masivamente en DB: {e}")
+
+        # 2. Descargar Facturas del rango de fechas completo
+        condicion_fact = f"INVOICE_DATE >= '{fecha_inicio}' AND INVOICE_DATE <= '{fecha_fin}'"
+        logging.info("SyncService [ATS]: Descargando cabeceras de facturas del ERP...")
+        datos_fact = self.repository.ejecutar_consulta(
+            token=token_actual,
+            select=cols_factura,
+            table="PROV_Factura_Principal",
+            where=condicion_fact,
+            limit=100000
+        )
+        if datos_fact is None:
+            token_actual = self.repository.obtener_token(force_refresh=True)
+            datos_fact = self.repository.ejecutar_consulta(
+                token=token_actual,
+                select=cols_factura,
+                table="PROV_Factura_Principal",
+                where=condicion_fact,
+                limit=100000
+            )
+
+        if not datos_fact:
+            logging.info("SyncService [ATS]: No se encontraron facturas en el ERP para este rango.")
+            return {
+                "status": "success",
+                "message": "Sincronización de ATS finalizada. No había facturas en el rango.",
+                "facturas_count": 0,
+                "fiscal_count": 0
+            }
+
+        # Extraer IDs de documentos únicos para obtener la información fiscal
+        lista_doc_ids = []
+        for f in datos_fact:
+            d_id = clean_str(f.get("DOC_ID_CORP"))
+            if d_id:
+                lista_doc_ids.append(d_id.replace('.0', '').strip().upper())
+        lista_doc_ids = list(set(lista_doc_ids))
+
+        # 3. Descargar información fiscal de estas facturas específicas (lotes de 30 IDs máximo por consulta)
+        datos_fiscal = []
+        tamanio_lote = 30
+        lotes_ids = [lista_doc_ids[i:i + tamanio_lote] for i in range(0, len(lista_doc_ids), tamanio_lote)]
+
+        for index, lote in enumerate(lotes_ids):
+            or_conds = " OR ".join([f"ID_Relacionado = '{doc}'" for doc in lote])
+            condicion_fiscal = f"({or_conds}) AND MF_Bool5 = 0"
+
+            logging.info(f"SyncService [ATS]: Solicitando lote fiscal {index+1}/{len(lotes_ids)} ({len(lote)} IDs)...")
+            lote_datos = self.repository.ejecutar_consulta(
+                token=token_actual,
+                select=cols_fiscal,
+                table="CONT_Info_Fiscal",
+                where=condicion_fiscal,
+                limit=10000
+            )
+
+            if lote_datos is None:
+                token_actual = self.repository.obtener_token(force_refresh=True)
+                lote_datos = self.repository.ejecutar_consulta(
+                    token=token_actual,
+                    select=cols_fiscal,
+                    table="CONT_Info_Fiscal",
+                    where=condicion_fiscal,
+                    limit=10000
+                )
+
+            if lote_datos:
+                datos_fiscal.extend(lote_datos)
+            
+            time.sleep(0.4) # Breve respiro para Sophos
+
+        # 4. Guardar atómicamente en PostgreSQL
+        try:
+            # Eliminar facturas del rango de fechas anterior
+            db.query(AtsFacturaStaging).filter(
+                AtsFacturaStaging.invoice_date.between(dt_inicio.date(), dt_fin.date())
+            ).delete()
+
+            # Eliminar info fiscal asociada a estas facturas específicas
+            if lista_doc_ids:
+                db.query(AtsFiscalStaging).filter(
+                    AtsFiscalStaging.id_relacionado.in_(lista_doc_ids)
+                ).delete()
+
+            # Insertar facturas
+            nuevas_facturas = []
+            for f in datos_fact:
+                d_id = clean_str(f.get("DOC_ID_CORP")).replace('.0', '').strip().upper()
+                v_id = clean_str(f.get("VENDOR_ID")).replace('.0', '').strip().upper()
+
+                fecha_raw = f.get("INVOICE_DATE")
+                if isinstance(fecha_raw, str):
+                    fecha_db = datetime.datetime.strptime(fecha_raw.split("T")[0], "%Y-%m-%d").date()
+                else:
+                    fecha_db = dt_inicio.date()
+
+                fact = AtsFacturaStaging(
+                    doc_id_corp=d_id,
+                    invoice_date=fecha_db,
+                    corp=clean_str(f.get("CORP")),
+                    vendor_id=v_id,
+                    memo=clean_str(f.get("MEMO")),
+                    invoice_total=parse_float(f.get("INVOICE_TOTAL")),
+                    doc_reference=clean_str(f.get("DOC_REFERENCE")),
+                    total_productos_con_iva=parse_float(f.get("TotalProductosConIVa")),
+                    total_servicios_con_iva=parse_float(f.get("TotalServiciosConIVa")),
+                    total_productos_sin_iva=parse_float(f.get("TotalProductosSinIVa")),
+                    total_servicios_sin_iva=parse_float(f.get("TotalServiciosSinIVa")),
+                    void=parse_bool(f.get("VOID")),
+                    confirmed=parse_bool(f.get("CONFIRMED"))
+                )
+                nuevas_facturas.append(fact)
+
+            if nuevas_facturas:
+                db.bulk_save_objects(nuevas_facturas)
+
+            # Insertar información fiscal
+            nueva_info_fiscal = []
+            for fi in datos_fiscal:
+                id_rel = clean_str(fi.get("ID_Relacionado")).replace('.0', '').strip().upper()
+                
+                fisc = AtsFiscalStaging(
+                    id_relacionado=id_rel,
+                    mf_nume1=parse_float(fi.get("MF_Nume1")),
+                    mf_alfa2=clean_str(fi.get("MF_Alfa2")),
+                    mf_lista2=clean_str(fi.get("MF_Lista2")),
+                    mf_bool5=parse_bool(fi.get("MF_Bool5"))
+                )
+                nueva_info_fiscal.append(fisc)
+
+            if nueva_info_fiscal:
+                db.bulk_save_objects(nueva_info_fiscal)
+
+            db.commit()
+            logging.info(f"SyncService [ATS]: Sincronización finalizada correctamente. Facturas: {len(nuevas_facturas)}, Registros Fiscales: {len(nueva_info_fiscal)}")
+            return {
+                "status": "success",
+                "message": f"Sincronización completada. Facturas procesadas: {len(nuevas_facturas)}, Registros fiscales procesados: {len(nueva_info_fiscal)}",
+                "facturas_count": len(nuevas_facturas),
+                "fiscal_count": len(nueva_info_fiscal)
+            }
+        except Exception as e:
+            db.rollback()
+            logging.error(f"SyncService [ATS]: Error escribiendo datos en base de datos: {e}")
+            return {"status": "error", "message": f"Error persistiendo datos de ATS: {e}"}
+

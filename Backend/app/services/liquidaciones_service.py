@@ -58,9 +58,13 @@ class LiquidacionesService:
                     
                 if rows:
                     df_historico = pd.DataFrame([dict(zip(keys, row)) for row in rows])
+                    # Estandarizar nombres de columnas a mayúsculas
+                    df_historico.columns = df_historico.columns.str.upper()
+                    # Renombrar ID_RECEPCION_RELACIONADA para mantener compatibilidad
+                    df_historico.rename(columns={"ID_RECEPCION_RELACIONADA": "IdRecepcionRelacionada"}, inplace=True)
                     # Parsear la fecha de Postgres a string YYYY-MM-DD para compatibilidad
-                    if "liquidacion_fecha" in df_historico.columns:
-                        df_historico["liquidacion_fecha"] = df_historico["liquidacion_fecha"].astype(str)
+                    if "LIQUIDACION_FECHA" in df_historico.columns:
+                        df_historico["LIQUIDACION_FECHA"] = df_historico["LIQUIDACION_FECHA"].astype(str)
                     logging.info(f"Service [Liquidaciones]: Histórico recuperado de local. Registros: {len(df_historico)}")
             except Exception as e:
                 logging.error(f"Service [Liquidaciones]: Error consultando la vista SQL local: {e}")
@@ -146,9 +150,6 @@ class LiquidacionesService:
 
             df_final = df_consolidado[columnas_finales].copy()
 
-            # Renombrar id_recepcion_relacionada a la capitalización del ERP para compatibilidad
-            df_final.rename(columns={"id_recepcion_relacionada": "IdRecepcionRelacionada"}, inplace=True)
-
             # Limpiar strings de caracteres nulos
             str_cols = [
                 "CORP", "OBSERVACIONES", "FACTURA_ID_CORP", "IdRecepcionRelacionada",
@@ -156,7 +157,7 @@ class LiquidacionesService:
             ]
             for col in str_cols:
                 if col in df_final.columns:
-                    df_final[col] = df_final[col].fillna("").astype(str).str.replace(r'\.0$', '', regex=True).str.replace('\x00', '').strip()
+                    df_final[col] = df_final[col].fillna("").astype(str).str.replace(r'\.0$', '', regex=True).str.replace('\x00', '').str.strip()
 
             # Parsear numéricos
             numeric_cols = [
