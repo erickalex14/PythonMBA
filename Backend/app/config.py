@@ -9,6 +9,7 @@ class Settings:
     PORT: int = int(os.getenv("PORT", 8000))
     HOST: str = os.getenv("HOST", "0.0.0.0")
     INTERNAL_API_KEY: str = os.getenv("INTERNAL_API_KEY", "")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql://postgres:123456@db:5432/MBAPruebas")
     
     # Conmutador de Entorno del ERP (PRUEBAS o PROD)
     MBA3_ENV: str = os.getenv("MBA3_ENV", "PRUEBAS")

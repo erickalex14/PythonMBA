@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import StreamingResponse
+from sqlalchemy.orm import Session
 import datetime
 import logging
 import pandas as pd
 from app.core.security import verify_api_key
-from app.dependencies import get_movimientos_service, get_liquidaciones_service, get_ats_service, get_excel_service
+from app.dependencies import get_movimientos_service, get_liquidaciones_service, get_ats_service, get_excel_service, get_db
 from app.services.movimientos_service import MovimientosService
 from app.services.liquidaciones_service import LiquidacionesService
 from app.services.ats_service import AtsService
@@ -17,12 +18,13 @@ def download_movimientos(
     inicio: str = Query(...),
     fin: str = Query(...),
     movimientos_service: MovimientosService = Depends(get_movimientos_service),
-    excel_service: ExcelService = Depends(get_excel_service)
+    excel_service: ExcelService = Depends(get_excel_service),
+    db: Session = Depends(get_db)
 ):
     """
     Descarga el reporte de movimientos en formato Excel corporativo para el rango dado.
     """
-    df = movimientos_service.obtener_movimientos(inicio, fin)
+    df = movimientos_service.obtener_movimientos(inicio, fin, db)
     if df.empty:
         raise HTTPException(status_code=404, detail="No hay movimientos registrados para exportar en este rango.")
     
@@ -41,12 +43,14 @@ def download_liquidaciones(
     inicio: str = Query(...),
     fin: str = Query(...),
     liquidaciones_service: LiquidacionesService = Depends(get_liquidaciones_service),
-    excel_service: ExcelService = Depends(get_excel_service)
+    excel_service: ExcelService = Depends(get_excel_service),
+    db: Session = Depends(get_db)
 ):
     """
     Descarga el reporte consolidado de liquidaciones en formato Excel para el rango dado.
     """
-    df = liquidaciones_service.obtener_liquidaciones(inicio, fin)
+    df = liquidaciones_service.obtener_liquidaciones(inicio, fin, db)
+
     if df.empty:
         raise HTTPException(status_code=404, detail="No hay liquidaciones registradas para exportar en este rango.")
     

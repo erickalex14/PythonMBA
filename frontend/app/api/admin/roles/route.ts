@@ -154,7 +154,7 @@ export async function PUT(request: Request) {
       data: {
         name: nameTrim,
         permissions: {
-          disconnect: previousRole.permissions.map((p) => ({ id: p.id })),
+          disconnect: previousRole.permissions.map((p: any) => ({ id: p.id })),
           connect: permissionIds.map((pid: string) => ({ id: pid }))
         }
       },

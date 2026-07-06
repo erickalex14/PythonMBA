@@ -45,7 +45,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           cedula: user.cedula,
           role: user.role.name,
-          permissions: user.role.permissions.map((p) => p.action),
+          permissions: user.role.permissions.map((p: any) => p.action),
         } as any;
       }
     })

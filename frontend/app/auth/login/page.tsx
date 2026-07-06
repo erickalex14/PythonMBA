@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import styles from "./login.module.css";
+
+// Hardcoded basePath para evitar dependencia del módulo interno de next-auth/react
+const AUTH_BASE = "/reportesmba/api/auth";
 
 export default function LoginPage() {
   const [cedula, setCedula] = useState("");
@@ -18,13 +20,42 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await signIn("credentials", {
-        redirect: false,
-        cedula,
-        password,
+      // 1. Obtener token CSRF desde el endpoint correcto
+      const csrfRes = await fetch(`${AUTH_BASE}/csrf`);
+      const { csrfToken } = await csrfRes.json();
+
+      // 2. Enviar credenciales al callback correcto
+      const res = await fetch(`${AUTH_BASE}/callback/credentials`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "X-Auth-Return-Redirect": "1",
+        },
+        body: new URLSearchParams({
+          csrfToken,
+          cedula,
+          password,
+          callbackUrl: `${window.location.origin}/reportesmba/dashboard`,
+          json: "true",
+        }),
       });
 
-      if (res?.error) {
+      const data = await res.json();
+
+      // Verificar si hubo error de autenticación
+      if (data.url) {
+        try {
+          const urlObj = new URL(data.url);
+          if (urlObj.searchParams.get("error")) {
+            setError("Cédula o contraseña incorrectas. Por favor, verifique sus datos.");
+            return;
+          }
+        } catch {
+          // URL parsing failed, continue
+        }
+      }
+
+      if (!res.ok) {
         setError("Cédula o contraseña incorrectas. Por favor, verifique sus datos.");
       } else {
         router.push("/dashboard");
