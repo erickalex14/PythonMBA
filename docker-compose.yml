@@ -21,7 +21,7 @@ services:
     ports:
       - "127.0.0.1:8002:8000"
     volumes:
-      - ./deploy/env/backend.env:/app/.env:ro
+      - ./deploy/env/backend.env:/app/.env
     environment:
       ROOT_PATH: "/apimbav1"
     depends_on:

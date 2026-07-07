@@ -6,6 +6,7 @@ from app.services.liquidaciones_service import LiquidacionesService
 from app.services.ats_service import AtsService
 from app.services.excel_service import ExcelService
 from app.services.sync_service import SyncService
+from app.services.ventas_service import VentasService
 from app.core.database import get_db
 
 def get_mba3_repository() -> IMba3Repository:
@@ -43,3 +44,10 @@ def get_sync_service(repo: IMba3Repository = Depends(get_mba3_repository)) -> Sy
     Provee el Servicio de Sincronización inyectando su dependencia del Repositorio.
     """
     return SyncService(repo)
+
+def get_ventas_service(repo: IMba3Repository = Depends(get_mba3_repository)) -> VentasService:
+    """
+    Provee el Servicio de Ventas Espejo inyectando su dependencia del Repositorio.
+    """
+    return VentasService(repo)
+

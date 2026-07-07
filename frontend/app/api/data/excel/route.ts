@@ -30,6 +30,7 @@ export async function GET(request: Request) {
   if (type === "movimientos") endpoint = "movimientos";
   else if (type === "liquidaciones") endpoint = "liquidaciones";
   else if (type === "ats") endpoint = "ats";
+  else if (type === "ventas") endpoint = "ventas";
   else {
     return new Response(JSON.stringify({ error: "Tipo de reporte no válido." }), {
       status: 400,
@@ -114,6 +115,9 @@ export async function POST(request: Request) {
     } else if (type === "ats") {
       sheetName = "Consolidado";
       filenamePrefix = "Reporte_Facturacion_Fiscal";
+    } else if (type === "ventas") {
+      sheetName = "Detalle Productos - Periodo";
+      filenamePrefix = "Reporte_Ventas_Espejo";
     }
 
     const backendUrl = `${process.env.BACKEND_API_URL}/api/v1/excel/export`;
