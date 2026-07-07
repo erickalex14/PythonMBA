@@ -155,4 +155,37 @@ model AtsFiscalStaging {
   @@map("ats_fiscal_staging")
 }
 
+model VentasKardexStaging {
+  id              Int      @id @default(autoincrement())
+  doc_id_corp     String   @db.VarChar(50)
+  trans_date      DateTime @db.Date
+  product_id_corp String   @db.VarChar(50)
+  product_name    String?  @db.VarChar(250)
+  quantity        Decimal  @db.Decimal(18, 4)
+  original_qty    Decimal  @db.Decimal(18, 4)
+  unit_cost       Decimal  @db.Decimal(18, 4)
+  discount_amount Decimal  @db.Decimal(18, 4)
+  net_line_total  Decimal  @db.Decimal(18, 4)
+  um              String?  @db.VarChar(20)
+  anulada         Boolean  @default(false)
+  in_out          String?  @db.VarChar(10)
+  codigo_grupo    String?  @db.VarChar(50)
+  codigo_subgrupo String?  @db.VarChar(50)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@map("ventas_kardex_staging")
+}
+
+model VentasFacturaStaging {
+  doc_id_corp   String   @id @db.VarChar(50)
+  doc_reference String?  @db.VarChar(100)
+  invoice_date  DateTime @db.Date
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@map("ventas_facturas_staging")
+}
+
+
 

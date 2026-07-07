@@ -15,12 +15,12 @@ logging.basicConfig(
 )
 
 # Constants de configuracion
-BASE_URL = "http://181.198.104.181:8020"
+BASE_URL = "http://181.198.104.181:8081"
 URL_LOGIN = f"{BASE_URL}/ws2_mba3_serv_/login_servicio"
 URL_CONSULTA = f"{BASE_URL}/ws2_mba3_serv_Consultas_Externas_/"
 
-CODIGO_SERVICIO = "ERICKDEV"
-PASSWORD_SERVICIO = "Er1ck2026$$"
+CODIGO_SERVICIO = "SERIALES"
+PASSWORD_SERVICIO = "Admin2026@@"
 
 
 def solicitar_fecha(mensaje_prompt):

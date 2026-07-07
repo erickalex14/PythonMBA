@@ -185,6 +185,7 @@ def main():
     location /apimbav1 {
         rewrite ^/apimbav1/?(.*)$ /$1 break;
         proxy_pass http://127.0.0.1:8002;
+        proxy_cache off;
         proxy_http_version 1.1;
         proxy_read_timeout 300;
         proxy_set_header Host $host;
@@ -195,8 +196,11 @@ def main():
     }
 
     # Proxy para Frontend MBA3 BI (Next.js)
+    # proxy_cache off: aaPanel define "proxy_cache cache_one" global en
+    # proxy.conf y cachea el HTML por URL (causa de páginas viejas pegadas)
     location /reportesmba {
         proxy_pass http://127.0.0.1:8003;
+        proxy_cache off;
         proxy_http_version 1.1;
         proxy_read_timeout 300;
         proxy_set_header Host $host;

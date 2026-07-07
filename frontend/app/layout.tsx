@@ -18,6 +18,11 @@ export const metadata: Metadata = {
   description: "Enterprise Business Intelligence and Reporting System integrated with MBA3 ERP",
 };
 
+// Render dinámico en TODAS las rutas: sin esto Next prerenderiza las páginas
+// y las sirve con "Cache-Control: s-maxage=31536000", que los proxies
+// intermedios de la red cachean por 1 año, pisando el no-store del middleware.
+export const dynamic = "force-dynamic";
+
 export default function RootLayout({
   children,
 }: Readonly<{
