@@ -5,11 +5,13 @@ import datetime
 import logging
 import pandas as pd
 from app.core.security import verify_api_key
-from app.dependencies import get_movimientos_service, get_liquidaciones_service, get_ats_service, get_excel_service, get_db
+from app.dependencies import get_movimientos_service, get_liquidaciones_service, get_ats_service, get_excel_service, get_ventas_service, get_db
 from app.services.movimientos_service import MovimientosService
 from app.services.liquidaciones_service import LiquidacionesService
 from app.services.ats_service import AtsService
 from app.services.excel_service import ExcelService
+from app.services.ventas_service import VentasService
+
 
 router = APIRouter(prefix="/api/v1/excel", tags=["Excel Export"])
 
@@ -88,6 +90,32 @@ def download_ats(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+@router.get("/ventas", dependencies=[Depends(verify_api_key)])
+def download_ventas(
+    inicio: str = Query(...),
+    fin: str = Query(...),
+    ventas_service: VentasService = Depends(get_ventas_service),
+    excel_service: ExcelService = Depends(get_excel_service),
+    db: Session = Depends(get_db)
+):
+    """
+    Descarga el reporte de Ventas Espejo en formato Excel para el rango dado.
+    """
+    df = ventas_service.obtener_ventas_espejo(inicio, fin, db)
+    if df.empty:
+        raise HTTPException(status_code=404, detail="No hay ventas registradas para exportar en este rango.")
+    
+    excel_file = excel_service.generar_reporte_excel(df, 'Detalle Productos - Periodo')
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"DETALLE_VENTAS_ESPEJO_{timestamp}.xlsx"
+    
+    return StreamingResponse(
+        excel_file,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
 
 from pydantic import BaseModel
 from typing import List, Dict, Any

@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from "react";
-import { useRouter } from "next/navigation";
 import styles from "./login.module.css";
 
 // Hardcoded basePath para evitar dependencia del módulo interno de next-auth/react
@@ -12,7 +11,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +33,7 @@ export default function LoginPage() {
           csrfToken,
           cedula,
           password,
-          callbackUrl: `${window.location.origin}/reportesmba/dashboard`,
+          callbackUrl: `${window.location.origin}/reportesmba/panel`,
           json: "true",
         }),
       });
@@ -58,8 +56,9 @@ export default function LoginPage() {
       if (!res.ok) {
         setError("Cédula o contraseña incorrectas. Por favor, verifique sus datos.");
       } else {
-        router.push("/dashboard");
-        router.refresh();
+        // Redirección completa del navegador (no client-side router):
+        // fuerza documento fresco del servidor y evita payloads RSC cacheados por el CDN
+        window.location.assign("/reportesmba/panel");
       }
     } catch (err) {
       setError("Ocurrió un error inesperado al intentar iniciar sesión.");

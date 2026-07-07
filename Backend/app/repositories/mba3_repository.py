@@ -10,11 +10,11 @@ class IMba3Repository(ABC):
     Sigue el principio de Inversión de Dependencias (DIP) de SOLID.
     """
     @abstractmethod
-    def obtener_token(self) -> Optional[str]:
+    def obtener_token(self, force_refresh: bool = False, env: Optional[str] = None) -> Optional[str]:
         pass
         
     @abstractmethod
-    def ejecutar_consulta(self, token: str, select: str, table: str, where: Optional[str] = None, limit: Optional[int] = None) -> List[Dict]:
+    def ejecutar_consulta(self, token: str, select: str, table: str, where: Optional[str] = None, limit: Optional[int] = None, env: Optional[str] = None) -> List[Dict]:
         pass
 
 def procesar_respuesta_erp(datos, context=""):
@@ -60,38 +60,56 @@ class Mba3Repository(IMba3Repository):
     para consumir las APIs REST de MBA3.
     """
     
-    # Variable de clase para almacenar el token JWT en memoria y evitar logins repetidos
-    _cached_token: Optional[str] = None
+    # Diccionario para almacenar los tokens JWT en memoria indexados por entorno ("PRUEBAS" o "PROD")
+    _cached_tokens: Dict[str, str] = {}
 
-    def obtener_token(self, force_refresh: bool = False) -> Optional[str]:
-        if not force_refresh and Mba3Repository._cached_token:
-            logging.info("Repository: Utilizando token JWT almacenado en caché.")
-            return Mba3Repository._cached_token
+    def obtener_token(self, force_refresh: bool = False, env: Optional[str] = None) -> Optional[str]:
+        target_env = env.strip().upper() if env else settings.MBA3_ENV
+        if target_env not in ["PRUEBAS", "PROD"]:
+            target_env = settings.MBA3_ENV
 
-        logging.info("Repository: Iniciando sesión en MBA3 (Solicitud fresca)...")
+        if not force_refresh and target_env in Mba3Repository._cached_tokens:
+            logging.info(f"Repository: Utilizando token JWT almacenado en caché para el entorno {target_env}.")
+            return Mba3Repository._cached_tokens[target_env]
+
+        logging.info(f"Repository: Iniciando sesión en MBA3 (Solicitud fresca para entorno {target_env})...")
+        
+        codigo = settings.MBA3_CODIGO_SERVICIO_PROD if target_env == "PROD" else settings.MBA3_CODIGO_SERVICIO_TEST
+        pwd = settings.MBA3_PASSWORD_SERVICIO_PROD if target_env == "PROD" else settings.MBA3_PASSWORD_SERVICIO_TEST
+        base_url = settings.MBA3_BASE_URL_PROD if target_env == "PROD" else settings.MBA3_BASE_URL_TEST
+        url_login = f"{base_url}/ws2_mba3_serv_/login_servicio"
+
         headers = {"Content-Type": "application/json"}
         payload = {
-            "codigo": settings.ACTIVE_CODIGO_SERVICIO,
-            "pwd": settings.ACTIVE_PASSWORD_SERVICIO
+            "codigo": codigo,
+            "pwd": pwd
         }
         try:
-            response = requests.post(settings.MBA3_URL_LOGIN, json=payload, headers=headers, timeout=15)
+            response = requests.post(url_login, json=payload, headers=headers, timeout=15)
             response.raise_for_status()
             datos = response.json()
             token = datos.get("jwt")
             if token:
-                logging.info("Repository: Token JWT obtenido correctamente y almacenado en caché.")
-                Mba3Repository._cached_token = token
+                logging.info(f"Repository: Token JWT obtenido correctamente y cacheado para entorno {target_env}.")
+                Mba3Repository._cached_tokens[target_env] = token
                 return token
             else:
                 logging.error("Repository: La respuesta no contiene la clave 'jwt'.")
                 return None
         except Exception as e:
-            logging.error(f"Repository: Error en la autenticación del ERP: {e}")
+            logging.error(f"Repository: Error en la autenticación del ERP para entorno {target_env}: {e}")
             return None
 
-    def ejecutar_consulta(self, token: str, select: str, table: str, where: Optional[str] = None, limit: Optional[int] = None) -> List[Dict]:
-        logging.info(f"Repository: Ejecutando consulta sobre la tabla {table}")
+    def ejecutar_consulta(self, token: str, select: str, table: str, where: Optional[str] = None, limit: Optional[int] = None, env: Optional[str] = None) -> List[Dict]:
+        target_env = env.strip().upper() if env else settings.MBA3_ENV
+        if target_env not in ["PRUEBAS", "PROD"]:
+            target_env = settings.MBA3_ENV
+
+        logging.info(f"Repository: Ejecutando consulta sobre la tabla {table} (Entorno: {target_env})")
+        
+        base_url = settings.MBA3_BASE_URL_PROD if target_env == "PROD" else settings.MBA3_BASE_URL_TEST
+        url_consulta = f"{base_url}/ws2_mba3_serv_Consultas_Externas_/"
+
         headers = {"Authorization": token}
         payload = {
             "select": select,
@@ -103,16 +121,17 @@ class Mba3Repository(IMba3Repository):
             payload["limit"] = str(limit)
             
         try:
-            response = requests.post(settings.MBA3_URL_CONSULTA, headers=headers, data=payload, timeout=120)
+            response = requests.post(url_consulta, headers=headers, data=payload, timeout=120)
             if response.status_code == 401:
-                logging.warning("Repository: Recibido HTTP 401 Unauthorized. Invalidando token en caché...")
-                Mba3Repository._cached_token = None
+                logging.warning(f"Repository: Recibido HTTP 401. Invalidando token de caché para entorno {target_env}...")
+                if target_env in Mba3Repository._cached_tokens:
+                    del Mba3Repository._cached_tokens[target_env]
             response.raise_for_status()
             datos = response.json()
             return procesar_respuesta_erp(datos, f"tabla {table}")
         except Exception as e:
-            logging.error(f"Repository: Error de comunicación al consultar la tabla {table}: {e}")
-            # Si el código de estado indica unauthorized, limpiar token
+            logging.error(f"Repository: Error de comunicación al consultar la tabla {table} en {target_env}: {e}")
             if hasattr(e, 'response') and e.response is not None and e.response.status_code == 401:
-                Mba3Repository._cached_token = None
+                if target_env in Mba3Repository._cached_tokens:
+                    del Mba3Repository._cached_tokens[target_env]
             return []

@@ -13,6 +13,7 @@ from app.core.database import engine, Base
 from app.models.movimiento import MovimientoStaging
 from app.models.liquidacion import LiquidacionPrincipalStaging, LiquidacionProductoStaging
 from app.models.ats import AtsFacturaStaging, AtsProveedorStaging, AtsFiscalStaging
+from app.models.ventas import VentasKardexStaging, VentasFacturaStaging
 from sqlalchemy import text
 
 @asynccontextmanager
@@ -92,6 +93,32 @@ async def lifespan(app: FastAPI):
             """
             connection.execute(text(sql_view_ats))
             logging.info("Vista relacional SQL 'view_ats_reporte' creada o actualizada.")
+
+            sql_view_ventas = """
+            CREATE OR REPLACE VIEW view_ventas_espejo_reporte AS
+            SELECT
+                regexp_replace(COALESCE(f.doc_reference, k.doc_id_corp), '\\.0$', '') AS factura_final,
+                k.trans_date AS fecha,
+                regexp_replace(k.product_id_corp, '\\.0$', '') AS codigo,
+                UPPER(TRIM(k.product_name)) AS producto,
+                COALESCE(k.codigo_grupo, 'GENERAL') AS grupo,
+                COALESCE(k.codigo_subgrupo, 'GENERAL') AS subgrupo,
+                UPPER(TRIM(k.um)) AS unidad,
+                ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer AS cantidad,
+                ROUND(k.unit_cost, 4) AS precio_venta,
+                ROUND(ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer * k.unit_cost, 4) AS subtotal,
+                ROUND(k.discount_amount, 4) AS descuento_aplicado,
+                ROUND(CASE WHEN k.net_line_total > 0 THEN k.net_line_total ELSE (ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer * k.unit_cost - k.discount_amount) END, 4) AS total_linea,
+                k.doc_id_corp AS doc_id_corp_kardex,
+                f.doc_id_corp AS doc_id_corp_fact,
+                k.anulada
+            FROM ventas_kardex_staging k
+            LEFT JOIN ventas_facturas_staging f 
+                ON regexp_replace(k.doc_id_corp, '[^0-9]', '', 'g') = regexp_replace(f.doc_id_corp, '[^0-9]', '', 'g')
+            WHERE k.anulada = false AND (k.original_qty > 0 OR k.quantity > 0);
+            """
+            connection.execute(text(sql_view_ventas))
+            logging.info("Vista relacional SQL 'view_ventas_espejo_reporte' creada o actualizada.")
             
     except Exception as e:
         logging.error(f"Error al inicializar la base de datos PostgreSQL: {e}")
@@ -105,7 +132,8 @@ from app.controllers import (
     ats_controller,
     excel_controller,
     admin_controller,
-    sync_controller
+    sync_controller,
+    ventas_controller
 )
 
 root_path = os.getenv("ROOT_PATH", "")
@@ -165,4 +193,5 @@ app.include_router(ats_controller.router)
 app.include_router(excel_controller.router)
 app.include_router(admin_controller.router)
 app.include_router(sync_controller.router)
+app.include_router(ventas_controller.router)
 

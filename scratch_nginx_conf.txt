@@ -1,0 +1,178 @@
+log_format novitec_json escape=json '{'
+    '"time":"$time_iso8601",'
+    '"host":"$host",'
+    '"remote_addr":"$remote_addr",'
+    '"method":"$request_method",'
+    '"uri":"$request_uri",'
+    '"status":$status,'
+    '"bytes_sent":$body_bytes_sent,'
+    '"request_time":$request_time,'
+    '"upstream_response_time":"$upstream_response_time",'
+    '"referer":"$http_referer",'
+    '"user_agent":"$http_user_agent"'
+'}';
+
+server {
+    listen 80;
+    server_name novitec.com.ec www.novitec.com.ec;
+
+    root /www/wwwroot/novitec.com.ec;
+    index index.html index.htm;
+
+    access_log /www/wwwlogs/novitec.com.ec.log;
+    error_log /www/wwwlogs/novitec.com.ec.error.log;
+
+    location ^~ /.well-known/acme-challenge/ {
+        allow all;
+        root /www/wwwroot/novitec.com.ec;
+    }
+
+    location = /sgn {
+        return 301 https://$host/sgn/;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name novitec.com.ec www.novitec.com.ec;
+
+    root /www/wwwroot/novitec.com.ec;
+    index index.html index.htm;
+
+    access_log /www/wwwlogs/novitec.com.ec.ssl.log novitec_json;
+    error_log /www/wwwlogs/novitec.com.ec.ssl.error.log;
+
+    ssl_certificate     /www/server/panel/vhost/cert/novitec.com.ec/fullchain.pem;
+    ssl_certificate_key /www/server/panel/vhost/cert/novitec.com.ec/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers EECDH+CHACHA20:EECDH+AES128:EECDH+AES256:!aNULL:!MD5:!DSS;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    client_max_body_size 50m;
+
+    location = /sgn {
+        return 301 /sgn/;
+    }
+
+    location /sgn/ {
+        rewrite ^/sgn/?(.*)$ /$1 break;
+        proxy_pass http://127.0.0.1:8001;
+        proxy_http_version 1.1;
+        proxy_read_timeout 300;
+        proxy_connect_timeout 60;
+        proxy_send_timeout 300;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header X-Forwarded-Prefix /sgn;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:8000;
+        proxy_http_version 1.1;
+        proxy_read_timeout 300;
+        proxy_connect_timeout 60;
+        proxy_send_timeout 300;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Port $server_port;
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    # Rewrite: /api/* → /reportesmba/api/* (NextAuth + API routes fix)
+    # next-auth/react y los componentes del dashboard hacen peticiones a /api/
+    # sin el basePath /reportesmba de Next.js. Esta regla reescribe TODAS las
+    # rutas /api/* para que Nginx las enrute al frontend correctamente.
+    location /api {
+        rewrite ^/api(.*)$ /reportesmba/api$1 last;
+    }
+
+    # Proxy para Backend MBA3 BI (FastAPI)
+    location /apimbav1 {
+        rewrite ^/apimbav1/?(.*)$ /$1 break;
+        proxy_pass http://127.0.0.1:8002;
+        proxy_http_version 1.1;
+        proxy_read_timeout 300;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+    }
+
+    # Proxy para Frontend MBA3 BI (Next.js)
+    location /reportesmba {
+        proxy_pass http://127.0.0.1:8003;
+        proxy_http_version 1.1;
+        proxy_read_timeout 300;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Host $host;
+    }
+}

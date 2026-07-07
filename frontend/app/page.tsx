@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
 export default function Home() {
-  // Redirecciona automáticamente del root al dashboard
-  redirect("/dashboard");
+  // Redirecciona automáticamente del root al panel
+  redirect("/panel");
 }

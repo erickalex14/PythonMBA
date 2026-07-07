@@ -1,18 +1,20 @@
 import logging
 import datetime
 import time
+from typing import Optional
 from sqlalchemy.orm import Session
 from app.repositories.mba3_repository import IMba3Repository
 from app.models.movimiento import MovimientoStaging
 from app.models.liquidacion import LiquidacionPrincipalStaging, LiquidacionProductoStaging
 from app.models.ats import AtsFacturaStaging, AtsProveedorStaging, AtsFiscalStaging
+from app.models.ventas import VentasKardexStaging, VentasFacturaStaging
 
 class SyncService:
     def __init__(self, repository: IMba3Repository):
         self.repository = repository
 
-    def sync_movimientos(self, db: Session, fecha_inicio: str, fecha_fin: str) -> dict:
-        logging.info(f"SyncService: Iniciando sincronización de movimientos desde {fecha_inicio} hasta {fecha_fin}")
+    def sync_movimientos(self, db: Session, fecha_inicio: str, fecha_fin: str, env: Optional[str] = None) -> dict:
+        logging.info(f"SyncService: Iniciando sincronización de movimientos desde {fecha_inicio} hasta {fecha_fin} (Entorno: {env})")
         
         try:
             dt_inicio = datetime.datetime.strptime(fecha_inicio, "%Y-%m-%d")
@@ -21,7 +23,7 @@ class SyncService:
             logging.error(f"SyncService: Formato de fechas inválido: {e}")
             return {"status": "error", "message": "Formato de fechas inválido (esperado YYYY-MM-DD)"}
 
-        token_actual = self.repository.obtener_token()
+        token_actual = self.repository.obtener_token(env=env)
         if not token_actual:
             logging.error("SyncService: No se pudo obtener el token inicial del ERP.")
             return {"status": "error", "message": "No se pudo conectar al ERP para obtener el token."}
@@ -52,14 +54,15 @@ class SyncService:
                         select=columnas,
                         table="INVT_Producto_Movimientos",
                         where=condicion_where,
-                        limit=50000
+                        limit=50000,
+                        env=env
                     )
                     # Si no da error pero regresa None/vacío, intentamos refrescar token una vez
                     if datos is None:
                         logging.warning(f"SyncService: Intento {intento_dia} fallido para {fecha_str}. Refrescando token con login fresco...")
                         # Esperar 3 segundos antes del reintento de login para evitar rate limiting del Sophos/ERP
                         time.sleep(3)
-                        nuevo_token = self.repository.obtener_token(force_refresh=True)
+                        nuevo_token = self.repository.obtener_token(force_refresh=True, env=env)
                         if nuevo_token:
                             token_actual = nuevo_token
                             continue # Reintentar el ciclo con el nuevo token
@@ -68,7 +71,7 @@ class SyncService:
                 except Exception as e:
                     logging.error(f"SyncService: Excepción en intento {intento_dia} para {fecha_str}: {e}")
                     time.sleep(3)
-                    nuevo_token = self.repository.obtener_token(force_refresh=True)
+                    nuevo_token = self.repository.obtener_token(force_refresh=True, env=env)
                     if nuevo_token:
                         token_actual = nuevo_token
                 
@@ -135,8 +138,8 @@ class SyncService:
             "records_count": registros_sincronizados
         }
 
-    def sync_liquidaciones(self, db: Session, fecha_inicio: str, fecha_fin: str) -> dict:
-        logging.info(f"SyncService: Iniciando sincronización masiva de liquidaciones desde {fecha_inicio} hasta {fecha_fin}")
+    def sync_liquidaciones(self, db: Session, fecha_inicio: str, fecha_fin: str, env: Optional[str] = None) -> dict:
+        logging.info(f"SyncService: Iniciando sincronización masiva de liquidaciones desde {fecha_inicio} hasta {fecha_fin} (Entorno: {env})")
         
         try:
             dt_inicio = datetime.datetime.strptime(fecha_inicio, "%Y-%m-%d")
@@ -145,7 +148,7 @@ class SyncService:
             logging.error(f"SyncService: Formato de fechas inválido en liquidaciones: {e}")
             return {"status": "error", "message": "Formato de fechas inválido (esperado YYYY-MM-DD)"}
 
-        token_actual = self.repository.obtener_token()
+        token_actual = self.repository.obtener_token(env=env)
         if not token_actual:
             logging.error("SyncService: No se pudo obtener el token inicial para liquidaciones.")
             return {"status": "error", "message": "No se pudo conectar al ERP para obtener el token."}
@@ -173,18 +176,20 @@ class SyncService:
             select=cols_cabecera,
             table="PROV_Liquidaciones_Principal",
             where=condicion_cabecera,
-            limit=50000
+            limit=50000,
+            env=env
         )
 
         if datos_cabecera is None:
             # Reintentar una vez con token fresco si falla
-            token_actual = self.repository.obtener_token(force_refresh=True)
+            token_actual = self.repository.obtener_token(force_refresh=True, env=env)
             datos_cabecera = self.repository.ejecutar_consulta(
                 token=token_actual,
                 select=cols_cabecera,
                 table="PROV_Liquidaciones_Principal",
                 where=condicion_cabecera,
-                limit=50000
+                limit=50000,
+                env=env
             )
 
         if not datos_cabecera:
@@ -220,18 +225,20 @@ class SyncService:
                 select=cols_productos,
                 table="PROV_Liquidaciones_Productos",
                 where=condicion_prod,
-                limit=10000
+                limit=10000,
+                env=env
             )
 
             if lote_datos is None:
                 # Reintentar con token fresco
-                token_actual = self.repository.obtener_token(force_refresh=True)
+                token_actual = self.repository.obtener_token(force_refresh=True, env=env)
                 lote_datos = self.repository.ejecutar_consulta(
                     token=token_actual,
                     select=cols_productos,
                     table="PROV_Liquidaciones_Productos",
                     where=condicion_prod,
-                    limit=10000
+                    limit=10000,
+                    env=env
                 )
 
             if lote_datos:
@@ -325,8 +332,8 @@ class SyncService:
             logging.error(f"SyncService: Error escribiendo liquidaciones masivas en PostgreSQL: {e}")
             return {"status": "error", "message": f"Error persistiendo liquidaciones: {e}"}
 
-    def sync_ats(self, db: Session, fecha_inicio: str, fecha_fin: str) -> dict:
-        logging.info(f"SyncService: Iniciando sincronización masiva de ATS desde {fecha_inicio} hasta {fecha_fin}")
+    def sync_ats(self, db: Session, fecha_inicio: str, fecha_fin: str, env: Optional[str] = None) -> dict:
+        logging.info(f"SyncService: Iniciando sincronización masiva de ATS desde {fecha_inicio} hasta {fecha_fin} (Entorno: {env})")
         
         try:
             dt_inicio = datetime.datetime.strptime(fecha_inicio, "%Y-%m-%d")
@@ -335,7 +342,7 @@ class SyncService:
             logging.error(f"SyncService: Formato de fechas inválido en ATS: {e}")
             return {"status": "error", "message": "Formato de fechas inválido (esperado YYYY-MM-DD)"}
 
-        token_actual = self.repository.obtener_token()
+        token_actual = self.repository.obtener_token(env=env)
         if not token_actual:
             logging.error("SyncService: No se pudo obtener el token inicial para ATS.")
             return {"status": "error", "message": "No se pudo conectar al ERP para obtener el token."}
@@ -365,15 +372,17 @@ class SyncService:
             token=token_actual,
             select=cols_proveedor,
             table="PROV_Ficha_Principal",
-            limit=100000
+            limit=100000,
+            env=env
         )
         if datos_prov is None:
-            token_actual = self.repository.obtener_token(force_refresh=True)
+            token_actual = self.repository.obtener_token(force_refresh=True, env=env)
             datos_prov = self.repository.ejecutar_consulta(
                 token=token_actual,
                 select=cols_proveedor,
                 table="PROV_Ficha_Principal",
-                limit=100000
+                limit=100000,
+                env=env
             )
 
         if datos_prov:
@@ -422,16 +431,18 @@ class SyncService:
             select=cols_factura,
             table="PROV_Factura_Principal",
             where=condicion_fact,
-            limit=100000
+            limit=100000,
+            env=env
         )
         if datos_fact is None:
-            token_actual = self.repository.obtener_token(force_refresh=True)
+            token_actual = self.repository.obtener_token(force_refresh=True, env=env)
             datos_fact = self.repository.ejecutar_consulta(
                 token=token_actual,
                 select=cols_factura,
                 table="PROV_Factura_Principal",
                 where=condicion_fact,
-                limit=100000
+                limit=100000,
+                env=env
             )
 
         if not datos_fact:
@@ -466,17 +477,19 @@ class SyncService:
                 select=cols_fiscal,
                 table="CONT_Info_Fiscal",
                 where=condicion_fiscal,
-                limit=10000
+                limit=10000,
+                env=env
             )
 
             if lote_datos is None:
-                token_actual = self.repository.obtener_token(force_refresh=True)
+                token_actual = self.repository.obtener_token(force_refresh=True, env=env)
                 lote_datos = self.repository.ejecutar_consulta(
                     token=token_actual,
                     select=cols_fiscal,
                     table="CONT_Info_Fiscal",
                     where=condicion_fiscal,
-                    limit=10000
+                    limit=10000,
+                    env=env
                 )
 
             if lote_datos:
@@ -558,4 +571,196 @@ class SyncService:
             db.rollback()
             logging.error(f"SyncService [ATS]: Error escribiendo datos en base de datos: {e}")
             return {"status": "error", "message": f"Error persistiendo datos de ATS: {e}"}
+
+    def sync_ventas(self, db: Session, fecha_inicio: str, fecha_fin: str, env: Optional[str] = None) -> dict:
+        logging.info(f"SyncService: Iniciando sincronización de Ventas desde {fecha_inicio} hasta {fecha_fin} (Entorno: {env})")
+        
+        try:
+            dt_inicio = datetime.datetime.strptime(fecha_inicio, "%Y-%m-%d")
+            dt_fin = datetime.datetime.strptime(fecha_fin, "%Y-%m-%d")
+        except Exception as e:
+            logging.error(f"SyncService: Formato de fechas inválido: {e}")
+            return {"status": "error", "message": "Formato de fechas inválido (esperado YYYY-MM-DD)"}
+
+        token_actual = self.repository.obtener_token(env=env)
+        if not token_actual:
+            logging.error("SyncService: No se pudo obtener el token inicial del ERP.")
+            return {"status": "error", "message": "No se pudo conectar al ERP para obtener el token."}
+
+        cols_movs = (
+            "DOC_ID_CORP,TRANS_DATE,PRODUCT_ID_CORP,PRODUCT_NAME,QUANTITY,ORIGINAL_QTY,"
+            "UNIT_COST,DISCOUNT_AMOUNT,NET_LINE_TOTAL,UM,Anulada,IN_OUT,"
+            "\"Codigo grupo\",\"Codigo subgrupo\",Codigo_grupo,Codigo_subgrupo"
+        )
+        cols_facturas = "CODIGO_FACTURA,NUMERO_FACTURA,FECHA_FACTURA"
+        
+        dt_actual = dt_inicio
+        dias_totales = (dt_fin - dt_inicio).days + 1
+        dia_contador = 1
+        kardex_count = 0
+        facturas_count = 0
+
+        def parse_float(val):
+            try:
+                return float(str(val).strip()) if val else 0.0
+            except:
+                return 0.0
+
+        def parse_bool(val):
+            if val is None:
+                return False
+            if isinstance(val, bool):
+                return val
+            return str(val).strip().lower() in ['true', '1', 't', 's', 'si', 'y']
+
+        def clean_str(val):
+            if val is None:
+                return None
+            return str(val).replace('\x00', '').replace('\u0000', '').strip()
+
+        while dt_actual <= dt_fin:
+            fecha_str = dt_actual.strftime('%Y-%m-%d')
+            logging.info(f"SyncService [Ventas]: Procesando día {dia_contador}/{dias_totales} (Fecha: {fecha_str})")
+            
+            # 1. Consultar Kardex de Inventario
+            condicion_where = f"TRANS_DATE = '{fecha_str}'"
+            datos_movs = None
+            intento = 1
+            while intento <= 3:
+                try:
+                    datos_movs = self.repository.ejecutar_consulta(
+                        token=token_actual,
+                        select=cols_movs,
+                        table="INVT_Producto_Movimientos",
+                        where=condicion_where,
+                        limit=250000,
+                        env=env
+                    )
+                    if datos_movs is None:
+                        time.sleep(3)
+                        nuevo_token = self.repository.obtener_token(force_refresh=True, env=env)
+                        if nuevo_token:
+                            token_actual = nuevo_token
+                            continue
+                    break
+                except Exception as e:
+                    logging.error(f"SyncService [Ventas]: Error en intento {intento} para Kardex {fecha_str}: {e}")
+                    time.sleep(3)
+                    nuevo_token = self.repository.obtener_token(force_refresh=True, env=env)
+                    if nuevo_token:
+                        token_actual = nuevo_token
+                intento += 1
+
+            # 2. Consultar Facturas de Clientes (CLNT_Factura_Principal)
+            datos_facturas = None
+            intento = 1
+            while intento <= 3:
+                try:
+                    datos_facturas = self.repository.ejecutar_consulta(
+                        token=token_actual,
+                        select=cols_facturas,
+                        table="CLNT_Factura_Principal",
+                        where=f"FECHA_FACTURA = '{fecha_str}'",
+                        limit=100000,
+                        env=env
+                    )
+                    if datos_facturas is None:
+                        time.sleep(3)
+                        nuevo_token = self.repository.obtener_token(force_refresh=True, env=env)
+                        if nuevo_token:
+                            token_actual = nuevo_token
+                            continue
+                    break
+                except Exception as e:
+                    logging.error(f"SyncService [Ventas]: Error en intento {intento} para Facturas {fecha_str}: {e}")
+                    time.sleep(3)
+                    nuevo_token = self.repository.obtener_token(force_refresh=True, env=env)
+                    if nuevo_token:
+                        token_actual = nuevo_token
+                intento += 1
+
+            # 3. Guardar localmente de forma atómica
+            try:
+                # Eliminar registros del día en ambas tablas
+                db.query(VentasKardexStaging).filter(VentasKardexStaging.trans_date == dt_actual.date()).delete()
+                db.query(VentasFacturaStaging).filter(VentasFacturaStaging.invoice_date == dt_actual.date()).delete()
+
+                # Guardar Kardex
+                nuevos_movs = []
+                if datos_movs:
+                    for item in datos_movs:
+                        mapeo_item = {k.replace(" ", "").replace("_", "").upper(): k for k in item.keys()}
+                        
+                        col_doc = mapeo_item.get("DOCIDCORP")
+                        col_prod_id = mapeo_item.get("PRODUCTIDCORP")
+                        col_prod_name = mapeo_item.get("PRODUCTNAME")
+                        col_qty = mapeo_item.get("QUANTITY")
+                        col_orig_qty = mapeo_item.get("ORIGINALQTY") if mapeo_item.get("ORIGINALQTY") else col_qty
+                        col_cost = mapeo_item.get("UNITCOST")
+                        col_discount = mapeo_item.get("DISCOUNTAMOUNT")
+                        col_total = mapeo_item.get("NETLINETOTAL")
+                        col_um = mapeo_item.get("UM")
+                        col_anulada = mapeo_item.get("ANULADA")
+                        col_in_out = mapeo_item.get("INOUT")
+                        col_grupo = mapeo_item.get("CODIGOGRUPO")
+                        col_subgrupo = mapeo_item.get("CODIGOSUBGRUPO")
+
+                        mov = VentasKardexStaging(
+                            doc_id_corp=clean_str(item.get(col_doc)) if col_doc else "",
+                            trans_date=dt_actual.date(),
+                            product_id_corp=clean_str(item.get(col_prod_id)) if col_prod_id else "",
+                            product_name=clean_str(item.get(col_prod_name)) if col_prod_name else "",
+                            quantity=parse_float(item.get(col_qty)) if col_qty else 0.0,
+                            original_qty=parse_float(item.get(col_orig_qty)) if col_orig_qty else 0.0,
+                            unit_cost=parse_float(item.get(col_cost)) if col_cost else 0.0,
+                            discount_amount=parse_float(item.get(col_discount)) if col_discount else 0.0,
+                            net_line_total=parse_float(item.get(col_total)) if col_total else 0.0,
+                            um=clean_str(item.get(col_um)) if col_um else "UNID",
+                            anulada=parse_bool(item.get(col_anulada)) if col_anulada else False,
+                            in_out=clean_str(item.get(col_in_out)) if col_in_out else "OUT",
+                            codigo_grupo=clean_str(item.get(col_grupo)) if col_grupo else "GENERAL",
+                            codigo_subgrupo=clean_str(item.get(col_subgrupo)) if col_subgrupo else "GENERAL"
+                        )
+                        nuevos_movs.append(mov)
+
+                if nuevos_movs:
+                    db.bulk_save_objects(nuevos_movs)
+                    kardex_count += len(nuevos_movs)
+
+                # Guardar Facturas
+                nuevas_facturas = []
+                if datos_facturas:
+                    for item in datos_facturas:
+                        mapeo_fact = {k.replace(" ", "").replace("_", "").upper(): k for k in item.keys()}
+                        col_fid = mapeo_fact.get("CODIGOFACTURA")
+                        col_fref = mapeo_fact.get("NUMEROFACTURA")
+
+                        fact = VentasFacturaStaging(
+                            doc_id_corp=clean_str(item.get(col_fid)) if col_fid else "",
+                            doc_reference=clean_str(item.get(col_fref)) if col_fref else "",
+                            invoice_date=dt_actual.date()
+                        )
+                        nuevas_facturas.append(fact)
+
+                if nuevas_facturas:
+                    db.bulk_save_objects(nuevas_facturas)
+                    facturas_count += len(nuevas_facturas)
+
+                db.commit()
+                logging.info(f"SyncService [Ventas]: Día {fecha_str} sincronizado. Kardex: {len(nuevos_movs)}, Facturas: {len(nuevas_facturas)}")
+            except Exception as e:
+                db.rollback()
+                logging.error(f"SyncService [Ventas]: Error guardando día {fecha_str} en DB: {e}")
+
+            dt_actual += datetime.timedelta(days=1)
+            dia_contador += 1
+            time.sleep(0.35)
+
+        return {
+            "status": "success",
+            "message": f"Sincronización completada. Movimientos: {kardex_count}, Facturas Clientes: {facturas_count}",
+            "kardex_count": kardex_count,
+            "facturas_count": facturas_count
+        }
+
 

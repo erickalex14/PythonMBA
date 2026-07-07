@@ -1354,3 +1354,231 @@
     line-height: 1.3;
   }
 }
+
+/* ============================================================
+   Clases de compatibilidad para los componentes modularizados
+   (Sidebar, SyncSection, ReportTable, etc.)
+   ============================================================ */
+
+/* Contenedor raíz del panel (flex sidebar + contenido) */
+.container {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f8fafc;
+  color: #0f172a;
+  font-family: 'Inter', 'Outfit', sans-serif;
+}
+
+/* Logo del sidebar */
+.logoArea {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  padding: 0 0.25rem;
+}
+
+.logoImg {
+  max-width: 150px;
+  height: auto;
+  object-fit: contain;
+}
+
+.logoText {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+}
+
+/* Secciones de reporte y acciones */
+.reportSection {
+  margin-bottom: 1.5rem;
+}
+
+.reportHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.downloadExcelBtn {
+  background-color: #005daa;
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  padding: 0.55rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s ease;
+}
+
+.downloadExcelBtn:hover:not(:disabled) {
+  background-color: #004b8a;
+  transform: translateY(-1px);
+}
+
+.downloadExcelBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.downloadPdfBtn {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #64748b;
+  font-weight: 600;
+  padding: 0.55rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s ease;
+}
+
+.downloadPdfBtn:hover:not(:disabled) {
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+.downloadPdfBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Filtros */
+.filtersRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: flex-end;
+}
+
+.subFiltersSection {
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.subFiltersRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  align-items: flex-end;
+}
+
+/* Estados de carga y sin datos */
+.loaderArea {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  gap: 1rem;
+}
+
+.noDataArea {
+  padding: 4rem;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 0.9rem;
+}
+
+/* Badge de permisos */
+.permBadge {
+  background-color: #f4fbef;
+  color: #559b1a;
+  border: 1px solid rgba(112, 185, 43, 0.15);
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  font-weight: 600;
+  display: inline-block;
+  margin: 0.1rem;
+}
+
+/* Formularios (SyncSection y Admin) */
+.formRow {
+  display: flex;
+  gap: 1rem;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.formGroup label {
+  font-size: 0.75rem;
+  color: #64748b;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.inputField {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.inputField:focus {
+  border-color: #005daa;
+}
+
+.saveConfigBtn {
+  background: linear-gradient(135deg, #005daa 0%, #007cc2 100%);
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  padding: 0.65rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 10px rgba(0, 93, 170, 0.15);
+  margin-top: 0.5rem;
+}
+
+.saveConfigBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 93, 170, 0.25);
+}
+
+.saveConfigBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.submitBtn {
+  background: linear-gradient(135deg, #005daa 0%, #007cc2 100%);
+  color: #ffffff;
+  border: none;
+  font-weight: 600;
+  padding: 0.65rem 1.25rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: all 0.15s ease;
+  box-shadow: 0 4px 10px rgba(0, 93, 170, 0.15);
+}
+
+.submitBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 14px rgba(0, 93, 170, 0.25);
+}
+
+.submitBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
