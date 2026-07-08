@@ -665,8 +665,8 @@ export default function DashboardPage() {
                   </select>
                 </div>
 
-                <div style={{ marginTop: "1.25rem", borderTop: "1px solid #f1f5f9", paddingTop: "1.25rem" }}>
-                  <h4 style={{ margin: "0 0 0.85rem 0", color: "#005daa", fontSize: "0.85rem", fontWeight: "700", textTransform: "uppercase" }}>Variables de PRUEBAS (.env)</h4>
+                <div style={{ marginTop: "1.25rem", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "1.25rem" }}>
+                  <h4 style={{ margin: "0 0 0.85rem 0", color: "var(--color-brand-primary)", fontSize: "0.85rem", fontWeight: "700", textTransform: "uppercase" }}>Variables de PRUEBAS (.env)</h4>
                   <div className={styles.adminFormGroup}>
                     <label>URL Base del Servicio Pruebas</label>
                     <input
@@ -675,7 +675,7 @@ export default function DashboardPage() {
                       onChange={(e) => setErpConfig({ ...erpConfig, base_url_test: e.target.value })}
                       placeholder="http://192.168.80.201:8020"
                       className={styles.selectFilter}
-                      style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
+                      style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)", color: "var(--color-text-primary)", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
                     />
                   </div>
                   <div className={styles.adminFormRow} style={{ display: "flex", gap: "1rem", marginTop: "0.85rem" }}>
@@ -686,7 +686,7 @@ export default function DashboardPage() {
                         value={erpConfig.codigo_servicio_test}
                         onChange={(e) => setErpConfig({ ...erpConfig, codigo_servicio_test: e.target.value })}
                         className={styles.selectFilter}
-                        style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1" }}
+                        style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)" }}
                       />
                     </div>
                     <div className={styles.adminFormGroup} style={{ flex: 1 }}>
@@ -696,14 +696,14 @@ export default function DashboardPage() {
                         value={erpConfig.password_servicio_test}
                         onChange={(e) => setErpConfig({ ...erpConfig, password_servicio_test: e.target.value })}
                         className={styles.selectFilter}
-                        style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1" }}
+                        style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)" }}
                       />
                     </div>
                   </div>
                 </div>
 
-                <div style={{ marginTop: "1.5rem", borderTop: "1px solid #f1f5f9", paddingTop: "1.25rem" }}>
-                  <h4 style={{ margin: "0 0 0.85rem 0", color: "#70b92b", fontSize: "0.85rem", fontWeight: "700", textTransform: "uppercase" }}>Variables de PRODUCCIÓN (.env)</h4>
+                <div style={{ marginTop: "1.5rem", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "1.25rem" }}>
+                  <h4 style={{ margin: "0 0 0.85rem 0", color: "var(--color-brand-accent)", fontSize: "0.85rem", fontWeight: "700", textTransform: "uppercase" }}>Variables de PRODUCCIÓN (.env)</h4>
                   <div className={styles.adminFormGroup}>
                     <label>URL Base del Servicio Producción</label>
                     <input
@@ -712,7 +712,7 @@ export default function DashboardPage() {
                       onChange={(e) => setErpConfig({ ...erpConfig, base_url_prod: e.target.value })}
                       placeholder="http://192.168.80.201:8081"
                       className={styles.selectFilter}
-                      style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
+                      style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)", color: "var(--color-text-primary)", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
                     />
                   </div>
                   <div className={styles.adminFormRow} style={{ display: "flex", gap: "1rem", marginTop: "0.85rem" }}>
@@ -723,7 +723,7 @@ export default function DashboardPage() {
                         value={erpConfig.codigo_servicio_prod}
                         onChange={(e) => setErpConfig({ ...erpConfig, codigo_servicio_prod: e.target.value })}
                         className={styles.selectFilter}
-                        style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1" }}
+                        style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)" }}
                       />
                     </div>
                     <div className={styles.adminFormGroup} style={{ flex: 1 }}>
@@ -733,7 +733,7 @@ export default function DashboardPage() {
                         value={erpConfig.password_servicio_prod}
                         onChange={(e) => setErpConfig({ ...erpConfig, password_servicio_prod: e.target.value })}
                         className={styles.selectFilter}
-                        style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1" }}
+                        style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)" }}
                       />
                     </div>
                   </div>
@@ -745,7 +745,7 @@ export default function DashboardPage() {
                   disabled={savingConfig}
                   loading={savingConfig}
                   loadingText="Guardando..."
-                  style={{ width: "100%", marginTop: "1.5rem", padding: "0.75rem", background: "#70b92b", color: "#ffffff", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer" }}
+                  style={{ width: "100%", marginTop: "1.5rem", padding: "0.75rem", background: "var(--color-brand-accent)", color: "var(--color-surface)", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer" }}
                 >
                   Guardar Configuración Persistente (.env)
                 </Button>
@@ -813,7 +813,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Sub-Card: CRUD de Roles y Permisos */}
-                <div style={{ marginTop: "2rem", borderTop: "1px solid #f1f5f9", paddingTop: "1.5rem" }}>
+                <div style={{ marginTop: "2rem", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "1.5rem" }}>
                   <div className={styles.adminCardHeader}>
                     <h3>Gestión de Roles del Sistema</h3>
                     <Button
@@ -1086,7 +1086,7 @@ export default function DashboardPage() {
                   onChange={(e) => setUserForm({ ...userForm, cedula: e.target.value })}
                   placeholder="Ej: 1712345678"
                   className={styles.selectFilter}
-                  style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
+                  style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)", color: "var(--color-text-primary)", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
                   disabled={editingUser !== null}
                 />
               </div>
@@ -1099,7 +1099,7 @@ export default function DashboardPage() {
                   onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
                   placeholder="Ej: Juan Pérez"
                   className={styles.selectFilter}
-                  style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
+                  style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)", color: "var(--color-text-primary)", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
                 />
               </div>
 
@@ -1111,7 +1111,7 @@ export default function DashboardPage() {
                   onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
                   placeholder={editingUser ? "Dejar vacío" : "Contraseña"}
                   className={styles.selectFilter}
-                  style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
+                  style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)", color: "var(--color-text-primary)", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
                 />
               </div>
 
@@ -1169,7 +1169,7 @@ export default function DashboardPage() {
                   onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })}
                   placeholder="Ej: Auditor Externo"
                   className={styles.selectFilter}
-                  style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
+                  style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)", color: "var(--color-text-primary)", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
                   disabled={editingRole?.name === "Admin" || editingRole?.name === "Visitante"}
                 />
               </div>
@@ -1180,7 +1180,7 @@ export default function DashboardPage() {
                   {adminPermissions.map((perm) => {
                     const isChecked = roleForm.permissionIds.includes(perm.id);
                     return (
-                      <label key={perm.id} style={{ display: "flex", alignItems: "flex-start", gap: "0.65rem", cursor: "pointer", fontSize: "0.85rem", color: "#0f172a" }}>
+                      <label key={perm.id} style={{ display: "flex", alignItems: "flex-start", gap: "0.65rem", cursor: "pointer", fontSize: "0.85rem", color: "var(--color-text-primary)" }}>
                         <input
                           type="checkbox"
                           checked={isChecked}
@@ -1189,7 +1189,7 @@ export default function DashboardPage() {
                         />
                         <div>
                           <span style={{ fontWeight: "700" }}>{perm.action}</span>
-                          <p style={{ margin: "0.05rem 0 0 0", fontSize: "0.75rem", color: "#64748b" }}>{perm.description}</p>
+                          <p style={{ margin: "0.05rem 0 0 0", fontSize: "0.75rem", color: "var(--color-text-muted)" }}>{perm.description}</p>
                         </div>
                       </label>
                     );
