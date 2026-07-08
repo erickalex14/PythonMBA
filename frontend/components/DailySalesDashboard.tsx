@@ -1,6 +1,8 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useReportQuery } from "../hooks/useReportQuery";
 import { Card } from "./ui/Card";
+import { FilterBar } from "./ui/FilterBar";
+import { getEmpresaLabel } from "../lib/empresa";
 
 interface DailySalesDashboardProps {
   styles: Record<string, string>;
@@ -20,22 +22,34 @@ const RANGE_DAYS = 30;
 
 export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles }) => {
   const { loading, data, error, fetchReportData } = useReportQuery();
+  const [selectedEmpresa, setSelectedEmpresa] = useState("");
 
   useEffect(() => {
     fetchReportData("ventas", dateNDaysAgo(RANGE_DAYS - 1), dateNDaysAgo(0));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const empresaOptions = useMemo(() => {
+    const set = new Set<string>();
+    data.forEach((row: any) => set.add(getEmpresaLabel(row.codigo)));
+    return Array.from(set).sort();
+  }, [data]);
+
+  const filteredData = useMemo(() => {
+    if (!selectedEmpresa) return data;
+    return data.filter((row: any) => getEmpresaLabel(row.codigo) === selectedEmpresa);
+  }, [data, selectedEmpresa]);
+
   const totalsByDay = useMemo(() => {
     const map: Record<string, number> = {};
-    data.forEach((row: any) => {
+    filteredData.forEach((row: any) => {
       const date = row.fecha || row.FECHA;
       if (!date) return;
       const val = Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0;
       map[date] = (map[date] || 0) + val;
     });
     return map;
-  }, [data]);
+  }, [filteredData]);
 
   const today = dateNDaysAgo(0);
   const yesterday = dateNDaysAgo(1);
@@ -60,7 +74,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
 
   const topProducts = useMemo(() => {
     const map: Record<string, number> = {};
-    data.forEach((row: any) => {
+    filteredData.forEach((row: any) => {
       const key = row.producto || row.PRODUCTO || "Sin producto";
       const val = Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0;
       map[key] = (map[key] || 0) + val;
@@ -69,7 +83,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
       .map(([producto, total]) => ({ producto, total }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 8);
-  }, [data]);
+  }, [filteredData]);
 
   if (loading) {
     return (
@@ -99,6 +113,19 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
 
   return (
     <div>
+      <FilterBar
+        fields={[
+          {
+            label: "Filtrar por Empresa",
+            value: selectedEmpresa,
+            onChange: setSelectedEmpresa,
+            placeholder: "Todas las Empresas...",
+            options: empresaOptions,
+          },
+        ]}
+        styles={styles}
+      />
+
       <section className={styles.kpiGrid}>
         <Card variant="kpiCard" styles={styles}>
           <h3>Ventas Hoy</h3>

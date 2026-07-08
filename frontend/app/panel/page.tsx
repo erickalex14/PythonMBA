@@ -19,6 +19,7 @@ import { Pagination } from "../../components/ui/Pagination";
 import { FilterBar, FilterFieldConfig } from "../../components/ui/FilterBar";
 import { Modal } from "../../components/ui/Modal";
 import { REPORTS_CONFIG } from "../../lib/reports-config";
+import { getEmpresaLabel } from "../../lib/empresa";
 import { useReportQuery } from "../../hooks/useReportQuery";
 
 type TabType = "movimientos" | "liquidaciones" | "ats" | "ventas" | "ventas-diarias" | "logs" | "admin" | "sync";
@@ -73,6 +74,9 @@ export default function DashboardPage() {
   const [selectedClassif, setSelectedClassif] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedCorp, setSelectedCorp] = useState("");
+
+  // Filtro específico en la tabla para Ventas (empresa: Novicompu / ENV)
+  const [selectedEmpresa, setSelectedEmpresa] = useState("");
 
   // Estados de administración
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
@@ -433,6 +437,7 @@ export default function DashboardPage() {
       } else if (activeTab === "ventas") {
         if (selectedProduct && String(row.producto).trim() !== selectedProduct) return false;
         if (selectedBranch && String(row.grupo).trim() !== selectedBranch) return false;
+        if (selectedEmpresa && getEmpresaLabel(row.codigo) !== selectedEmpresa) return false;
       }
 
       return true;
@@ -441,7 +446,8 @@ export default function DashboardPage() {
     data, activeTab, searchQuery,
     selectedBrand, selectedBranch, selectedSalesman,
     selectedProduct, selectedPartida, selectedRecepcion,
-    selectedVendor, selectedClassif, selectedStatus, selectedCorp
+    selectedVendor, selectedClassif, selectedStatus, selectedCorp,
+    selectedEmpresa
   ]);
 
   // Filtros de bitácora
@@ -482,6 +488,7 @@ export default function DashboardPage() {
     const recepciones = new Set<string>();
     const vendors = new Set<string>();
     const classifs = new Set<string>();
+    const empresas = new Set<string>();
 
     data.forEach((row) => {
       if (activeTab === "movimientos") {
@@ -498,6 +505,7 @@ export default function DashboardPage() {
       } else if (activeTab === "ventas") {
         if (row.producto) products.add(String(row.producto).trim());
         if (row.grupo) branches.add(String(row.grupo).trim());
+        empresas.add(getEmpresaLabel(row.codigo));
       }
     });
 
@@ -509,7 +517,8 @@ export default function DashboardPage() {
       partidas: Array.from(partidas).sort(),
       recepciones: Array.from(recepciones).sort(),
       vendors: Array.from(vendors).sort(),
-      classifs: Array.from(classifs).sort()
+      classifs: Array.from(classifs).sort(),
+      empresas: Array.from(empresas).sort()
     };
   }, [data, activeTab]);
 
@@ -530,6 +539,7 @@ export default function DashboardPage() {
       { label: "Estado del Documento", value: selectedStatus, onChange: setSelectedStatus, placeholder: "Todos los Estados...", options: ["ACTIVO", "ANULADO"] },
     ],
     ventas: [
+      { label: "Filtrar por Empresa", value: selectedEmpresa, onChange: setSelectedEmpresa, placeholder: "Todas las Empresas...", options: filterOptions.empresas },
       { label: "Filtrar por Producto", value: selectedProduct, onChange: setSelectedProduct, placeholder: "Todos los Productos...", options: filterOptions.products },
       { label: "Filtrar por Grupo", value: selectedBranch, onChange: setSelectedBranch, placeholder: "Todos los Grupos...", options: filterOptions.branches },
     ],
