@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "./ui/Button";
+import { Card } from "./ui/Card";
 
 interface SyncSectionProps {
   styles: any;
@@ -138,7 +139,7 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
   };
 
   return (
-    <div className={styles.adminCard} style={{ marginTop: "1rem" }}>
+    <Card variant="adminCard" styles={styles} style={{ marginTop: "1rem" }}>
       <h3 style={{ borderBottom: "2px solid #e2e8f0", paddingBottom: "0.50rem", color: "#005DAA" }}>
         Sincronización Manual del ERP
       </h3>
@@ -280,6 +281,6 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 };
