@@ -90,6 +90,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {(permissions.includes("VIEW_VENTAS") || isUserAdmin) && (
           <button
+            className={`${styles.navItem} ${activeTab === "ventas-diarias" ? styles.active : ""}`}
+            onClick={() => selectTab("ventas-diarias")}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <span className="flex-1">Ventas Diarias</span>
+          </button>
+        )}
+
+        {(permissions.includes("VIEW_VENTAS") || isUserAdmin) && (
+          <button
             className={`${styles.navItem} ${activeTab === "ventas" ? styles.active : ""}`}
             onClick={() => selectTab("ventas")}
           >

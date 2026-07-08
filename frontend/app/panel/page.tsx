@@ -11,6 +11,7 @@ import { KPICards } from "../../components/KPICards";
 import { ChartsSection } from "../../components/ChartsSection";
 import { ReportTable } from "../../components/ReportTable";
 import { SyncSection } from "../../components/SyncSection";
+import { DailySalesDashboard } from "../../components/DailySalesDashboard";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -20,7 +21,7 @@ import { Modal } from "../../components/ui/Modal";
 import { REPORTS_CONFIG } from "../../lib/reports-config";
 import { useReportQuery } from "../../hooks/useReportQuery";
 
-type TabType = "movimientos" | "liquidaciones" | "ats" | "ventas" | "logs" | "admin" | "sync";
+type TabType = "movimientos" | "liquidaciones" | "ats" | "ventas" | "ventas-diarias" | "logs" | "admin" | "sync";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -622,6 +623,7 @@ export default function DashboardPage() {
             {activeTab === "liquidaciones" && "Liquidaciones de Importaciones"}
             {activeTab === "ats" && "ATS - Facturas de Compras"}
             {activeTab === "ventas" && "Ventas (Detalle)"}
+            {activeTab === "ventas-diarias" && "Ventas Diarias"}
             {activeTab === "logs" && "Bitácora de Auditoría"}
             {activeTab === "admin" && "Panel de Administración"}
             {activeTab === "sync" && "Sincronización Transaccional"}
@@ -631,6 +633,7 @@ export default function DashboardPage() {
             {activeTab === "liquidaciones" && "Consolidado de costos CIF y detalle de productos liquidados"}
             {activeTab === "ats" && "Resumen fiscal de compras autorizadas y anulaciones"}
             {activeTab === "ventas" && "Reporte consolidado de facturación de clientes y ventas transadas"}
+            {activeTab === "ventas-diarias" && "Resumen ejecutivo de ventas: hoy, ayer y tendencia de los últimos 30 días"}
             {activeTab === "logs" && "Historial de descargas de reportes para auditoría de seguridad"}
             {activeTab === "admin" && "Gestión de seguridad, control de acceso de usuarios y configuración del entorno"}
             {activeTab === "sync" && "Sincronización manual de datos históricos y diarios del ERP MBA3 a Staging local"}
@@ -640,6 +643,11 @@ export default function DashboardPage() {
         {/* 1. SECCIÓN DE SINCRONIZACIÓN MANUAL */}
         {activeTab === "sync" && (
           <SyncSection styles={styles} />
+        )}
+
+        {/* SECCIÓN DE VENTAS DIARIAS (DASHBOARD EJECUTIVO) */}
+        {activeTab === "ventas-diarias" && (
+          <DailySalesDashboard styles={styles} />
         )}
 
         {/* 2. SECCIÓN DE ADMINISTRACIÓN DE USUARIOS/CONFIG */}
@@ -867,7 +875,7 @@ export default function DashboardPage() {
         )}
 
         {/* 3. FILTROS GENERALES DE REPORTES */}
-        {activeTab !== "admin" && activeTab !== "sync" && (
+        {activeTab !== "admin" && activeTab !== "sync" && activeTab !== "ventas-diarias" && (
           <section className={styles.filtersSection}>
             <div className={styles.filtersRow}>
               <div className={styles.filterGroup}>
@@ -942,7 +950,7 @@ export default function DashboardPage() {
         )}
 
         {/* 8. CONTENEDOR DE TABLAS E INFORMES */}
-        {activeTab !== "admin" && activeTab !== "sync" && (
+        {activeTab !== "admin" && activeTab !== "sync" && activeTab !== "ventas-diarias" && (
           <section className={styles.reportSection}>
             <div className={styles.reportHeaderActions}>
               <h3>Detalle Consolidado de Datos</h3>
