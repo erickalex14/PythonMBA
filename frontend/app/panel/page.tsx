@@ -16,6 +16,7 @@ import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Pagination } from "../../components/ui/Pagination";
 import { FilterBar, FilterFieldConfig } from "../../components/ui/FilterBar";
+import { Modal } from "../../components/ui/Modal";
 import { REPORTS_CONFIG } from "../../lib/reports-config";
 import { useReportQuery } from "../../hooks/useReportQuery";
 
@@ -1069,17 +1070,13 @@ export default function DashboardPage() {
       </main>
 
       {/* Modal de CRUD de Usuarios */}
-      {isUserModalOpen && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <h2>{editingUser ? "Editar Usuario" : "Crear Nuevo Usuario"}</h2>
-              <button onClick={() => setIsUserModalOpen(false)} className={styles.modalClose}>
-                &times;
-              </button>
-            </div>
-            <div className={styles.modalBody}>
-              {userError && <div className={styles.modalErrorAlert}>{userError}</div>}
+      <Modal
+        isOpen={isUserModalOpen}
+        onClose={() => setIsUserModalOpen(false)}
+        title={editingUser ? "Editar Usuario" : "Crear Nuevo Usuario"}
+        styles={styles}
+      >
+        {userError && <div className={styles.modalErrorAlert}>{userError}</div>}
               
               <div className={styles.adminFormGroup}>
                 <label>Número de Cédula</label>
@@ -1152,23 +1149,17 @@ export default function DashboardPage() {
                   Guardar Usuario
                 </Button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Modal de CRUD de Roles */}
-      {isRoleModalOpen && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent} style={{ width: "520px" }}>
-            <div className={styles.modalHeader}>
-              <h2>{editingRole ? "Editar Rol" : "Crear Nuevo Rol"}</h2>
-              <button onClick={() => setIsRoleModalOpen(false)} className={styles.modalClose}>
-                &times;
-              </button>
-            </div>
-            <div className={styles.modalBody}>
-              {roleError && <div className={styles.modalErrorAlert}>{roleError}</div>}
+      <Modal
+        isOpen={isRoleModalOpen}
+        onClose={() => setIsRoleModalOpen(false)}
+        title={editingRole ? "Editar Rol" : "Crear Nuevo Rol"}
+        styles={styles}
+        contentStyle={{ width: "520px" }}
+      >
+        {roleError && <div className={styles.modalErrorAlert}>{roleError}</div>}
               
               <div className={styles.adminFormGroup}>
                 <label>Nombre del Rol</label>
@@ -1225,10 +1216,7 @@ export default function DashboardPage() {
                   Guardar Rol
                 </Button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }
