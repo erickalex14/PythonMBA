@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { Card } from "./ui/Card";
 
 interface KPICardsProps {
   filteredData: any[];
@@ -57,7 +58,7 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
 
   return (
     <section className={styles.kpiGrid}>
-      <div className={styles.kpiCard}>
+      <Card variant="kpiCard" styles={styles}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <h3>Registros Encontrados</h3>
           <div style={{ background: "#eff6ff", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
@@ -70,9 +71,9 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
           <span style={{ color: "#70b92b", fontWeight: "700" }}>+8.3%</span>
           <span>vs. mes anterior</span>
         </div>
-      </div>
+      </Card>
 
-      <div className={styles.kpiCard}>
+      <Card variant="kpiCard" styles={styles}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <h3>{kpis.mainMetricLabel}</h3>
           <div style={{ background: "#f4fbef", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
@@ -85,9 +86,9 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
           <span style={{ color: "#70b92b", fontWeight: "700" }}>+12.6%</span>
           <span>vs. mes anterior</span>
         </div>
-      </div>
+      </Card>
 
-      <div className={styles.kpiCard}>
+      <Card variant="kpiCard" styles={styles}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <h3>{kpis.secondMetricLabel}</h3>
           <div style={{ background: "#f5f3ff", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
@@ -100,7 +101,7 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
           <span style={{ color: "#dc2626", fontWeight: "700" }}>-3.2%</span>
           <span>vs. mes anterior</span>
         </div>
-      </div>
+      </Card>
     </section>
   );
 };

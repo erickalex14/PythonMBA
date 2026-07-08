@@ -67,6 +67,7 @@ next-env.d.ts
 # 5. ENTORNO LOCAL DE EJECUCIÓN (Herramientas Portables)
 # ------------------------------------------------------------------------------
 node-win/
+docker-compose.override.yml
 
 # ------------------------------------------------------------------------------
 # 6. BASES DE DATOS LOCALES Y TEMPORALES

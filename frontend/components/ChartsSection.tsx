@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { Card } from "./ui/Card";
 
 interface ChartsSectionProps {
   filteredData: any[];
@@ -168,7 +169,7 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ filteredData, acti
   return (
     <section className={styles.chartsGrid}>
       {/* Gráfico 1: Curva Diaria */}
-      <div className={styles.chartCard}>
+      <Card variant="chartCard" styles={styles}>
         <h3>
           {activeTab === "movimientos"
             ? "Curva Diaria de Movimientos"
@@ -261,10 +262,10 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ filteredData, acti
             )}
           </svg>
         </div>
-      </div>
+      </Card>
 
       {/* Gráfico 2: Top de Items */}
-      <div className={styles.chartCard}>
+      <Card variant="chartCard" styles={styles}>
         <h3>
           {activeTab === "movimientos"
             ? "Top 8 Marcas más Movidas"
@@ -304,10 +305,10 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ filteredData, acti
             })()}
           </svg>
         </div>
-      </div>
+      </Card>
 
       {/* Gráfico 3: Distribución */}
-      <div className={styles.chartCard}>
+      <Card variant="chartCard" styles={styles}>
         <h3>
           {activeTab === "movimientos"
             ? "Distribución por Sucursal"
@@ -341,7 +342,7 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ filteredData, acti
             </div>
           ))}
         </div>
-      </div>
+      </Card>
     </section>
   );
 };

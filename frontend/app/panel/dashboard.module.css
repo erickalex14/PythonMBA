@@ -333,12 +333,15 @@
   }
 }
 
-.kpiCard {
+.card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 1.25rem 1.5rem;
   box-shadow: var(--shadow-card);
+}
+
+.kpiCard {
+  padding: 1.25rem 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -381,11 +384,7 @@
 }
 
 .chartCard {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
   padding: 1.25rem 1.5rem;
-  box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
 }
@@ -554,10 +553,6 @@
 
 /* Tarjeta de Tabla */
 .tableCard {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card);
   overflow: hidden;
   margin-bottom: 2rem;
 }
@@ -769,11 +764,7 @@
 }
 
 .adminCard {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
   padding: 1.5rem;
-  box-shadow: var(--shadow-card);
 }
 
 .adminCard h3 {

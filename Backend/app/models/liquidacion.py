@@ -18,9 +18,9 @@ class LiquidacionPrincipalStaging(Base):
     despues_total_3 = Column(Numeric(18, 4), default=0.0)
     
     liquidacion_estado = Column(Boolean, default=True)
-    
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 
 class LiquidacionProductoStaging(Base):
@@ -53,8 +53,8 @@ class LiquidacionProductoStaging(Base):
     valor_total_cif_manual = Column(Numeric(18, 4), default=0.0)
     valor_total_cif_unidad = Column(Numeric(18, 4), default=0.0)
 
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 # Crear índices individuales para agilizar el cruce
 Index("idx_liquidaciones_prod_id_corp", LiquidacionProductoStaging.liquidacion_id_corp)
