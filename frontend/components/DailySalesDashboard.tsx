@@ -85,6 +85,24 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
       .slice(0, 8);
   }, [filteredData]);
 
+  const topCategories = useMemo(() => {
+    const map: Record<string, number> = {};
+    filteredData.forEach((row: any) => {
+      const key = row.grupo || row.GRUPO || "Sin categoría";
+      const val = Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0;
+      map[key] = (map[key] || 0) + val;
+    });
+    const total = Object.values(map).reduce((acc, v) => acc + v, 0);
+    return Object.entries(map)
+      .map(([categoria, monto]) => ({
+        categoria,
+        monto,
+        percentage: total > 0 ? Math.round((monto / total) * 100) : 0,
+      }))
+      .sort((a, b) => b.monto - a.monto)
+      .slice(0, 6);
+  }, [filteredData]);
+
   if (loading) {
     return (
       <div className={styles.loaderArea}>
@@ -159,7 +177,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
       </section>
 
       <section className={styles.chartsGrid}>
-        <Card variant="chartCard" styles={styles} style={{ gridColumn: "span 2" }}>
+        <Card variant="chartCard" styles={styles}>
           <h3>Tendencia Diaria de Ventas ({RANGE_DAYS} días)</h3>
           <div className={styles.svgContainer}>
             <svg viewBox="0 0 500 200" className={styles.svgChart}>
@@ -229,6 +247,28 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
                 </text>
               )}
             </svg>
+          </div>
+        </Card>
+
+        <Card variant="chartCard" styles={styles}>
+          <h3>Distribución por Categoría ({RANGE_DAYS} días)</h3>
+          <div className={styles.branchProgressList}>
+            {topCategories.map((c, index) => (
+              <div key={index} className={styles.branchProgressItem}>
+                <div className={styles.branchMetaInfo}>
+                  <span className={styles.branchName}>{c.categoria}</span>
+                  <span className={styles.branchQty}>
+                    {fmtCurrency(c.monto)} ({c.percentage}%)
+                  </span>
+                </div>
+                <div className={styles.branchProgressBarBg}>
+                  <div className={styles.branchProgressBarFill} style={{ width: `${c.percentage}%` }}></div>
+                </div>
+              </div>
+            ))}
+            {topCategories.length === 0 && (
+              <p style={{ fontSize: "0.85rem", color: "var(--color-text-faint)" }}>Sin datos en el período</p>
+            )}
           </div>
         </Card>
       </section>
