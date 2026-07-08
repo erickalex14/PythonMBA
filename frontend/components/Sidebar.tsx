@@ -39,7 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
-        <img src="/reportesmba/logo.svg" alt="Novicompu Logo" className={styles.logoImg} style={{ maxWidth: "130px" }} />
+        <img src="/reportesmba/novbi-logo.png" alt="NovBI Logo" className={styles.logoImg} style={{ maxWidth: "130px" }} />
       </div>
 
       {mobileOpen && <div className={styles.sidebarBackdrop} onClick={() => setMobileOpen(false)} />}
@@ -47,8 +47,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <aside className={`${styles.sidebar} ${mobileOpen ? styles.sidebarOpen : ""}`}>
         <div className={styles.logoArea}>
           <img
-            src="/reportesmba/logo.svg"
-            alt="Novicompu Logo"
+            src="/reportesmba/novbi-logo.png"
+            alt="NovBI Logo"
             className={styles.logoImg}
             onError={(e) => {
               // Fallback si no carga la imagen
