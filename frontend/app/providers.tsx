@@ -6,18 +6,26 @@
 // Esto es CRÍTICO: SessionProvider de next-auth hace fetch a
 // /api/auth/session en su primer useEffect. Si no interceptamos
 // ANTES de eso, las peticiones van a la URL incorrecta.
+//
+// Cubre TODO /api/* (no solo /api/auth): los componentes del
+// dashboard (page.tsx, useReportQuery, SyncSection) hacen
+// fetch("/api/data/...") y fetch("/api/admin/...") sin el
+// basePath /reportesmba de Next.js. En producción Nginx reescribe
+// /api/* -> /reportesmba/api/* antes de que llegue al frontend;
+// en local (sin Nginx delante, ej. localhost:3001 directo) nada
+// hacía esa reescritura, así que esas rutas devolvían 404.
 // ============================================================
 if (typeof window !== "undefined") {
   const _origFetch = window.fetch;
   window.fetch = function (input: RequestInfo | URL, init?: RequestInit) {
     if (typeof input === "string") {
-      if (input.startsWith("/api/auth")) {
+      if (input.startsWith("/api/")) {
         input = "/reportesmba" + input;
       }
     } else if (input instanceof Request) {
       try {
         const url = new URL(input.url);
-        if (url.pathname.startsWith("/api/auth")) {
+        if (url.pathname.startsWith("/api/")) {
           const fixed = url.origin + "/reportesmba" + url.pathname + url.search;
           input = new Request(fixed, input);
         }
