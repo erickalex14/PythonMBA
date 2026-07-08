@@ -55,6 +55,18 @@
   margin-bottom: 2rem;
 }
 
+.logoWrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+.logoImg {
+  width: 240px;
+  max-width: 100%;
+  height: auto;
+}
+
 .cardHeader h1 {
   font-size: 1.4rem;
   font-weight: 700;
