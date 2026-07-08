@@ -53,6 +53,9 @@
   --shadow-brand-sm: 0 2px 6px rgba(0, 93, 170, 0.15);
   --shadow-brand-md: 0 4px 10px rgba(0, 93, 170, 0.15);
   --shadow-modal: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+  /* Tipografía */
+  --font-sans: var(--font-inter), 'Segoe UI', Arial, sans-serif;
 }
 
 html {
@@ -71,7 +74,7 @@ body {
   flex-direction: column;
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
