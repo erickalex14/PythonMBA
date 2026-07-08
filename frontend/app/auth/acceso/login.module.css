@@ -5,7 +5,7 @@
   align-items: center;
   min-height: 100vh;
   background-color: var(--color-surface-faint);
-  font-family: 'Inter', sans-serif;
+  font-family: var(--font-sans);
   overflow: hidden;
   color: var(--color-text-primary);
   margin: 0;
