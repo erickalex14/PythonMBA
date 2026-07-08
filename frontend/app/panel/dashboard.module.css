@@ -19,6 +19,77 @@
   flex-shrink: 0;
 }
 
+.mobileNavToggle {
+  display: none;
+}
+
+.sidebarBackdrop {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+  }
+
+  .mainContent {
+    padding: 1.25rem 1rem;
+    max-height: none;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 260px;
+    max-width: 82vw;
+    z-index: 1001;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+
+  .sidebarOpen {
+    transform: translateX(0);
+    box-shadow: 12px 0 32px rgba(15, 23, 42, 0.18);
+  }
+
+  .mobileNavToggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: sticky;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3.25rem;
+    background-color: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    z-index: 1000;
+    padding: 0 1rem;
+    gap: 0.65rem;
+    box-sizing: border-box;
+  }
+
+  .mobileNavToggleBtn {
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    cursor: pointer;
+    color: var(--color-text-primary);
+    display: flex;
+    align-items: center;
+  }
+
+  .sidebarBackdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.4);
+    z-index: 1000;
+  }
+}
+
 .sidebarHeader {
   display: flex;
   align-items: center;
@@ -268,6 +339,31 @@
 .searchFilter input:focus {
   background-color: var(--color-surface);
   border-color: var(--color-brand-primary);
+}
+
+@media (max-width: 640px) {
+  .filtersSection,
+  .dateFilters,
+  .subFiltersRow,
+  .filtersRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filterGroup,
+  .searchFilter {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .filterGroup input[type="date"],
+  .filterGroup select,
+  .selectFilter,
+  .queryBtn {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
 }
 
 /* Tarjeta de Progreso por lotes */
