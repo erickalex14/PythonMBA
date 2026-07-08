@@ -15,6 +15,7 @@ import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
 import { Pagination } from "../../components/ui/Pagination";
+import { FilterBar, FilterFieldConfig } from "../../components/ui/FilterBar";
 import { REPORTS_CONFIG } from "../../lib/reports-config";
 import { useReportQuery } from "../../hooks/useReportQuery";
 
@@ -510,6 +511,28 @@ export default function DashboardPage() {
     };
   }, [data, activeTab]);
 
+  const FILTER_FIELDS_BY_TAB: Partial<Record<TabType, FilterFieldConfig[]>> = {
+    movimientos: [
+      { label: "Filtrar por Marca", value: selectedBrand, onChange: setSelectedBrand, placeholder: "Todas las Marcas...", options: filterOptions.brands },
+      { label: "Filtrar por Sucursal", value: selectedBranch, onChange: setSelectedBranch, placeholder: "Todas las Sucursales...", options: filterOptions.branches },
+      { label: "Filtrar por Vendedor", value: selectedSalesman, onChange: setSelectedSalesman, placeholder: "Todos los Vendedores...", options: filterOptions.salesmen },
+    ],
+    liquidaciones: [
+      { label: "Filtrar por ID Producto", value: selectedProduct, onChange: setSelectedProduct, placeholder: "Todos los Productos...", options: filterOptions.products },
+      { label: "Filtrar por Partida Arancelaria", value: selectedPartida, onChange: setSelectedPartida, placeholder: "Todas las Partidas...", options: filterOptions.partidas },
+      { label: "Filtrar por Recepción Relacionada", value: selectedRecepcion, onChange: setSelectedRecepcion, placeholder: "Todas las Recepciones...", options: filterOptions.recepciones },
+    ],
+    ats: [
+      { label: "Filtrar por Proveedor", value: selectedVendor, onChange: setSelectedVendor, placeholder: "Todos los Proveedores...", options: filterOptions.vendors },
+      { label: "Filtrar por SRI Clasificación", value: selectedClassif, onChange: setSelectedClassif, placeholder: "Todas las Clasificaciones...", options: filterOptions.classifs },
+      { label: "Estado del Documento", value: selectedStatus, onChange: setSelectedStatus, placeholder: "Todos los Estados...", options: ["ACTIVO", "ANULADO"] },
+    ],
+    ventas: [
+      { label: "Filtrar por Producto", value: selectedProduct, onChange: setSelectedProduct, placeholder: "Todos los Productos...", options: filterOptions.products },
+      { label: "Filtrar por Grupo", value: selectedBranch, onChange: setSelectedBranch, placeholder: "Todos los Grupos...", options: filterOptions.branches },
+    ],
+  };
+
   const isUserAdmin = session?.user?.role === "Admin";
   const reportConfig = REPORTS_CONFIG[activeTab];
 
@@ -884,133 +907,8 @@ export default function DashboardPage() {
         )}
 
         {/* 4. FILTROS ESPECÍFICOS POR TABLA */}
-        {data.length > 0 && !loading && activeTab !== "admin" && activeTab !== "sync" && activeTab !== "logs" && (
-          <section className={styles.subFiltersSection}>
-            <h4 style={{ margin: "0 0 0.85rem 0", color: "#005daa", fontSize: "0.80rem", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Filtros de Segmentación Local (Sin recargar base de datos)
-            </h4>
-            <div className={styles.subFiltersRow}>
-              
-              {activeTab === "movimientos" && (
-                <>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por Marca</label>
-                    <select value={selectedBrand} onChange={(e) => setSelectedBrand(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todas las Marcas...</option>
-                      {filterOptions.brands.map((b) => (
-                        <option key={b} value={b}>{b}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por Sucursal</label>
-                    <select value={selectedBranch} onChange={(e) => setSelectedBranch(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todas las Sucursales...</option>
-                      {filterOptions.branches.map((b) => (
-                        <option key={b} value={b}>{b}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por Vendedor</label>
-                    <select value={selectedSalesman} onChange={(e) => setSelectedSalesman(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todos los Vendedores...</option>
-                      {filterOptions.salesmen.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {activeTab === "liquidaciones" && (
-                <>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por ID Producto</label>
-                    <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todos los Productos...</option>
-                      {filterOptions.products.map((p) => (
-                        <option key={p} value={p}>{p}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por Partida Arancelaria</label>
-                    <select value={selectedPartida} onChange={(e) => setSelectedPartida(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todas las Partidas...</option>
-                      {filterOptions.partidas.map((p) => (
-                        <option key={p} value={p}>{p}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por Recepción Relacionada</label>
-                    <select value={selectedRecepcion} onChange={(e) => setSelectedRecepcion(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todas las Recepciones...</option>
-                      {filterOptions.recepciones.map((r) => (
-                        <option key={r} value={r}>{r}</option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {activeTab === "ats" && (
-                <>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por Proveedor</label>
-                    <select value={selectedVendor} onChange={(e) => setSelectedVendor(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todos los Proveedores...</option>
-                      {filterOptions.vendors.map((v) => (
-                        <option key={v} value={v}>{v}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por SRI Clasificación</label>
-                    <select value={selectedClassif} onChange={(e) => setSelectedClassif(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todas las Clasificaciones...</option>
-                      {filterOptions.classifs.map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={styles.filterGroup}>
-                    <label>Estado del Documento</label>
-                    <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todos los Estados...</option>
-                      <option value="ACTIVO">ACTIVO</option>
-                      <option value="ANULADO">ANULADO</option>
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {activeTab === "ventas" && (
-                <>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por Producto</label>
-                    <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todos los Productos...</option>
-                      {filterOptions.products.map((p) => (
-                        <option key={p} value={p}>{p}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por Grupo</label>
-                    <select value={selectedBranch} onChange={(e) => setSelectedBranch(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todos los Grupos...</option>
-                      {filterOptions.branches.map((b) => (
-                        <option key={b} value={b}>{b}</option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              )}
-
-            </div>
-          </section>
+        {data.length > 0 && !loading && activeTab !== "admin" && activeTab !== "sync" && activeTab !== "logs" && FILTER_FIELDS_BY_TAB[activeTab] && (
+          <FilterBar fields={FILTER_FIELDS_BY_TAB[activeTab]!} styles={styles} />
         )}
 
         {/* 5. CARGADOR PROGRESIVO DE CONSULTA DIARIA */}
