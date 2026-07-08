@@ -4,7 +4,7 @@
   min-height: 100vh;
   background-color: var(--color-surface-faint);
   color: var(--color-text-primary);
-  font-family: 'Inter', 'Outfit', sans-serif;
+  font-family: var(--font-sans);
 }
 
 /* Sidebar Styling (Fondo Blanco) */
@@ -1453,7 +1453,7 @@
   min-height: 100vh;
   background-color: var(--color-surface-faint);
   color: var(--color-text-primary);
-  font-family: 'Inter', 'Outfit', sans-serif;
+  font-family: var(--font-sans);
 }
 
 /* Logo del sidebar */
