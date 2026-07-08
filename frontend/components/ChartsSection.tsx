@@ -183,8 +183,8 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ filteredData, acti
           <svg viewBox="0 0 500 200" className={styles.svgChart}>
             <defs>
               <linearGradient id="areaGradBlue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#005DAA" stopOpacity="0.12" />
-                <stop offset="100%" stopColor="#005DAA" stopOpacity="0.0" />
+                <stop offset="0%" stopColor="var(--color-brand-primary)" stopOpacity="0.12" />
+                <stop offset="100%" stopColor="var(--color-brand-primary)" stopOpacity="0.0" />
               </linearGradient>
             </defs>
 
@@ -196,7 +196,7 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ filteredData, acti
                 y1={170 - p * 140}
                 x2="470"
                 y2={170 - p * 140}
-                stroke="#f1f5f9"
+                stroke="var(--color-surface-subtle)"
                 strokeWidth="1"
               />
             ))}
@@ -221,15 +221,15 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ filteredData, acti
               return (
                 <>
                   <path d={areaD} fill="url(#areaGradBlue)" />
-                  <path d={pathD} fill="none" stroke="#005DAA" strokeWidth="2.5" strokeLinecap="round" />
+                  <path d={pathD} fill="none" stroke="var(--color-brand-primary)" strokeWidth="2.5" strokeLinecap="round" />
                   {points.map((p, i) => (
                     <circle
                       key={i}
                       cx={p.x}
                       cy={p.y}
                       r="3.5"
-                      fill="#ffffff"
-                      stroke="#005DAA"
+                      fill="var(--color-surface)"
+                      stroke="var(--color-brand-primary)"
                       strokeWidth="1.5"
                     />
                   ))}
@@ -238,23 +238,23 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ filteredData, acti
             })()}
 
             {/* Ejes */}
-            <line x1="50" y1="170" x2="470" y2="170" stroke="#cbd5e1" strokeWidth="1" />
-            <line x1="50" y1="30" x2="50" y2="170" stroke="#cbd5e1" strokeWidth="1" />
+            <line x1="50" y1="170" x2="470" y2="170" stroke="var(--color-border-strong)" strokeWidth="1" />
+            <line x1="50" y1="30" x2="50" y2="170" stroke="var(--color-border-strong)" strokeWidth="1" />
 
             {/* Etiquetas */}
-            <text x="42" y="173" textAnchor="end" fill="#94a3b8" fontSize="8">0</text>
+            <text x="42" y="173" textAnchor="end" fill="var(--color-text-faint)" fontSize="8">0</text>
             {chartDataByDay.length > 0 && (
-              <text x="42" y="34" textAnchor="end" fill="#94a3b8" fontSize="8">
+              <text x="42" y="34" textAnchor="end" fill="var(--color-text-faint)" fontSize="8">
                 {Math.max(...chartDataByDay.map((d) => d.qty)).toLocaleString()}
               </text>
             )}
             {chartDataByDay.length > 0 && (
               <>
-                <text x="50" y="184" textAnchor="middle" fill="#94a3b8" fontSize="8">
+                <text x="50" y="184" textAnchor="middle" fill="var(--color-text-faint)" fontSize="8">
                   {chartDataByDay[0].date.substring(5)}
                 </text>
                 {chartDataByDay.length > 1 && (
-                  <text x="470" y="184" textAnchor="middle" fill="#94a3b8" fontSize="8">
+                  <text x="470" y="184" textAnchor="middle" fill="var(--color-text-faint)" fontSize="8">
                     {chartDataByDay[chartDataByDay.length - 1].date.substring(5)}
                   </text>
                 )}
@@ -285,12 +285,12 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ filteredData, acti
                 const opacity = 0.45 + (d.qty / maxQty) * 0.55;
                 return (
                   <g key={index}>
-                    <text x="5" y={y + 11} fill="#475569" fontSize="9" fontWeight="600">
+                    <text x="5" y={y + 11} fill="var(--color-text-tertiary)" fontSize="9" fontWeight="600">
                       {d.brand.substring(0, 11)}
                     </text>
-                    <rect x="90" y={y} width="320" height="13" rx="4" fill="#f1f5f9" />
-                    <rect x="90" y={y} width={barWidth} height="13" rx="4" fill="#005DAA" fillOpacity={opacity} />
-                    <text x={95 + barWidth} y={y + 11} fill="#475569" fontSize="8.5" fontWeight="700">
+                    <rect x="90" y={y} width="320" height="13" rx="4" fill="var(--color-surface-subtle)" />
+                    <rect x="90" y={y} width={barWidth} height="13" rx="4" fill="var(--color-brand-primary)" fillOpacity={opacity} />
+                    <text x={95 + barWidth} y={y + 11} fill="var(--color-text-tertiary)" fontSize="8.5" fontWeight="700">
                       {activeTab === "movimientos"
                         ? d.qty.toLocaleString()
                         : d.qty.toLocaleString("es-EC", {

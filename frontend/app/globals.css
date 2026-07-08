@@ -25,6 +25,9 @@
   --color-surface-faint: #f8fafc;
   --color-surface-tint: #ebf5ff;
   --color-surface-tint-accent: #f4fbef;
+  --color-surface-tint-blue: #eff6ff;
+  --color-surface-tint-violet: #f5f3ff;
+  --color-accent-violet: #7c3aed;
 
   /* Estados */
   --color-danger: #dc2626;
