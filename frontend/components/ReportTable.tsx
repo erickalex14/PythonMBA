@@ -1,5 +1,6 @@
 import React from "react";
 import { ReportConfig } from "../lib/reports-config";
+import { Badge } from "./ui/Badge";
 
 interface ReportTableProps {
   config: ReportConfig;
@@ -53,9 +54,9 @@ export const ReportTable: React.FC<ReportTableProps> = ({ config, paginatedData,
                 const badge = col.badgeStyles(val);
                 return (
                   <td key={col.key}>
-                    <span className={styles[badge.className] || badge.className}>
+                    <Badge status={badge.className as "badgeActivo" | "badgeAnulado"} styles={styles}>
                       {badge.label}
-                    </span>
+                    </Badge>
                   </td>
                 );
               }

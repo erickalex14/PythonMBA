@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { Button } from "./ui/Button";
 
 interface SyncSectionProps {
   styles: any;
@@ -186,38 +187,38 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
 
       {/* Botonera de Acción */}
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
-        <button
+        <Button
           onClick={() => handleSync("movimientos")}
           disabled={syncing}
           className={styles.submitBtn}
           style={{ background: "#005DAA", flex: "1 1 180px" }}
         >
           Sincronizar Movimientos
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => handleSync("liquidaciones")}
           disabled={syncing}
           className={styles.submitBtn}
           style={{ background: "#7c3aed", flex: "1 1 180px" }}
         >
           Sincronizar Liquidaciones
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => handleSync("ats")}
           disabled={syncing}
           className={styles.submitBtn}
           style={{ background: "#f59e0b", flex: "1 1 180px" }}
         >
           Sincronizar ATS
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => handleSync("ventas")}
           disabled={syncing}
           className={styles.submitBtn}
           style={{ background: "#70b92b", flex: "1 1 180px" }}
         >
           Sincronizar Ventas
-        </button>
+        </Button>
       </div>
 
       {/* Indicadores de Progreso */}
