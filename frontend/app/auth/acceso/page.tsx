@@ -73,8 +73,8 @@ export default function LoginPage() {
       <div className={styles.loginCard}>
         <div className={styles.cardHeader}>
           {/* Logotipo SVG oficial de Novicompu */}
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: "1.5rem" }}>
-            <img src="/reportesmba/logo.svg" alt="Novicompu Logo" style={{ width: "240px", height: "auto" }} />
+          <div className={styles.logoWrapper}>
+            <img src="/reportesmba/logo.svg" alt="Novicompu Logo" className={styles.logoImg} />
           </div>
           <h1>Iniciar Sesión</h1>
           <p>Ingrese sus credenciales de acceso corporativo</p>
