@@ -28,6 +28,8 @@
   --color-surface-tint-blue: #eff6ff;
   --color-surface-tint-violet: #f5f3ff;
   --color-accent-violet: #7c3aed;
+  --color-surface-hover: #f0f9ff;
+  --color-surface-zebra: #fafafa;
 
   /* Estados */
   --color-danger: #dc2626;
