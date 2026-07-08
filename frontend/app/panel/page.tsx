@@ -11,6 +11,8 @@ import { KPICards } from "../../components/KPICards";
 import { ChartsSection } from "../../components/ChartsSection";
 import { ReportTable } from "../../components/ReportTable";
 import { SyncSection } from "../../components/SyncSection";
+import { Badge } from "../../components/ui/Badge";
+import { Button } from "../../components/ui/Button";
 import { REPORTS_CONFIG } from "../../lib/reports-config";
 import { useReportQuery } from "../../hooks/useReportQuery";
 
@@ -711,14 +713,16 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                <button
+                <Button
                   onClick={handleSaveErpConfig}
                   className={styles.saveConfigBtn}
                   disabled={savingConfig}
+                  loading={savingConfig}
+                  loadingText="Guardando..."
                   style={{ width: "100%", marginTop: "1.5rem", padding: "0.75rem", background: "#70b92b", color: "#ffffff", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer" }}
                 >
-                  {savingConfig ? "Guardando..." : "Guardar Configuración Persistente (.env)"}
-                </button>
+                  Guardar Configuración Persistente (.env)
+                </Button>
               </div>
             )}
 
@@ -727,12 +731,12 @@ export default function DashboardPage() {
               <div className={styles.adminCard}>
                 <div className={styles.adminCardHeader}>
                   <h3>Gestión de Cuentas de Usuarios</h3>
-                  <button
+                  <Button
                     onClick={() => handleOpenUserModal(null)}
                     className={styles.createUserBtn}
                   >
                     + Crear Usuario
-                  </button>
+                  </Button>
                 </div>
 
                 <div className={styles.tableWrapper}>
@@ -757,23 +761,23 @@ export default function DashboardPage() {
                             <td><strong>{u.cedula}</strong></td>
                             <td>{u.name}</td>
                             <td>
-                              <span className={`${styles.roleBadge} ${u.role?.name === "Admin" ? styles.badgeAdmin : styles.badgeUser}`}>
+                              <Badge status={u.role?.name === "Admin" ? "badgeAdmin" : "badgeUser"} styles={styles}>
                                 {u.role?.name}
-                              </span>
+                              </Badge>
                             </td>
                             <td>
-                              <button
+                              <Button
                                 onClick={() => handleOpenUserModal(u)}
                                 className={`${styles.actionBtn} ${styles.btnEdit}`}
                               >
                                 Editar
-                              </button>
-                              <button
+                              </Button>
+                              <Button
                                 onClick={() => handleDeleteUser(u)}
                                 className={`${styles.actionBtn} ${styles.btnDelete}`}
                               >
                                 Eliminar
-                              </button>
+                              </Button>
                             </td>
                           </tr>
                         ))}
@@ -786,12 +790,12 @@ export default function DashboardPage() {
                 <div style={{ marginTop: "2rem", borderTop: "1px solid #f1f5f9", paddingTop: "1.5rem" }}>
                   <div className={styles.adminCardHeader}>
                     <h3>Gestión de Roles del Sistema</h3>
-                    <button
+                    <Button
                       onClick={() => handleOpenRoleModal(null)}
                       className={styles.createUserBtn}
                     >
                       + Crear Rol
-                    </button>
+                    </Button>
                   </div>
                   
                   <div className={styles.tableWrapper}>
@@ -817,13 +821,13 @@ export default function DashboardPage() {
                               </div>
                             </td>
                             <td>
-                              <button
+                              <Button
                                 onClick={() => handleOpenRoleModal(role)}
                                 className={`${styles.actionBtn} ${styles.btnEdit}`}
                                 disabled={role.name === "Admin" || role.name === "Visitante"}
                               >
                                 Editar
-                              </button>
+                              </Button>
                             </td>
                           </tr>
                         ))}
@@ -858,9 +862,9 @@ export default function DashboardPage() {
                   disabled={loading}
                 />
               </div>
-              <button onClick={handleQuery} className={styles.queryBtn} disabled={loading}>
-                {loading ? "Consultando..." : "Consultar Datos"}
-              </button>
+              <Button onClick={handleQuery} className={styles.queryBtn} loading={loading} loadingText="Consultando...">
+                Consultar Datos
+              </Button>
             </div>
 
             <div className={styles.searchFilter}>
@@ -1044,12 +1048,12 @@ export default function DashboardPage() {
               
               {!loading && activeTab !== "logs" && filteredData.length > 0 && (
                 <div style={{ display: "flex", gap: "0.50rem" }}>
-                  <button onClick={handleDownloadExcel} className={styles.downloadExcelBtn} disabled={downloading}>
-                    {downloading ? "Generando..." : "Descargar Excel"}
-                  </button>
-                  <button onClick={handlePrintPdf} className={styles.downloadPdfBtn} disabled={downloadingPdf}>
+                  <Button onClick={handleDownloadExcel} className={styles.downloadExcelBtn} loading={downloading} loadingText="Generando...">
+                    Descargar Excel
+                  </Button>
+                  <Button onClick={handlePrintPdf} className={styles.downloadPdfBtn} disabled={downloadingPdf}>
                     Imprimir Certificado (PDF)
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -1098,9 +1102,9 @@ export default function DashboardPage() {
                         <td><strong>{log.user_name}</strong></td>
                         <td>{log.user_cedula}</td>
                         <td>
-                          <span className={`${styles.roleBadge} ${log.user_role === "Admin" ? styles.badgeAdmin : styles.badgeUser}`}>
+                          <Badge status={log.user_role === "Admin" ? "badgeAdmin" : "badgeUser"} styles={styles}>
                             {log.user_role}
-                          </span>
+                          </Badge>
                         </td>
                         <td><strong>{log.download_type}</strong></td>
                         <td>{log.query_period}</td>
@@ -1309,22 +1313,23 @@ export default function DashboardPage() {
               </div>
 
               <div className={styles.modalActions}>
-                <button
+                <Button
                   type="button"
                   onClick={() => setIsUserModalOpen(false)}
                   className={styles.btnCancel}
                   disabled={submittingUser}
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={handleSubmitUser}
                   className={styles.btnConfirm}
-                  disabled={submittingUser}
+                  loading={submittingUser}
+                  loadingText="Guardando..."
                 >
-                  {submittingUser ? "Guardando..." : "Guardar Usuario"}
-                </button>
+                  Guardar Usuario
+                </Button>
               </div>
             </div>
           </div>
@@ -1381,22 +1386,23 @@ export default function DashboardPage() {
               </div>
 
               <div className={styles.modalActions}>
-                <button
+                <Button
                   type="button"
                   onClick={() => setIsRoleModalOpen(false)}
                   className={styles.btnCancel}
                   disabled={submittingRole}
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={handleSubmitRole}
                   className={styles.btnConfirm}
-                  disabled={submittingRole}
+                  loading={submittingRole}
+                  loadingText="Guardando..."
                 >
-                  {submittingRole ? "Guardando..." : "Guardar Rol"}
-                </button>
+                  Guardar Rol
+                </Button>
               </div>
             </div>
           </div>
