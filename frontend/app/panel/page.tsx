@@ -14,6 +14,7 @@ import { SyncSection } from "../../components/SyncSection";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
+import { Pagination } from "../../components/ui/Pagination";
 import { REPORTS_CONFIG } from "../../lib/reports-config";
 import { useReportQuery } from "../../hooks/useReportQuery";
 
@@ -1120,108 +1121,29 @@ export default function DashboardPage() {
 
             {/* CONTROLES DE PAGINACIÓN DE REPORTES */}
             {!loading && activeTab !== "logs" && filteredData.length > 0 && (
-              <div className={styles.paginationRow}>
-                <div className={styles.paginationInfo}>
-                  Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(filteredData.length, currentPage * itemsPerPage)} de {filteredData.length} registros
-                </div>
-                <div className={styles.paginationButtons}>
-                  <button
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                    className={styles.pageBtn}
-                  >
-                    &lt;&lt;
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className={styles.pageBtn}
-                  >
-                    Anterior
-                  </button>
-                  <span className={styles.pageNumber}>
-                    Pág. {currentPage} de {Math.ceil(filteredData.length / itemsPerPage) || 1}
-                  </span>
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.min(Math.ceil(filteredData.length / itemsPerPage), p + 1))}
-                    disabled={currentPage >= Math.ceil(filteredData.length / itemsPerPage)}
-                    className={styles.pageBtn}
-                    style={currentPage >= Math.ceil(filteredData.length / itemsPerPage) ? {} : { background: "#ffffff", color: "#005daa" }}
-                  >
-                    Siguiente
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(Math.ceil(filteredData.length / itemsPerPage))}
-                    disabled={currentPage >= Math.ceil(filteredData.length / itemsPerPage)}
-                    className={styles.pageBtn}
-                  >
-                    &gt;&gt;
-                  </button>
-                </div>
-                <div className={styles.itemsPerPageSelect}>
-                  <select
-                    value={itemsPerPage}
-                    onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                  >
-                    <option value={10}>10 filas</option>
-                    <option value={25}>25 filas</option>
-                    <option value={50}>50 filas</option>
-                    <option value={100}>100 filas</option>
-                  </select>
-                </div>
-              </div>
+              <Pagination
+                currentPage={currentPage}
+                totalItems={filteredData.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(n) => { setItemsPerPage(n); setCurrentPage(1); }}
+                styles={styles}
+                itemLabel="registros"
+              />
             )}
 
             {/* CONTROLES DE PAGINACIÓN DE BITÁCORA */}
             {!loading && activeTab === "logs" && filteredLogs.length > 0 && (
-              <div className={styles.paginationRow}>
-                <div className={styles.paginationInfo}>
-                  Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(filteredLogs.length, currentPage * itemsPerPage)} de {filteredLogs.length} logs
-                </div>
-                <div className={styles.paginationButtons}>
-                  <button
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                    className={styles.pageBtn}
-                  >
-                    &lt;&lt;
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className={styles.pageBtn}
-                  >
-                    Anterior
-                  </button>
-                  <span className={styles.pageNumber}>
-                    Pág. {currentPage} de {Math.ceil(filteredLogs.length / itemsPerPage) || 1}
-                  </span>
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.min(Math.ceil(filteredLogs.length / itemsPerPage), p + 1))}
-                    disabled={currentPage >= Math.ceil(filteredLogs.length / itemsPerPage)}
-                    className={styles.pageBtn}
-                  >
-                    Siguiente
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(Math.ceil(filteredLogs.length / itemsPerPage))}
-                    disabled={currentPage >= Math.ceil(filteredLogs.length / itemsPerPage)}
-                    className={styles.pageBtn}
-                  >
-                    &gt;&gt;
-                  </button>
-                </div>
-                <div className={styles.itemsPerPageSelect}>
-                  <select
-                    value={itemsPerPage}
-                    onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                  >
-                    <option value={10}>10 logs</option>
-                    <option value={25}>25 logs</option>
-                    <option value={50}>50 logs</option>
-                  </select>
-                </div>
-              </div>
+              <Pagination
+                currentPage={currentPage}
+                totalItems={filteredLogs.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(n) => { setItemsPerPage(n); setCurrentPage(1); }}
+                styles={styles}
+                itemLabel="logs"
+                pageSizeOptions={[10, 25, 50]}
+              />
             )}
           </section>
         )}
