@@ -23,7 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     <aside className={styles.sidebar}>
       <div className={styles.logoArea}>
         <img
-          src="/reportesmba/novicompu_logo.png"
+          src="/reportesmba/logo.svg"
           alt="Novicompu Logo"
           className={styles.logoImg}
           onError={(e) => {
