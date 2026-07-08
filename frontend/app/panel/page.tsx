@@ -13,6 +13,7 @@ import { ReportTable } from "../../components/ReportTable";
 import { SyncSection } from "../../components/SyncSection";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
 import { REPORTS_CONFIG } from "../../lib/reports-config";
 import { useReportQuery } from "../../hooks/useReportQuery";
 
@@ -622,7 +623,7 @@ export default function DashboardPage() {
             
             {/* Card 1: Configuración de Entorno ERP con Conmutación Dual */}
             {session?.user && (session.user as any).permissions?.includes("MANAGE_CONFIG") && (
-              <div className={styles.adminCard}>
+              <Card variant="adminCard" styles={styles}>
                 <h3>Configuración de Conexión ERP MBA3</h3>
                 
                 <div className={styles.adminFormGroup}>
@@ -723,12 +724,12 @@ export default function DashboardPage() {
                 >
                   Guardar Configuración Persistente (.env)
                 </Button>
-              </div>
+              </Card>
             )}
 
             {/* Card 2: CRUD de Usuarios y Roles */}
             {session?.user && (session.user as any).permissions?.includes("MANAGE_CONFIG") && (
-              <div className={styles.adminCard}>
+              <Card variant="adminCard" styles={styles}>
                 <div className={styles.adminCardHeader}>
                   <h3>Gestión de Cuentas de Usuarios</h3>
                   <Button
@@ -835,7 +836,7 @@ export default function DashboardPage() {
                     </table>
                   </div>
                 </div>
-              </div>
+              </Card>
             )}
           </section>
         )}

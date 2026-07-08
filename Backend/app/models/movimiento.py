@@ -21,5 +21,7 @@ class MovimientoStaging(Base):
     cod_salesman = Column(String, nullable=True)
     codigo_marca = Column(String, nullable=True)
     
-    created_at = Column(DateTime(timezone=True), server_default=func.now())
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    # default= (no server_default): la tabla la crea Prisma sin default en DB,
+    # y bulk_save_objects solo emite defaults del lado cliente en el INSERT
+    created_at = Column(DateTime(timezone=True), default=func.now())
+    updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now())
