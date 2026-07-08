@@ -116,6 +116,19 @@ export default function DashboardPage() {
     }
   }, [status, router]);
 
+  // Al iniciar sesión, aterrizar en el dashboard de Ventas Diarias si el
+  // usuario tiene permiso; si no, se queda en la pestaña por defecto.
+  useEffect(() => {
+    if (status === "authenticated") {
+      const perms: string[] = (session?.user as any)?.permissions || [];
+      const isAdmin = session?.user?.role === "Admin";
+      if (perms.includes("VIEW_VENTAS") || isAdmin) {
+        setActiveTab("ventas-diarias");
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
+
   // Cargar datos administrativos
   const fetchAdminData = async () => {
     setLoadingAdminData(true);
