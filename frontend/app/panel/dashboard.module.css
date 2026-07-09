@@ -178,17 +178,30 @@
   animation: navItemFadeIn 0.35s ease-out both;
 }
 
+.navItem svg {
+  color: rgb(var(--item-accent, 255 255 255) / 0.85);
+  transition: color 0.18s ease;
+}
+
 .navItem:hover {
-  background-color: rgba(0, 124, 194, 0.18);
+  background-color: rgb(var(--item-accent, 0 124 194) / 0.18);
   color: var(--color-sidebar-text-strong);
   transform: translateX(2px);
 }
 
+.navItem:hover svg {
+  color: rgb(var(--item-accent, 255 255 255));
+}
+
 .navItem.active {
-  background: linear-gradient(135deg, var(--color-brand-primary) 0%, var(--color-brand-accent) 100%);
+  background: rgb(var(--item-accent, 0 93 170));
   color: #ffffff;
   font-weight: 600;
-  box-shadow: 0 4px 14px rgba(0, 93, 170, 0.4);
+  box-shadow: 0 4px 14px rgb(var(--item-accent, 0 93 170) / 0.45);
+}
+
+.navItem.active svg {
+  color: #ffffff;
 }
 
 .navItem.active:hover {
