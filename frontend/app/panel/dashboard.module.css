@@ -10,7 +10,10 @@
 /* Sidebar Styling (Oscuro, marca NOV|BI) */
 .sidebar {
   width: 240px;
-  background-color: var(--color-sidebar-bg);
+  background:
+    radial-gradient(130% 45% at 8% 0%, rgba(0, 124, 194, 0.28), transparent 55%),
+    radial-gradient(120% 45% at 95% 100%, rgba(112, 185, 43, 0.18), transparent 60%),
+    var(--color-sidebar-bg);
   border-right: 1px solid var(--color-sidebar-border);
   display: flex;
   flex-direction: column;
@@ -66,10 +69,12 @@
   display: flex;
   align-items: center;
   transform-origin: center bottom;
+  transition: box-shadow 0.3s ease;
 }
 
 .novbiLogoLockup:hover .novbiLogoBox {
   animation: sidebarLogoBounce 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  box-shadow: 0 0 16px rgba(0, 124, 194, 0.6), 0 0 26px rgba(112, 185, 43, 0.35);
 }
 
 .novbiLogoBox span {
@@ -174,15 +179,16 @@
 }
 
 .navItem:hover {
-  background-color: var(--color-sidebar-hover-bg);
+  background-color: rgba(0, 124, 194, 0.18);
   color: var(--color-sidebar-text-strong);
   transform: translateX(2px);
 }
 
 .navItem.active {
-  background-color: var(--color-sidebar-active-bg);
-  color: var(--color-sidebar-active-text);
+  background: linear-gradient(135deg, var(--color-brand-primary) 0%, var(--color-brand-accent) 100%);
+  color: #ffffff;
   font-weight: 600;
+  box-shadow: 0 4px 14px rgba(0, 93, 170, 0.4);
 }
 
 .navItem.active:hover {
@@ -211,6 +217,7 @@
   padding: 0.875rem;
   border-radius: 10px;
   border: 1px solid var(--color-sidebar-border);
+  border-left: 3px solid var(--color-brand-accent);
 }
 
 .userName {
@@ -224,10 +231,14 @@
 }
 
 .userRole {
-  font-size: 0.75rem;
-  color: var(--color-sidebar-text);
-  margin: 0 0 0.15rem 0;
-  font-weight: 600;
+  display: inline-block;
+  font-size: 0.7rem;
+  color: var(--color-brand-accent);
+  background-color: rgba(112, 185, 43, 0.15);
+  margin: 0.2rem 0 0.35rem 0;
+  padding: 0.1rem 0.5rem;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
 }
 
 .userCedula {
