@@ -1,5 +1,4 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useReportQuery } from "../hooks/useReportQuery";
 import { Card } from "./ui/Card";
 import { FilterBar } from "./ui/FilterBar";
 import { getEmpresaLabel } from "../lib/empresa";
@@ -13,16 +12,102 @@ function fmtCurrency(n: number): string {
   return n.toLocaleString("es-EC", { style: "currency", currency: "USD" });
 }
 
+function fmtNumber(n: number): string {
+  return n.toLocaleString("es-EC");
+}
+
 function dateNDaysAgo(n: number): string {
   const d = new Date();
   d.setDate(d.getDate() - n);
   return d.toISOString().split("T")[0];
 }
 
+function monthPrefix(date: Date): string {
+  return date.toISOString().slice(0, 7);
+}
+
+async function fetchRange(reportId: string, start: string, end: string): Promise<any[]> {
+  const res = await fetch(`/api/data/${reportId}?inicio=${start}&fin=${end}`);
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || `Error consultando ${reportId}`);
+  }
+  const json = await res.json();
+  return Array.isArray(json) ? json : [];
+}
+
 const RANGE_DAYS = 7;
+const MOV_RANGE_DAYS = 14;
+const PERIOD_RANGE_DAYS = 60;
+
+function deltaPct(current: number, previous: number): number | null {
+  if (previous <= 0) return null;
+  return ((current - previous) / previous) * 100;
+}
+
+function ComparisonMiniCard({
+  title,
+  currentLabel,
+  previousLabel,
+  currentValue,
+  previousValue,
+  formatter,
+  styles,
+}: {
+  title: string;
+  currentLabel: string;
+  previousLabel: string;
+  currentValue: number;
+  previousValue: number;
+  formatter: (n: number) => string;
+  styles: Record<string, string>;
+}) {
+  const max = Math.max(currentValue, previousValue, 1);
+  const pct = deltaPct(currentValue, previousValue);
+  return (
+    <Card variant="chartCard" styles={styles}>
+      <h3>{title}</h3>
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem", marginTop: "0.75rem" }}>
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", color: "var(--color-text-muted)", marginBottom: 4 }}>
+            <span>{currentLabel}</span>
+            <span style={{ fontWeight: 700, color: "var(--color-text-primary)" }}>{formatter(currentValue)}</span>
+          </div>
+          <div style={{ height: 10, borderRadius: 6, background: "var(--color-surface-subtle)", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${(currentValue / max) * 100}%`, background: "var(--color-brand-primary)", borderRadius: 6 }} />
+          </div>
+        </div>
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", color: "var(--color-text-muted)", marginBottom: 4 }}>
+            <span>{previousLabel}</span>
+            <span style={{ fontWeight: 700, color: "var(--color-text-primary)" }}>{formatter(previousValue)}</span>
+          </div>
+          <div style={{ height: 10, borderRadius: 6, background: "var(--color-surface-subtle)", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${(previousValue / max) * 100}%`, background: "var(--color-text-faint)", borderRadius: 6 }} />
+          </div>
+        </div>
+        <span style={{ fontSize: "0.75rem", color: "var(--color-text-faint)" }}>
+          {pct === null ? (
+            "Sin datos del período anterior"
+          ) : (
+            <span style={{ color: pct >= 0 ? "var(--color-brand-accent)" : "var(--color-danger)", fontWeight: 700 }}>
+              {pct >= 0 ? "+" : ""}
+              {pct.toFixed(1)}%
+            </span>
+          )}{" "}
+          vs. período anterior
+        </span>
+      </div>
+    </Card>
+  );
+}
 
 export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles }) => {
-  const { loading, data, error, fetchReportData } = useReportQuery();
+  const [data, setData] = useState<any[]>([]);
+  const [movData, setMovData] = useState<any[]>([]);
+  const [liqData, setLiqData] = useState<any[]>([]);
+  const [atsData, setAtsData] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [selectedEmpresa, setSelectedEmpresa] = useState("");
   const [codigoSearch, setCodigoSearch] = useState("");
   // Empieza en true desde el primer render (sin esperar al useEffect) para
@@ -31,10 +116,29 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
   const [firstLoadDone, setFirstLoadDone] = useState(false);
 
   useEffect(() => {
-    fetchReportData("ventas", dateNDaysAgo(RANGE_DAYS - 1), dateNDaysAgo(0)).finally(() => {
-      setFirstLoadDone(true);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    let cancelled = false;
+    Promise.all([
+      fetchRange("ventas", dateNDaysAgo(RANGE_DAYS - 1), dateNDaysAgo(0)),
+      fetchRange("movimientos", dateNDaysAgo(MOV_RANGE_DAYS - 1), dateNDaysAgo(0)),
+      fetchRange("liquidaciones", dateNDaysAgo(PERIOD_RANGE_DAYS - 1), dateNDaysAgo(0)),
+      fetchRange("ats", dateNDaysAgo(PERIOD_RANGE_DAYS - 1), dateNDaysAgo(0)),
+    ])
+      .then(([ventasRows, movRows, liqRows, atsRows]) => {
+        if (cancelled) return;
+        setData(ventasRows);
+        setMovData(movRows);
+        setLiqData(liqRows);
+        setAtsData(atsRows);
+      })
+      .catch((err: any) => {
+        if (!cancelled) setError(err.message || "Error al obtener la información desde el ERP.");
+      })
+      .finally(() => {
+        if (!cancelled) setFirstLoadDone(true);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const empresaOptions = useMemo(() => {
@@ -114,7 +218,53 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
       .slice(0, 6);
   }, [filteredData]);
 
-  if (loading || !firstLoadDone) {
+  // Movimientos: esta semana (últimos 7 días) vs. semana anterior
+  const movWeekSplit = dateNDaysAgo(6);
+  const movThisWeek = useMemo(
+    () => movData.filter((r: any) => String(r.TRANS_DATE) >= movWeekSplit).length,
+    [movData, movWeekSplit]
+  );
+  const movLastWeek = useMemo(
+    () => movData.filter((r: any) => String(r.TRANS_DATE) < movWeekSplit).length,
+    [movData, movWeekSplit]
+  );
+
+  // Liquidaciones y ATS: mes actual vs. mes anterior (procesos periódicos, no diarios)
+  const now = new Date();
+  const thisMonthPrefix = monthPrefix(now);
+  const prevMonthPrefix = monthPrefix(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+
+  const liqThisMonth = useMemo(
+    () =>
+      liqData
+        .filter((r: any) => String(r.LIQUIDACION_FECHA).slice(0, 7) === thisMonthPrefix)
+        .reduce((acc: number, r: any) => acc + (Number(r.VALOR_TOTAL_CIF) || 0), 0),
+    [liqData, thisMonthPrefix]
+  );
+  const liqPrevMonth = useMemo(
+    () =>
+      liqData
+        .filter((r: any) => String(r.LIQUIDACION_FECHA).slice(0, 7) === prevMonthPrefix)
+        .reduce((acc: number, r: any) => acc + (Number(r.VALOR_TOTAL_CIF) || 0), 0),
+    [liqData, prevMonthPrefix]
+  );
+
+  const atsThisMonth = useMemo(
+    () =>
+      atsData
+        .filter((r: any) => String(r.INVOICE_DATE).slice(0, 7) === thisMonthPrefix && r.ES_ANULADO !== 1)
+        .reduce((acc: number, r: any) => acc + (Number(r.INVOICE_TOTAL) || 0), 0),
+    [atsData, thisMonthPrefix]
+  );
+  const atsPrevMonth = useMemo(
+    () =>
+      atsData
+        .filter((r: any) => String(r.INVOICE_DATE).slice(0, 7) === prevMonthPrefix && r.ES_ANULADO !== 1)
+        .reduce((acc: number, r: any) => acc + (Number(r.INVOICE_TOTAL) || 0), 0),
+    [atsData, prevMonthPrefix]
+  );
+
+  if (!firstLoadDone) {
     return (
       <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#ffffff" }}>
         <NovbiSplash loop />
@@ -289,6 +439,39 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
             )}
           </div>
         </Card>
+      </section>
+
+      <h2 style={{ fontSize: "1.05rem", fontWeight: 700, margin: "2rem 0 1rem", color: "var(--color-text-primary)" }}>
+        Comparativa entre Módulos
+      </h2>
+      <section className={styles.chartsGrid}>
+        <ComparisonMiniCard
+          title="Movimientos de Inventario"
+          currentLabel="Esta semana"
+          previousLabel="Semana anterior"
+          currentValue={movThisWeek}
+          previousValue={movLastWeek}
+          formatter={fmtNumber}
+          styles={styles}
+        />
+        <ComparisonMiniCard
+          title="Liquidaciones (Monto CIF)"
+          currentLabel="Este mes"
+          previousLabel="Mes anterior"
+          currentValue={liqThisMonth}
+          previousValue={liqPrevMonth}
+          formatter={fmtCurrency}
+          styles={styles}
+        />
+        <ComparisonMiniCard
+          title="ATS Compras (Facturado)"
+          currentLabel="Este mes"
+          previousLabel="Mes anterior"
+          currentValue={atsThisMonth}
+          previousValue={atsPrevMonth}
+          formatter={fmtCurrency}
+          styles={styles}
+        />
       </section>
     </div>
   );

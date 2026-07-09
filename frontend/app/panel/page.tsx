@@ -118,8 +118,8 @@ export default function DashboardPage() {
     }
   }, [status, router]);
 
-  // Al iniciar sesión, aterrizar en el dashboard de Ventas Diarias si el
-  // usuario tiene permiso; si no, se queda en la pestaña por defecto.
+  // Al iniciar sesión, aterrizar en el Dashboard si el usuario tiene
+  // permiso; si no, se queda en la pestaña por defecto.
   // initialTabResolved evita pintar el sidebar/layout con la pestaña por
   // defecto (Movimientos) durante el instante entre "autenticado" y que
   // este efecto corra - sin eso se ve un flash antes del splash real.
@@ -666,7 +666,7 @@ export default function DashboardPage() {
             {activeTab === "liquidaciones" && "Liquidaciones de Importaciones"}
             {activeTab === "ats" && "ATS - Facturas de Compras"}
             {activeTab === "ventas" && "Ventas (Detalle)"}
-            {activeTab === "ventas-diarias" && "Ventas Diarias"}
+            {activeTab === "ventas-diarias" && "Dashboard"}
             {activeTab === "logs" && "Bitácora de Auditoría"}
             {activeTab === "admin" && "Panel de Administración"}
             {activeTab === "sync" && "Sincronización Transaccional"}
@@ -676,7 +676,7 @@ export default function DashboardPage() {
             {activeTab === "liquidaciones" && "Consolidado de costos CIF y detalle de productos liquidados"}
             {activeTab === "ats" && "Resumen fiscal de compras autorizadas y anulaciones"}
             {activeTab === "ventas" && "Reporte consolidado de facturación de clientes y ventas transadas"}
-            {activeTab === "ventas-diarias" && "Resumen ejecutivo de ventas: hoy, ayer y tendencia de los últimos 7 días"}
+            {activeTab === "ventas-diarias" && "Resumen ejecutivo de ventas y comparativa con Movimientos, Liquidaciones y ATS"}
             {activeTab === "logs" && "Historial de descargas de reportes para auditoría de seguridad"}
             {activeTab === "admin" && "Gestión de seguridad, control de acceso de usuarios y configuración del entorno"}
             {activeTab === "sync" && "Sincronización manual de datos históricos y diarios del ERP MBA3 a Staging local"}
