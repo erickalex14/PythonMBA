@@ -146,8 +146,6 @@ function ComparisonMiniCard({
   );
 }
 
-const DONUT_COLORS = ["#7c3aed", "#2563eb", "#16a34a", "#f59e0b", "#0d9488", "#db2777", "#0891b2", "#dc2626"];
-
 function ChartTooltip({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
     <div
@@ -171,97 +169,6 @@ function ChartTooltip({ children, style }: { children: React.ReactNode; style?: 
   );
 }
 
-// Composición de un todo (marcas como % del total vendido) - un donut deja
-// ver de un vistazo qué tan concentradas están las ventas, algo que una
-// lista de barras no comunica tan bien.
-function DonutChart({
-  items,
-  formatter,
-}: {
-  items: { marca: string; monto: number; percentage: number }[];
-  formatter: (n: number) => string;
-}) {
-  const [hovered, setHovered] = useState<number | null>(null);
-  const size = 180;
-  const cx = size / 2;
-  const cy = size / 2;
-  const r = 62;
-  const strokeWidth = 26;
-  const circumference = 2 * Math.PI * r;
-  const total = items.reduce((acc, it) => acc + it.monto, 0);
-  let cumulative = 0;
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
-      <div style={{ position: "relative", width: size, height: size }}>
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: "visible" }}>
-          <g transform={`rotate(-90 ${cx} ${cy})`}>
-            {items.map((it, i) => {
-              const segLength = (it.percentage / 100) * circumference;
-              const dashoffset = -cumulative;
-              cumulative += segLength;
-              const isHovered = hovered === i;
-              return (
-                <circle
-                  key={i}
-                  cx={cx}
-                  cy={cy}
-                  r={r}
-                  fill="none"
-                  stroke={DONUT_COLORS[i % DONUT_COLORS.length]}
-                  strokeWidth={isHovered ? strokeWidth + 5 : strokeWidth}
-                  strokeDasharray={`${segLength} ${circumference - segLength}`}
-                  strokeDashoffset={dashoffset}
-                  style={{ transition: "stroke-width 0.15s ease", cursor: "pointer" }}
-                  onMouseEnter={() => setHovered(i)}
-                  onMouseLeave={() => setHovered(null)}
-                />
-              );
-            })}
-          </g>
-        </svg>
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            pointerEvents: "none",
-          }}
-        >
-          {hovered !== null && items[hovered] ? (
-            <div style={{ background: "#0f172a", color: "#fff", padding: "0.5rem 0.7rem", borderRadius: 8, fontSize: "0.72rem", boxShadow: "0 8px 20px rgba(15,23,42,0.3)", textAlign: "center" }}>
-              <div style={{ fontWeight: 700, marginBottom: 2 }}>{items[hovered].marca}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}>
-                <span style={{ width: 7, height: 7, borderRadius: "50%", background: DONUT_COLORS[hovered % DONUT_COLORS.length], display: "inline-block" }} />
-                {formatter(items[hovered].monto)}
-              </div>
-            </div>
-          ) : (
-            <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "0.68rem", color: "var(--color-text-faint)" }}>Total</div>
-              <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--color-text-primary)" }}>{formatter(total)}</div>
-            </div>
-          )}
-        </div>
-      </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem 0.9rem", justifyContent: "center" }}>
-        {items.map((it, i) => (
-          <div
-            key={i}
-            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem", color: "var(--color-text-muted)", cursor: "pointer" }}
-            onMouseEnter={() => setHovered(i)}
-            onMouseLeave={() => setHovered(null)}
-          >
-            <span style={{ width: 9, height: 9, borderRadius: "50%", background: DONUT_COLORS[i % DONUT_COLORS.length], display: "inline-block", flexShrink: 0 }} />
-            {it.marca}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 // Ranking de items (productos): las barras siguen siendo lo más claro para
 // comparar magnitudes entre muchos items, pero con hover para ver el nombre
@@ -732,20 +639,20 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
 
         <Card variant="chartCard" styles={styles}>
           <h3>Top Marcas (Ventas, {RANGE_DAYS} días)</h3>
-          {topBrands.length > 0 ? (
-            <DonutChart items={topBrands} formatter={fmtCurrency} />
-          ) : (
-            <p style={{ fontSize: "0.85rem", color: "var(--color-text-faint)" }}>Sin datos en el período</p>
-          )}
+          <RankedBarChart
+            items={topBrands.map((b) => ({ label: b.marca, total: b.monto }))}
+            color="var(--color-brand-primary)"
+            formatter={fmtCurrency}
+          />
         </Card>
 
         <Card variant="chartCard" styles={styles}>
           <h3>Top Marcas Diario ({today})</h3>
-          {topBrandsToday.length > 0 ? (
-            <DonutChart items={topBrandsToday} formatter={fmtCurrency} />
-          ) : (
-            <p style={{ fontSize: "0.85rem", color: "var(--color-text-faint)" }}>Sin datos en el período</p>
-          )}
+          <RankedBarChart
+            items={topBrandsToday.map((b) => ({ label: b.marca, total: b.monto }))}
+            color="var(--color-brand-accent)"
+            formatter={fmtCurrency}
+          />
         </Card>
       </section>
 
