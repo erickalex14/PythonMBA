@@ -15,6 +15,9 @@ const KEYFRAMES = `
 @keyframes novbi-draw-line { to { stroke-dashoffset: 0; } }
 @keyframes novbi-dot-in { from { opacity:0; transform:scale(0.4); } to { opacity:1; transform:scale(1); } }
 @keyframes novbi-pulse-ring { 0% { transform:scale(0.6); opacity:0.55; } 100% { transform:scale(2.4); opacity:0; } }
+@keyframes novbi-bar-wave { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.14); } }
+@keyframes novbi-line-wave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+@keyframes novbi-dot-wave { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.4); } }
 `;
 
 const BAR_HEIGHTS = [58, 92, 40, 130, 70, 110, 150];
@@ -50,6 +53,8 @@ export default function NovBILogin() {
   const [passwordError, setPasswordError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loginErrorMsg, setLoginErrorMsg] = useState("");
+  const [chartHover, setChartHover] = useState(false);
+  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -140,7 +145,7 @@ export default function NovBILogin() {
       <div
         style={{
           position: "relative",
-          flex: isMobile ? "none" : "0 0 46%",
+          flex: isMobile ? "none" : "0 0 52%",
           minHeight: isMobile ? 260 : "100vh",
           background: "#0a0a0a",
           display: "flex",
@@ -365,7 +370,7 @@ export default function NovBILogin() {
                 fontWeight: 700,
                 fontSize: 15,
                 color: "#ffffff",
-                background: submitting ? "#2a4d75" : "#1c3f66",
+                background: submitting ? "#1c3f66" : "#000000",
                 border: "none",
                 borderRadius: 8,
                 cursor: submitting ? "default" : "pointer",
