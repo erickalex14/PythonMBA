@@ -18,11 +18,12 @@ function dateNDaysAgo(n: number): string {
   return d.toISOString().split("T")[0];
 }
 
-const RANGE_DAYS = 30;
+const RANGE_DAYS = 7;
 
 export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles }) => {
   const { loading, data, error, fetchReportData } = useReportQuery();
   const [selectedEmpresa, setSelectedEmpresa] = useState("");
+  const [codigoSearch, setCodigoSearch] = useState("");
 
   useEffect(() => {
     fetchReportData("ventas", dateNDaysAgo(RANGE_DAYS - 1), dateNDaysAgo(0));
@@ -36,9 +37,12 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
   }, [data]);
 
   const filteredData = useMemo(() => {
-    if (!selectedEmpresa) return data;
-    return data.filter((row: any) => getEmpresaLabel(row.codigo) === selectedEmpresa);
-  }, [data, selectedEmpresa]);
+    return data.filter((row: any) => {
+      if (selectedEmpresa && getEmpresaLabel(row.codigo) !== selectedEmpresa) return false;
+      if (codigoSearch && !String(row.codigo || "").toLowerCase().includes(codigoSearch.trim().toLowerCase())) return false;
+      return true;
+    });
+  }, [data, selectedEmpresa, codigoSearch]);
 
   const totalsByDay = useMemo(() => {
     const map: Record<string, number> = {};
@@ -139,6 +143,14 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
             onChange: setSelectedEmpresa,
             placeholder: "Todas las Empresas...",
             options: empresaOptions,
+          },
+          {
+            label: "Buscar por Código de Producto",
+            value: codigoSearch,
+            onChange: setCodigoSearch,
+            placeholder: "Ej: 1AENV8395-NVC01",
+            options: [],
+            type: "text",
           },
         ]}
         styles={styles}

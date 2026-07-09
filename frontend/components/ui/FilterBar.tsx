@@ -6,6 +6,7 @@ export interface FilterFieldConfig {
   onChange: (value: string) => void;
   placeholder: string;
   options: string[];
+  type?: "select" | "text";
 }
 
 interface FilterBarProps {
@@ -22,16 +23,26 @@ export const FilterBar: React.FC<FilterBarProps> = ({ fields, styles }) => (
       {fields.map((field) => (
         <div key={field.label} className={styles.filterGroup}>
           <label>{field.label}</label>
-          <select
-            value={field.value}
-            onChange={(e) => field.onChange(e.target.value)}
-            className={styles.selectFilter}
-          >
-            <option value="">{field.placeholder}</option>
-            {field.options.map((opt) => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
+          {field.type === "text" ? (
+            <input
+              type="text"
+              value={field.value}
+              onChange={(e) => field.onChange(e.target.value)}
+              placeholder={field.placeholder}
+              className={styles.selectFilter}
+            />
+          ) : (
+            <select
+              value={field.value}
+              onChange={(e) => field.onChange(e.target.value)}
+              className={styles.selectFilter}
+            >
+              <option value="">{field.placeholder}</option>
+              {field.options.map((opt) => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          )}
         </div>
       ))}
     </div>
