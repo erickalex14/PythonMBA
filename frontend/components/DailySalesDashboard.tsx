@@ -17,6 +17,21 @@ function fmtNumber(n: number): string {
   return n.toLocaleString("es-EC");
 }
 
+function rankBrandsByRevenue(rows: any[]): { marca: string; monto: number; percentage: number }[] {
+  const map: Record<string, number> = {};
+  rows.forEach((row: any) => {
+    const marca = getMarcaFromProductName(row.producto || row.PRODUCTO);
+    if (!marca) return;
+    const val = Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0;
+    map[marca] = (map[marca] || 0) + val;
+  });
+  const total = Object.values(map).reduce((acc, v) => acc + v, 0);
+  return Object.entries(map)
+    .map(([marca, monto]) => ({ marca, monto, percentage: total > 0 ? Math.round((monto / total) * 100) : 0 }))
+    .sort((a, b) => b.monto - a.monto)
+    .slice(0, 8);
+}
+
 function dateNDaysAgo(n: number): string {
   const d = new Date();
   d.setDate(d.getDate() - n);
@@ -320,20 +335,8 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
   // transferencias internas entre bodegas, no refleja lo que realmente
   // compran los clientes. Se busca el nombre de marca dentro del texto real
   // del producto vendido (ver lib/marca.ts).
-  const topBrands = useMemo(() => {
-    const map: Record<string, number> = {};
-    recentData.forEach((row: any) => {
-      const marca = getMarcaFromProductName(row.producto || row.PRODUCTO);
-      if (!marca) return;
-      const val = Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0;
-      map[marca] = (map[marca] || 0) + val;
-    });
-    const total = Object.values(map).reduce((acc, v) => acc + v, 0);
-    return Object.entries(map)
-      .map(([marca, monto]) => ({ marca, monto, percentage: total > 0 ? Math.round((monto / total) * 100) : 0 }))
-      .sort((a, b) => b.monto - a.monto)
-      .slice(0, 8);
-  }, [recentData]);
+  const topBrands = useMemo(() => rankBrandsByRevenue(recentData), [recentData]);
+  const topBrandsToday = useMemo(() => rankBrandsByRevenue(todayData), [todayData]);
 
   if (!firstLoadDone) {
     return (
@@ -533,6 +536,28 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
               </div>
             ))}
             {topBrands.length === 0 && (
+              <p style={{ fontSize: "0.85rem", color: "var(--color-text-faint)" }}>Sin datos en el período</p>
+            )}
+          </div>
+        </Card>
+
+        <Card variant="chartCard" styles={styles}>
+          <h3>Top Marcas Diario ({today})</h3>
+          <div className={styles.branchProgressList}>
+            {topBrandsToday.map((b, index) => (
+              <div key={index} className={styles.branchProgressItem}>
+                <div className={styles.branchMetaInfo}>
+                  <span className={styles.branchName}>{b.marca}</span>
+                  <span className={styles.branchQty}>
+                    {fmtCurrency(b.monto)} ({b.percentage}%)
+                  </span>
+                </div>
+                <div className={styles.branchProgressBarBg}>
+                  <div className={styles.branchProgressBarFill} style={{ width: `${b.percentage}%` }}></div>
+                </div>
+              </div>
+            ))}
+            {topBrandsToday.length === 0 && (
               <p style={{ fontSize: "0.85rem", color: "var(--color-text-faint)" }}>Sin datos en el período</p>
             )}
           </div>
