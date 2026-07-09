@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Card } from "./ui/Card";
 import { FilterBar } from "./ui/FilterBar";
 import { getEmpresaLabel } from "../lib/empresa";
+import { getMarcaLabel, MARCA_EXCLUDE } from "../lib/marca";
 import NovbiSplash from "./NovbiSplash";
 
 interface DailySalesDashboardProps {
@@ -18,6 +19,12 @@ function fmtNumber(n: number): string {
 
 function dateNDaysAgo(n: number): string {
   const d = new Date();
+  d.setDate(d.getDate() - n);
+  return d.toISOString().split("T")[0];
+}
+
+function daysBefore(dateStr: string, n: number): string {
+  const d = new Date(dateStr + "T00:00:00");
   d.setDate(d.getDate() - n);
   return d.toISOString().split("T")[0];
 }
@@ -113,7 +120,11 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      fetchRange("ventas", dateNDaysAgo(RANGE_DAYS - 1), dateNDaysAgo(0)),
+      // Ventas viene de una tabla de staging sincronizada manualmente, no en
+      // vivo - puede tener varios días/semanas de retraso. Se pide una ventana
+      // amplia y luego se ancla "hoy" al último día real con datos (ver
+      // latestVentasDate), en vez de asumir que "hoy" del reloj tiene datos.
+      fetchRange("ventas", dateNDaysAgo(PERIOD_RANGE_DAYS - 1), dateNDaysAgo(0)),
       fetchRange("movimientos", dateNDaysAgo(MOV_RANGE_DAYS - 1), dateNDaysAgo(0)),
       fetchRange("liquidaciones", dateNDaysAgo(PERIOD_RANGE_DAYS - 1), dateNDaysAgo(0)),
       fetchRange("ats", dateNDaysAgo(PERIOD_RANGE_DAYS - 1), dateNDaysAgo(0)),
@@ -149,10 +160,10 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
     });
   }, [data, selectedEmpresa]);
 
-  const totalsByDay = useMemo(() => {
+  const fullDailyTotals = useMemo(() => {
     const map: Record<string, number> = {};
     filteredData.forEach((row: any) => {
-      const date = row.fecha || row.FECHA;
+      const date = String(row.fecha || row.FECHA || "");
       if (!date) return;
       const val = Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0;
       map[date] = (map[date] || 0) + val;
@@ -160,8 +171,43 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
     return map;
   }, [filteredData]);
 
-  const today = dateNDaysAgo(0);
-  const yesterday = dateNDaysAgo(1);
+  // "Hoy" real = el día más reciente con un volumen de ventas representativo,
+  // no el día del reloj (la sincronización es manual y puede llevar semanas
+  // de retraso) ni necesariamente el último día con CUALQUIER registro: tras
+  // el último lote de sincronización real suelen quedar días sueltos con
+  // montos mínimos (pruebas de sync, no ventas del día completo). Se ancla
+  // al día más reciente cuyo total sea al menos 10% del máximo diario visto
+  // en la ventana consultada, para no anclar en uno de esos días sueltos.
+  const latestVentasDate = useMemo(() => {
+    const entries = Object.entries(fullDailyTotals);
+    if (entries.length === 0) return dateNDaysAgo(0);
+    const maxTotal = Math.max(...entries.map(([, v]) => v));
+    const threshold = maxTotal * 0.1;
+    const validDates = entries.filter(([, v]) => v >= threshold).map(([d]) => d).sort();
+    return validDates.length > 0 ? validDates[validDates.length - 1] : entries.map(([d]) => d).sort().slice(-1)[0];
+  }, [fullDailyTotals]);
+
+  const recentData = useMemo(() => {
+    const windowStart = daysBefore(latestVentasDate, RANGE_DAYS - 1);
+    return filteredData.filter((row: any) => {
+      const date = String(row.fecha || row.FECHA || "");
+      return date >= windowStart && date <= latestVentasDate;
+    });
+  }, [filteredData, latestVentasDate]);
+
+  const totalsByDay = useMemo(() => {
+    const map: Record<string, number> = {};
+    recentData.forEach((row: any) => {
+      const date = row.fecha || row.FECHA;
+      if (!date) return;
+      const val = Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0;
+      map[date] = (map[date] || 0) + val;
+    });
+    return map;
+  }, [recentData]);
+
+  const today = latestVentasDate;
+  const yesterday = daysBefore(latestVentasDate, 1);
   const totalToday = totalsByDay[today] || 0;
   const totalYesterday = totalsByDay[yesterday] || 0;
   const pctChange = totalYesterday > 0 ? ((totalToday - totalYesterday) / totalYesterday) * 100 : null;
@@ -175,15 +221,15 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
   const dailySeries = useMemo(() => {
     const days: { date: string; total: number }[] = [];
     for (let i = RANGE_DAYS - 1; i >= 0; i--) {
-      const date = dateNDaysAgo(i);
+      const date = daysBefore(latestVentasDate, i);
       days.push({ date, total: totalsByDay[date] || 0 });
     }
     return days;
-  }, [totalsByDay]);
+  }, [totalsByDay, latestVentasDate]);
 
   const topProducts = useMemo(() => {
     const map: Record<string, number> = {};
-    filteredData.forEach((row: any) => {
+    recentData.forEach((row: any) => {
       const key = row.producto || row.PRODUCTO || "Sin producto";
       const val = Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0;
       map[key] = (map[key] || 0) + val;
@@ -192,11 +238,11 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
       .map(([producto, total]) => ({ producto, total }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 8);
-  }, [filteredData]);
+  }, [recentData]);
 
   const topCategories = useMemo(() => {
     const map: Record<string, number> = {};
-    filteredData.forEach((row: any) => {
+    recentData.forEach((row: any) => {
       const key = row.grupo || row.GRUPO || "Sin categoría";
       const val = Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0;
       map[key] = (map[key] || 0) + val;
@@ -210,7 +256,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
       }))
       .sort((a, b) => b.monto - a.monto)
       .slice(0, 6);
-  }, [filteredData]);
+  }, [recentData]);
 
   // Movimientos: esta semana (últimos 7 días) vs. semana anterior
   const movWeekSplit = dateNDaysAgo(6);
@@ -262,9 +308,10 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
   const topBrands = useMemo(() => {
     const map: Record<string, number> = {};
     movData.forEach((row: any) => {
-      const key = String(row.Codigo_Marca || "").trim();
-      if (!key) return;
-      map[key] = (map[key] || 0) + 1;
+      const code = String(row.Codigo_Marca || "").trim();
+      if (!code || MARCA_EXCLUDE.has(code)) return;
+      const label = getMarcaLabel(code);
+      map[label] = (map[label] || 0) + 1;
     });
     const total = Object.values(map).reduce((acc, v) => acc + v, 0);
     return Object.entries(map)
@@ -312,6 +359,10 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
         ]}
         styles={styles}
       />
+
+      <p style={{ fontSize: "0.8rem", color: "var(--color-text-faint)", margin: "0 0 0.75rem" }}>
+        Datos de ventas sincronizados al <strong>{latestVentasDate}</strong> (último día con registros)
+      </p>
 
       <section className={styles.kpiGrid}>
         <Card variant="kpiCard" styles={styles}>
