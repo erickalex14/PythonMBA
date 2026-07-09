@@ -15,9 +15,6 @@ const KEYFRAMES = `
 @keyframes novbi-draw-line { to { stroke-dashoffset: 0; } }
 @keyframes novbi-dot-in { from { opacity:0; transform:scale(0.4); } to { opacity:1; transform:scale(1); } }
 @keyframes novbi-pulse-ring { 0% { transform:scale(0.6); opacity:0.55; } 100% { transform:scale(2.4); opacity:0; } }
-@keyframes novbi-bar-wave { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.14); } }
-@keyframes novbi-line-wave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-@keyframes novbi-dot-wave { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.4); } }
 `;
 
 const BAR_HEIGHTS = [58, 92, 40, 130, 70, 110, 150];
@@ -53,8 +50,8 @@ export default function NovBILogin() {
   const [passwordError, setPasswordError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loginErrorMsg, setLoginErrorMsg] = useState("");
-  const [chartHover, setChartHover] = useState(false);
-  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
+  const [panelMouse, setPanelMouse] = useState<{ x: number; y: number } | null>(null);
+  const [barDrag, setBarDrag] = useState<{ index: number; y: number } | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -155,6 +152,11 @@ export default function NovBILogin() {
           overflow: "hidden",
           boxSizing: "border-box",
         }}
+        onMouseMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          setPanelMouse({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+        }}
+        onMouseLeave={() => setPanelMouse(null)}
       >
         <div
           style={{
@@ -165,6 +167,24 @@ export default function NovBILogin() {
             backgroundSize: "40px 40px",
             pointerEvents: "none",
           }}
+        />
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.9) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.9) 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+            pointerEvents: "none",
+            opacity: panelMouse ? 1 : 0,
+            WebkitMaskImage: panelMouse
+              ? `radial-gradient(160px circle at ${panelMouse.x}px ${panelMouse.y}px, black, transparent 70%)`
+              : undefined,
+            maskImage: panelMouse
+              ? `radial-gradient(160px circle at ${panelMouse.x}px ${panelMouse.y}px, black, transparent 70%)`
+              : undefined,
+            transition: "opacity 0.25s ease",
+          } as React.CSSProperties}
         />
 
         <div style={{ position: "relative", zIndex: 1 }}>
@@ -186,80 +206,72 @@ export default function NovBILogin() {
           </div>
         </div>
 
-        <div
-          style={{ position: "relative", zIndex: 1, display: isMobile ? "none" : "flex", alignItems: "center", justifyContent: "center", flex: 1 }}
-          onMouseEnter={() => setChartHover(true)}
-          onMouseLeave={() => setChartHover(false)}
-        >
-          <svg viewBox="0 0 360 220" width="100%" height={220} style={{ maxWidth: 420, overflow: "visible" }}>
+        <div style={{ position: "relative", zIndex: 1, display: isMobile ? "none" : "flex", alignItems: "center", justifyContent: "center", flex: 1 }}>
+          <svg
+            viewBox="0 0 360 220"
+            width="100%"
+            height={220}
+            style={{ maxWidth: 420, overflow: "visible" }}
+            onMouseMove={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const scale = Math.min(rect.width / 360, rect.height / 220);
+              const offsetX = (rect.width - 360 * scale) / 2;
+              const offsetY = (rect.height - 220 * scale) / 2;
+              const svgX = (e.clientX - rect.left - offsetX) / scale;
+              const svgY = (e.clientY - rect.top - offsetY) / scale;
+              const index = Math.max(0, Math.min(BAR_HEIGHTS.length - 1, Math.floor((svgX - 4) / 48)));
+              setBarDrag({ index, y: Math.max(15, Math.min(195, svgY)) });
+            }}
+            onMouseLeave={() => setBarDrag(null)}
+          >
             <line x1={0} y1={200} x2={360} y2={200} stroke="#ffffff" strokeOpacity={0.18} strokeWidth={1} />
-            {BAR_HEIGHTS.map((barH, i) => (
-              <g
-                key={i}
-                onMouseEnter={() => setHoveredBar(i)}
-                onMouseLeave={() => setHoveredBar(null)}
-                style={{
-                  transformBox: "fill-box",
-                  transformOrigin: "bottom",
-                  cursor: "pointer",
-                  animation: chartHover ? `novbi-bar-wave 1.1s ease-in-out ${(i * 0.08).toFixed(2)}s infinite` : undefined,
-                } as React.CSSProperties}
-              >
+            {BAR_HEIGHTS.map((barH, i) => {
+              const dragged = barDrag?.index === i;
+              const top = dragged ? barDrag!.y : 200 - barH;
+              const height = 200 - top;
+              return (
                 <rect
+                  key={i}
                   x={i * 48 + 4}
-                  y={200 - barH}
+                  y={top}
                   width={28}
-                  height={barH}
+                  height={height}
                   fill="#ffffff"
-                  fillOpacity={hoveredBar === i ? 1 : 0.22 + (i % 3) * 0.12}
+                  fillOpacity={dragged ? 1 : 0.22 + (i % 3) * 0.12}
                   rx={2}
                   style={{
                     transformBox: "fill-box",
                     transformOrigin: "bottom",
                     animation: `novbi-grow-bar 0.6s cubic-bezier(.2,.8,.2,1) ${(0.15 + i * 0.06).toFixed(2)}s both`,
-                    filter: hoveredBar === i ? "brightness(1.8) drop-shadow(0 0 8px rgba(255,255,255,0.75))" : "none",
-                    transition: "filter 0.2s ease, fill-opacity 0.2s ease",
+                    filter: dragged ? "brightness(1.8) drop-shadow(0 0 8px rgba(255,255,255,0.75))" : "none",
+                    transition: dragged
+                      ? "filter 0.15s ease"
+                      : "y 0.35s cubic-bezier(.2,.8,.2,1), height 0.35s cubic-bezier(.2,.8,.2,1), filter 0.2s ease, fill-opacity 0.2s ease",
                   } as React.CSSProperties}
                 />
-              </g>
-            ))}
-            <g
-              style={{
-                transformBox: "fill-box",
-                transformOrigin: "center",
-                animation: chartHover ? "novbi-line-wave 1.6s ease-in-out infinite" : undefined,
-              } as React.CSSProperties}
-            >
-              <path
-                d={LINE_PATH}
-                fill="none"
+              );
+            })}
+            <path
+              d={LINE_PATH}
+              fill="none"
+              stroke="#ffffff"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ strokeDasharray: 520, strokeDashoffset: 520, animation: "novbi-draw-line 1.4s ease-out 0.7s forwards" } as React.CSSProperties}
+            />
+            {LINE_POINTS.map(([x, y], i) => (
+              <circle
+                key={i}
+                cx={x}
+                cy={y}
+                r={4.5}
+                fill="#0a0a0a"
                 stroke="#ffffff"
                 strokeWidth={2.5}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ strokeDasharray: 520, strokeDashoffset: 520, animation: "novbi-draw-line 1.4s ease-out 0.7s forwards" } as React.CSSProperties}
+                style={{ opacity: 0, animation: `novbi-dot-in 0.4s ease-out ${(1.0 + i * 0.09).toFixed(2)}s forwards` } as React.CSSProperties}
               />
-              {LINE_POINTS.map(([x, y], i) => (
-                <g
-                  key={i}
-                  style={{
-                    transformBox: "fill-box",
-                    transformOrigin: "center",
-                    animation: chartHover ? `novbi-dot-wave 1.1s ease-in-out ${(i * 0.07).toFixed(2)}s infinite` : undefined,
-                  } as React.CSSProperties}
-                >
-                  <circle
-                    cx={x}
-                    cy={y}
-                    r={4.5}
-                    fill="#0a0a0a"
-                    stroke="#ffffff"
-                    strokeWidth={2.5}
-                    style={{ opacity: 0, animation: `novbi-dot-in 0.4s ease-out ${(1.0 + i * 0.09).toFixed(2)}s forwards` } as React.CSSProperties}
-                  />
-                </g>
-              ))}
-            </g>
+            ))}
             <circle
               cx={340}
               cy={20}
