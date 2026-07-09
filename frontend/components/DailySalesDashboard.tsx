@@ -22,10 +22,6 @@ function dateNDaysAgo(n: number): string {
   return d.toISOString().split("T")[0];
 }
 
-function monthPrefix(date: Date): string {
-  return date.toISOString().slice(0, 7);
-}
-
 async function fetchRange(reportId: string, start: string, end: string): Promise<any[]> {
   const res = await fetch(`/api/data/${reportId}?inicio=${start}&fin=${end}`);
   if (!res.ok) {
@@ -229,40 +225,55 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
     [movData, movWeekSplit]
   );
 
-  // Liquidaciones y ATS: mes actual vs. mes anterior (procesos periódicos, no diarios)
-  const now = new Date();
-  const thisMonthPrefix = monthPrefix(now);
-  const prevMonthPrefix = monthPrefix(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+  // Liquidaciones y ATS: son procesos periódicos (no diarios) y casi nunca tienen
+  // registros en el mes calendario actual todavía - comparar por mes calendario
+  // (julio vs junio) siempre mostraba $0 en "este mes" aunque hubiera datos reales
+  // recientes. Se usa una ventana móvil de 30 días en vez de mes calendario.
+  const periodSplit = dateNDaysAgo(29);
 
-  const liqThisMonth = useMemo(
+  const liqLast30d = useMemo(
     () =>
       liqData
-        .filter((r: any) => String(r.LIQUIDACION_FECHA).slice(0, 7) === thisMonthPrefix)
+        .filter((r: any) => String(r.LIQUIDACION_FECHA) >= periodSplit)
         .reduce((acc: number, r: any) => acc + (Number(r.VALOR_TOTAL_CIF) || 0), 0),
-    [liqData, thisMonthPrefix]
+    [liqData, periodSplit]
   );
-  const liqPrevMonth = useMemo(
+  const liqPrev30d = useMemo(
     () =>
       liqData
-        .filter((r: any) => String(r.LIQUIDACION_FECHA).slice(0, 7) === prevMonthPrefix)
+        .filter((r: any) => String(r.LIQUIDACION_FECHA) < periodSplit)
         .reduce((acc: number, r: any) => acc + (Number(r.VALOR_TOTAL_CIF) || 0), 0),
-    [liqData, prevMonthPrefix]
+    [liqData, periodSplit]
   );
 
-  const atsThisMonth = useMemo(
+  const atsLast30d = useMemo(
     () =>
       atsData
-        .filter((r: any) => String(r.INVOICE_DATE).slice(0, 7) === thisMonthPrefix && r.ES_ANULADO !== 1)
+        .filter((r: any) => String(r.INVOICE_DATE) >= periodSplit && r.ES_ANULADO !== 1)
         .reduce((acc: number, r: any) => acc + (Number(r.INVOICE_TOTAL) || 0), 0),
-    [atsData, thisMonthPrefix]
+    [atsData, periodSplit]
   );
-  const atsPrevMonth = useMemo(
+  const atsPrev30d = useMemo(
     () =>
       atsData
-        .filter((r: any) => String(r.INVOICE_DATE).slice(0, 7) === prevMonthPrefix && r.ES_ANULADO !== 1)
+        .filter((r: any) => String(r.INVOICE_DATE) < periodSplit && r.ES_ANULADO !== 1)
         .reduce((acc: number, r: any) => acc + (Number(r.INVOICE_TOTAL) || 0), 0),
-    [atsData, prevMonthPrefix]
+    [atsData, periodSplit]
   );
+
+  const topBrands = useMemo(() => {
+    const map: Record<string, number> = {};
+    movData.forEach((row: any) => {
+      const key = String(row.Codigo_Marca || "").trim();
+      if (!key) return;
+      map[key] = (map[key] || 0) + 1;
+    });
+    const total = Object.values(map).reduce((acc, v) => acc + v, 0);
+    return Object.entries(map)
+      .map(([marca, count]) => ({ marca, count, percentage: total > 0 ? Math.round((count / total) * 100) : 0 }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 8);
+  }, [movData]);
 
   if (!firstLoadDone) {
     return (
@@ -439,6 +450,28 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
             )}
           </div>
         </Card>
+
+        <Card variant="chartCard" styles={styles}>
+          <h3>Top Marcas (Movimientos, {MOV_RANGE_DAYS} días)</h3>
+          <div className={styles.branchProgressList}>
+            {topBrands.map((b, index) => (
+              <div key={index} className={styles.branchProgressItem}>
+                <div className={styles.branchMetaInfo}>
+                  <span className={styles.branchName}>{b.marca}</span>
+                  <span className={styles.branchQty}>
+                    {fmtNumber(b.count)} mov. ({b.percentage}%)
+                  </span>
+                </div>
+                <div className={styles.branchProgressBarBg}>
+                  <div className={styles.branchProgressBarFill} style={{ width: `${b.percentage}%` }}></div>
+                </div>
+              </div>
+            ))}
+            {topBrands.length === 0 && (
+              <p style={{ fontSize: "0.85rem", color: "var(--color-text-faint)" }}>Sin datos en el período</p>
+            )}
+          </div>
+        </Card>
       </section>
 
       <h2 style={{ fontSize: "1.05rem", fontWeight: 700, margin: "2rem 0 1rem", color: "var(--color-text-primary)" }}>
@@ -456,19 +489,19 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
         />
         <ComparisonMiniCard
           title="Liquidaciones (Monto CIF)"
-          currentLabel="Este mes"
-          previousLabel="Mes anterior"
-          currentValue={liqThisMonth}
-          previousValue={liqPrevMonth}
+          currentLabel="Últimos 30 días"
+          previousLabel="30 días anteriores"
+          currentValue={liqLast30d}
+          previousValue={liqPrev30d}
           formatter={fmtCurrency}
           styles={styles}
         />
         <ComparisonMiniCard
           title="ATS Compras (Facturado)"
-          currentLabel="Este mes"
-          previousLabel="Mes anterior"
-          currentValue={atsThisMonth}
-          previousValue={atsPrevMonth}
+          currentLabel="Últimos 30 días"
+          previousLabel="30 días anteriores"
+          currentValue={atsLast30d}
+          previousValue={atsPrev30d}
           formatter={fmtCurrency}
           styles={styles}
         />
