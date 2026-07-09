@@ -75,8 +75,9 @@ export default function DashboardPage() {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedCorp, setSelectedCorp] = useState("");
 
-  // Filtro específico en la tabla para Ventas (empresa: Novicompu / ENV)
+  // Filtros específicos en la tabla para Ventas (empresa y búsqueda de código)
   const [selectedEmpresa, setSelectedEmpresa] = useState("");
+  const [codigoSearch, setCodigoSearch] = useState("");
 
   // Estados de administración
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
@@ -451,6 +452,7 @@ export default function DashboardPage() {
         if (selectedProduct && String(row.producto).trim() !== selectedProduct) return false;
         if (selectedBranch && String(row.grupo).trim() !== selectedBranch) return false;
         if (selectedEmpresa && getEmpresaLabel(row.codigo) !== selectedEmpresa) return false;
+        if (codigoSearch && !String(row.codigo || "").toLowerCase().includes(codigoSearch.trim().toLowerCase())) return false;
       }
 
       return true;
@@ -460,7 +462,7 @@ export default function DashboardPage() {
     selectedBrand, selectedBranch, selectedSalesman,
     selectedProduct, selectedPartida, selectedRecepcion,
     selectedVendor, selectedClassif, selectedStatus, selectedCorp,
-    selectedEmpresa
+    selectedEmpresa, codigoSearch
   ]);
 
   // Filtros de bitácora
@@ -555,6 +557,7 @@ export default function DashboardPage() {
       { label: "Filtrar por Empresa", value: selectedEmpresa, onChange: setSelectedEmpresa, placeholder: "Todas las Empresas...", options: filterOptions.empresas },
       { label: "Filtrar por Producto", value: selectedProduct, onChange: setSelectedProduct, placeholder: "Todos los Productos...", options: filterOptions.products },
       { label: "Filtrar por Grupo", value: selectedBranch, onChange: setSelectedBranch, placeholder: "Todos los Grupos...", options: filterOptions.branches },
+      { label: "Buscar por Código de Producto", value: codigoSearch, onChange: setCodigoSearch, placeholder: "Ej: 1AENV8395-NVC01", options: [], type: "text" },
     ],
   };
 
@@ -656,7 +659,7 @@ export default function DashboardPage() {
             {activeTab === "liquidaciones" && "Consolidado de costos CIF y detalle de productos liquidados"}
             {activeTab === "ats" && "Resumen fiscal de compras autorizadas y anulaciones"}
             {activeTab === "ventas" && "Reporte consolidado de facturación de clientes y ventas transadas"}
-            {activeTab === "ventas-diarias" && "Resumen ejecutivo de ventas: hoy, ayer y tendencia de los últimos 30 días"}
+            {activeTab === "ventas-diarias" && "Resumen ejecutivo de ventas: hoy, ayer y tendencia de los últimos 7 días"}
             {activeTab === "logs" && "Historial de descargas de reportes para auditoría de seguridad"}
             {activeTab === "admin" && "Gestión de seguridad, control de acceso de usuarios y configuración del entorno"}
             {activeTab === "sync" && "Sincronización manual de datos históricos y diarios del ERP MBA3 a Staging local"}
