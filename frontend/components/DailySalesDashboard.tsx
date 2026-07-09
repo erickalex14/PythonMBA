@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Card } from "./ui/Card";
 import { FilterBar } from "./ui/FilterBar";
 import { getEmpresaLabel } from "../lib/empresa";
-import { getMarcaLabel, MARCA_EXCLUDE } from "../lib/marca";
+import { getMarcaFromProductName } from "../lib/marca";
 import NovbiSplash from "./NovbiSplash";
 
 interface DailySalesDashboardProps {
@@ -41,7 +41,22 @@ async function fetchRange(reportId: string, start: string, end: string): Promise
 
 const RANGE_DAYS = 7;
 const MOV_RANGE_DAYS = 14;
-const PERIOD_RANGE_DAYS = 60;
+const PERIOD_RANGE_DAYS = 60; // ventana de Liquidaciones/ATS (necesitan 60d para comparar 30 vs 30)
+const FAST_RANGE_DAYS = 14;
+const VENTAS_FALLBACK_DAYS = 45; // suficiente margen sobre el atraso de sync conocido, sin pedir los 60d completos
+
+// Ventas viene de una tabla de staging sincronizada manualmente, no en vivo.
+// En producción con sync regular, los últimos FAST_RANGE_DAYS ya alcanzan
+// para encontrar "hoy" real - se pide esa ventana chica primero (rápido). Si
+// la sincronización está atrasada (pocos días con datos en esa ventana, como
+// pasa en este entorno de pruebas), se amplía recién ahí, en vez de pedir
+// siempre la ventana grande "por si acaso".
+async function fetchVentasAdaptive(): Promise<any[]> {
+  const fastRows = await fetchRange("ventas", dateNDaysAgo(FAST_RANGE_DAYS - 1), dateNDaysAgo(0));
+  const populatedDays = new Set(fastRows.map((r: any) => r.fecha || r.FECHA)).size;
+  if (populatedDays >= 5) return fastRows;
+  return fetchRange("ventas", dateNDaysAgo(VENTAS_FALLBACK_DAYS - 1), dateNDaysAgo(0));
+}
 
 function deltaPct(current: number, previous: number): number | null {
   if (previous <= 0) return null;
@@ -120,11 +135,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      // Ventas viene de una tabla de staging sincronizada manualmente, no en
-      // vivo - puede tener varios días/semanas de retraso. Se pide una ventana
-      // amplia y luego se ancla "hoy" al último día real con datos (ver
-      // latestVentasDate), en vez de asumir que "hoy" del reloj tiene datos.
-      fetchRange("ventas", dateNDaysAgo(PERIOD_RANGE_DAYS - 1), dateNDaysAgo(0)),
+      fetchVentasAdaptive(),
       fetchRange("movimientos", dateNDaysAgo(MOV_RANGE_DAYS - 1), dateNDaysAgo(0)),
       fetchRange("liquidaciones", dateNDaysAgo(PERIOD_RANGE_DAYS - 1), dateNDaysAgo(0)),
       fetchRange("ats", dateNDaysAgo(PERIOD_RANGE_DAYS - 1), dateNDaysAgo(0)),
@@ -237,26 +248,26 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
     return Object.entries(map)
       .map(([producto, total]) => ({ producto, total }))
       .sort((a, b) => b.total - a.total)
-      .slice(0, 8);
+      .slice(0, 10);
   }, [recentData]);
 
-  const topCategories = useMemo(() => {
+  const todayData = useMemo(
+    () => recentData.filter((row: any) => String(row.fecha || row.FECHA || "") === latestVentasDate),
+    [recentData, latestVentasDate]
+  );
+
+  const topProductsToday = useMemo(() => {
     const map: Record<string, number> = {};
-    recentData.forEach((row: any) => {
-      const key = row.grupo || row.GRUPO || "Sin categoría";
+    todayData.forEach((row: any) => {
+      const key = row.producto || row.PRODUCTO || "Sin producto";
       const val = Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0;
       map[key] = (map[key] || 0) + val;
     });
-    const total = Object.values(map).reduce((acc, v) => acc + v, 0);
     return Object.entries(map)
-      .map(([categoria, monto]) => ({
-        categoria,
-        monto,
-        percentage: total > 0 ? Math.round((monto / total) * 100) : 0,
-      }))
-      .sort((a, b) => b.monto - a.monto)
-      .slice(0, 6);
-  }, [recentData]);
+      .map(([producto, total]) => ({ producto, total }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 10);
+  }, [todayData]);
 
   // Movimientos: esta semana (últimos 7 días) vs. semana anterior
   const movWeekSplit = dateNDaysAgo(6);
@@ -305,20 +316,24 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
     [atsData, periodSplit]
   );
 
+  // Top Marcas viene de Ventas (no de Movimientos): Movimientos incluye
+  // transferencias internas entre bodegas, no refleja lo que realmente
+  // compran los clientes. Se busca el nombre de marca dentro del texto real
+  // del producto vendido (ver lib/marca.ts).
   const topBrands = useMemo(() => {
     const map: Record<string, number> = {};
-    movData.forEach((row: any) => {
-      const code = String(row.Codigo_Marca || "").trim();
-      if (!code || MARCA_EXCLUDE.has(code)) return;
-      const label = getMarcaLabel(code);
-      map[label] = (map[label] || 0) + 1;
+    recentData.forEach((row: any) => {
+      const marca = getMarcaFromProductName(row.producto || row.PRODUCTO);
+      if (!marca) return;
+      const val = Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0;
+      map[marca] = (map[marca] || 0) + val;
     });
     const total = Object.values(map).reduce((acc, v) => acc + v, 0);
     return Object.entries(map)
-      .map(([marca, count]) => ({ marca, count, percentage: total > 0 ? Math.round((count / total) * 100) : 0 }))
-      .sort((a, b) => b.count - a.count)
+      .map(([marca, monto]) => ({ marca, monto, percentage: total > 0 ? Math.round((monto / total) * 100) : 0 }))
+      .sort((a, b) => b.monto - a.monto)
       .slice(0, 8);
-  }, [movData]);
+  }, [recentData]);
 
   if (!firstLoadDone) {
     return (
@@ -334,6 +349,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
 
   const maxDaily = Math.max(...dailySeries.map((d) => d.total), 1);
   const maxProduct = Math.max(...topProducts.map((p) => p.total), 1);
+  const maxProductToday = Math.max(...topProductsToday.map((p) => p.total), 1);
 
   const points = dailySeries.map((d, index) => {
     const x = dailySeries.length > 1 ? (index / (dailySeries.length - 1)) * 400 + 50 : 250;
@@ -471,36 +487,44 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
         </Card>
 
         <Card variant="chartCard" styles={styles}>
-          <h3>Distribución por Categoría ({RANGE_DAYS} días)</h3>
-          <div className={styles.branchProgressList}>
-            {topCategories.map((c, index) => (
-              <div key={index} className={styles.branchProgressItem}>
-                <div className={styles.branchMetaInfo}>
-                  <span className={styles.branchName}>{c.categoria}</span>
-                  <span className={styles.branchQty}>
-                    {fmtCurrency(c.monto)} ({c.percentage}%)
-                  </span>
-                </div>
-                <div className={styles.branchProgressBarBg}>
-                  <div className={styles.branchProgressBarFill} style={{ width: `${c.percentage}%` }}></div>
-                </div>
-              </div>
-            ))}
-            {topCategories.length === 0 && (
-              <p style={{ fontSize: "0.85rem", color: "var(--color-text-faint)" }}>Sin datos en el período</p>
-            )}
+          <h3>Top Productos Diario ({today})</h3>
+          <div className={styles.svgContainer}>
+            <svg viewBox="0 0 500 200" className={styles.svgChart}>
+              {topProductsToday.map((p, index) => {
+                const y = index * 22 + 15;
+                const barWidth = (p.total / maxProductToday) * 310;
+                const opacity = 0.45 + (p.total / maxProductToday) * 0.55;
+                return (
+                  <g key={index}>
+                    <text x="5" y={y + 11} fill="var(--color-text-tertiary)" fontSize="9" fontWeight="600">
+                      {p.producto.substring(0, 11)}
+                    </text>
+                    <rect x="90" y={y} width="320" height="13" rx="4" fill="var(--color-surface-subtle)" />
+                    <rect x="90" y={y} width={barWidth} height="13" rx="4" fill="var(--color-brand-accent)" fillOpacity={opacity} />
+                    <text x={95 + barWidth} y={y + 11} fill="var(--color-text-tertiary)" fontSize="8.5" fontWeight="700">
+                      {fmtCurrency(p.total)}
+                    </text>
+                  </g>
+                );
+              })}
+              {topProductsToday.length === 0 && (
+                <text x="250" y="100" textAnchor="middle" fill="var(--color-text-faint)" fontSize="10">
+                  Sin datos en el período
+                </text>
+              )}
+            </svg>
           </div>
         </Card>
 
         <Card variant="chartCard" styles={styles}>
-          <h3>Top Marcas (Movimientos, {MOV_RANGE_DAYS} días)</h3>
+          <h3>Top Marcas (Ventas, {RANGE_DAYS} días)</h3>
           <div className={styles.branchProgressList}>
             {topBrands.map((b, index) => (
               <div key={index} className={styles.branchProgressItem}>
                 <div className={styles.branchMetaInfo}>
                   <span className={styles.branchName}>{b.marca}</span>
                   <span className={styles.branchQty}>
-                    {fmtNumber(b.count)} mov. ({b.percentage}%)
+                    {fmtCurrency(b.monto)} ({b.percentage}%)
                   </span>
                 </div>
                 <div className={styles.branchProgressBarBg}>
