@@ -15,6 +15,13 @@ const KEYFRAMES = `
 @keyframes novbi-draw-line { to { stroke-dashoffset: 0; } }
 @keyframes novbi-dot-in { from { opacity:0; transform:scale(0.4); } to { opacity:1; transform:scale(1); } }
 @keyframes novbi-pulse-ring { 0% { transform:scale(0.6); opacity:0.55; } 100% { transform:scale(2.4); opacity:0; } }
+@keyframes novbi-box-bounce {
+  0% { transform: translateY(0) scale(1,1); }
+  30% { transform: translateY(-14px) scale(1,1); }
+  55% { transform: translateY(0) scale(1.1,0.88); }
+  75% { transform: translateY(-4px) scale(0.97,1.04); }
+  100% { transform: translateY(0) scale(1,1); }
+}
 `;
 
 const BAR_HEIGHTS = [58, 92, 40, 130, 70, 110, 150];
@@ -174,50 +181,15 @@ export default function NovBILogin() {
             <div style={{ width: 2, height: 30, background: "#ffffff", opacity: 0.5 }} />
             <div
               style={{
-                position: "relative",
                 background: "#ffffff",
+                padding: "4px 10px",
                 display: "flex",
                 alignItems: "center",
-                height: 42,
-                overflow: "hidden",
-                width: logoHover ? 250 : 62,
-                transition: "width 0.4s cubic-bezier(.2,.8,.2,1)",
-              }}
+                transformOrigin: "center bottom",
+                animation: logoHover ? "novbi-box-bounce 0.55s cubic-bezier(.34,1.56,.64,1) both" : undefined,
+              } as React.CSSProperties}
             >
-              <div
-                style={{
-                  position: "absolute",
-                  left: 10,
-                  fontFamily: FONT,
-                  fontWeight: 300,
-                  fontSize: 34,
-                  letterSpacing: "-0.015em",
-                  color: "#0a0a0a",
-                  lineHeight: 1,
-                  whiteSpace: "nowrap",
-                  opacity: logoHover ? 0 : 1,
-                  transition: "opacity 0.2s ease",
-                }}
-              >
-                BI
-              </div>
-              <div
-                style={{
-                  position: "absolute",
-                  left: 14,
-                  fontFamily: FONT,
-                  fontWeight: 300,
-                  fontSize: 19,
-                  letterSpacing: "-0.01em",
-                  color: "#0a0a0a",
-                  lineHeight: 1,
-                  whiteSpace: "nowrap",
-                  opacity: logoHover ? 1 : 0,
-                  transition: "opacity 0.25s ease 0.1s",
-                }}
-              >
-                Business Intelligence
-              </div>
+              <div style={{ fontFamily: FONT, fontWeight: 300, fontSize: 34, letterSpacing: "-0.015em", color: "#0a0a0a", lineHeight: 1 }}>BI</div>
             </div>
           </div>
 
