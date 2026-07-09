@@ -105,7 +105,6 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
   const [atsData, setAtsData] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [selectedEmpresa, setSelectedEmpresa] = useState("");
-  const [codigoSearch, setCodigoSearch] = useState("");
   // Empieza en true desde el primer render (sin esperar al useEffect) para
   // que el splash cubra la pantalla desde el primer frame, sin dejar ver
   // el layout/dashboard vacío mientras el efecto todavía no dispara el fetch.
@@ -146,10 +145,9 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
   const filteredData = useMemo(() => {
     return data.filter((row: any) => {
       if (selectedEmpresa && getEmpresaLabel(row.codigo) !== selectedEmpresa) return false;
-      if (codigoSearch && !String(row.codigo || "").toLowerCase().includes(codigoSearch.trim().toLowerCase())) return false;
       return true;
     });
-  }, [data, selectedEmpresa, codigoSearch]);
+  }, [data, selectedEmpresa]);
 
   const totalsByDay = useMemo(() => {
     const map: Record<string, number> = {};
@@ -304,14 +302,6 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
     <div>
       <FilterBar
         fields={[
-          {
-            label: "Buscar por Código de Producto",
-            value: codigoSearch,
-            onChange: setCodigoSearch,
-            placeholder: "Ej: 1AENV8395-NVC01",
-            options: [],
-            type: "text",
-          },
           {
             label: "Filtrar por Empresa",
             value: selectedEmpresa,
