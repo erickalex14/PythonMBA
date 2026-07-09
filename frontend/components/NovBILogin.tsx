@@ -50,7 +50,6 @@ export default function NovBILogin() {
   const [passwordError, setPasswordError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loginErrorMsg, setLoginErrorMsg] = useState("");
-  const [panelMouse, setPanelMouse] = useState<{ x: number; y: number } | null>(null);
   const [barDrag, setBarDrag] = useState<{ index: number; y: number } | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -152,11 +151,6 @@ export default function NovBILogin() {
           overflow: "hidden",
           boxSizing: "border-box",
         }}
-        onMouseMove={(e) => {
-          const rect = e.currentTarget.getBoundingClientRect();
-          setPanelMouse({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-        }}
-        onMouseLeave={() => setPanelMouse(null)}
       >
         <div
           style={{
@@ -167,24 +161,6 @@ export default function NovBILogin() {
             backgroundSize: "40px 40px",
             pointerEvents: "none",
           }}
-        />
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.9) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.9) 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
-            pointerEvents: "none",
-            opacity: panelMouse ? 1 : 0,
-            WebkitMaskImage: panelMouse
-              ? `radial-gradient(160px circle at ${panelMouse.x}px ${panelMouse.y}px, black, transparent 70%)`
-              : undefined,
-            maskImage: panelMouse
-              ? `radial-gradient(160px circle at ${panelMouse.x}px ${panelMouse.y}px, black, transparent 70%)`
-              : undefined,
-            transition: "opacity 0.25s ease",
-          } as React.CSSProperties}
         />
 
         <div style={{ position: "relative", zIndex: 1 }}>
