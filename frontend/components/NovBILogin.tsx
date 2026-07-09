@@ -186,43 +186,80 @@ export default function NovBILogin() {
           </div>
         </div>
 
-        <div style={{ position: "relative", zIndex: 1, display: isMobile ? "none" : "flex", alignItems: "center", justifyContent: "center", flex: 1 }}>
+        <div
+          style={{ position: "relative", zIndex: 1, display: isMobile ? "none" : "flex", alignItems: "center", justifyContent: "center", flex: 1 }}
+          onMouseEnter={() => setChartHover(true)}
+          onMouseLeave={() => setChartHover(false)}
+        >
           <svg viewBox="0 0 360 220" width="100%" height={220} style={{ maxWidth: 420, overflow: "visible" }}>
             <line x1={0} y1={200} x2={360} y2={200} stroke="#ffffff" strokeOpacity={0.18} strokeWidth={1} />
             {BAR_HEIGHTS.map((barH, i) => (
-              <rect
+              <g
                 key={i}
-                x={i * 48 + 4}
-                y={200 - barH}
-                width={28}
-                height={barH}
-                fill="#ffffff"
-                fillOpacity={0.22 + (i % 3) * 0.12}
-                rx={2}
-                style={{ transformBox: "fill-box", transformOrigin: "bottom", animation: `novbi-grow-bar 0.6s cubic-bezier(.2,.8,.2,1) ${(0.15 + i * 0.06).toFixed(2)}s both` } as React.CSSProperties}
-              />
+                onMouseEnter={() => setHoveredBar(i)}
+                onMouseLeave={() => setHoveredBar(null)}
+                style={{
+                  transformBox: "fill-box",
+                  transformOrigin: "bottom",
+                  cursor: "pointer",
+                  animation: chartHover ? `novbi-bar-wave 1.1s ease-in-out ${(i * 0.08).toFixed(2)}s infinite` : undefined,
+                } as React.CSSProperties}
+              >
+                <rect
+                  x={i * 48 + 4}
+                  y={200 - barH}
+                  width={28}
+                  height={barH}
+                  fill="#ffffff"
+                  fillOpacity={hoveredBar === i ? 1 : 0.22 + (i % 3) * 0.12}
+                  rx={2}
+                  style={{
+                    transformBox: "fill-box",
+                    transformOrigin: "bottom",
+                    animation: `novbi-grow-bar 0.6s cubic-bezier(.2,.8,.2,1) ${(0.15 + i * 0.06).toFixed(2)}s both`,
+                    filter: hoveredBar === i ? "brightness(1.8) drop-shadow(0 0 8px rgba(255,255,255,0.75))" : "none",
+                    transition: "filter 0.2s ease, fill-opacity 0.2s ease",
+                  } as React.CSSProperties}
+                />
+              </g>
             ))}
-            <path
-              d={LINE_PATH}
-              fill="none"
-              stroke="#ffffff"
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ strokeDasharray: 520, strokeDashoffset: 520, animation: "novbi-draw-line 1.4s ease-out 0.7s forwards" } as React.CSSProperties}
-            />
-            {LINE_POINTS.map(([x, y], i) => (
-              <circle
-                key={i}
-                cx={x}
-                cy={y}
-                r={4.5}
-                fill="#0a0a0a"
+            <g
+              style={{
+                transformBox: "fill-box",
+                transformOrigin: "center",
+                animation: chartHover ? "novbi-line-wave 1.6s ease-in-out infinite" : undefined,
+              } as React.CSSProperties}
+            >
+              <path
+                d={LINE_PATH}
+                fill="none"
                 stroke="#ffffff"
                 strokeWidth={2.5}
-                style={{ opacity: 0, animation: `novbi-dot-in 0.4s ease-out ${(1.0 + i * 0.09).toFixed(2)}s forwards` } as React.CSSProperties}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ strokeDasharray: 520, strokeDashoffset: 520, animation: "novbi-draw-line 1.4s ease-out 0.7s forwards" } as React.CSSProperties}
               />
-            ))}
+              {LINE_POINTS.map(([x, y], i) => (
+                <g
+                  key={i}
+                  style={{
+                    transformBox: "fill-box",
+                    transformOrigin: "center",
+                    animation: chartHover ? `novbi-dot-wave 1.1s ease-in-out ${(i * 0.07).toFixed(2)}s infinite` : undefined,
+                  } as React.CSSProperties}
+                >
+                  <circle
+                    cx={x}
+                    cy={y}
+                    r={4.5}
+                    fill="#0a0a0a"
+                    stroke="#ffffff"
+                    strokeWidth={2.5}
+                    style={{ opacity: 0, animation: `novbi-dot-in 0.4s ease-out ${(1.0 + i * 0.09).toFixed(2)}s forwards` } as React.CSSProperties}
+                  />
+                </g>
+              ))}
+            </g>
             <circle
               cx={340}
               cy={20}
