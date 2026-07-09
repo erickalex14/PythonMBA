@@ -20,7 +20,6 @@ import { Pagination } from "../../components/ui/Pagination";
 import { FilterBar, FilterFieldConfig } from "../../components/ui/FilterBar";
 import { Modal } from "../../components/ui/Modal";
 import { REPORTS_CONFIG } from "../../lib/reports-config";
-import { getEmpresaLabel } from "../../lib/empresa";
 import { useReportQuery } from "../../hooks/useReportQuery";
 
 type TabType = "movimientos" | "liquidaciones" | "ats" | "ventas" | "ventas-diarias" | "logs" | "admin" | "sync";
@@ -457,7 +456,7 @@ export default function DashboardPage() {
       } else if (activeTab === "ventas") {
         if (selectedProduct && String(row.producto).trim() !== selectedProduct) return false;
         if (selectedBranch && String(row.grupo).trim() !== selectedBranch) return false;
-        if (selectedEmpresa && getEmpresaLabel(row.codigo) !== selectedEmpresa) return false;
+        if (selectedEmpresa && String(row.empresa || "").trim() !== selectedEmpresa) return false;
         if (codigoSearch && !String(row.codigo || "").toLowerCase().includes(codigoSearch.trim().toLowerCase())) return false;
       }
 
@@ -526,7 +525,7 @@ export default function DashboardPage() {
       } else if (activeTab === "ventas") {
         if (row.producto) products.add(String(row.producto).trim());
         if (row.grupo) branches.add(String(row.grupo).trim());
-        empresas.add(getEmpresaLabel(row.codigo));
+        if (row.empresa) empresas.add(String(row.empresa).trim());
       }
     });
 

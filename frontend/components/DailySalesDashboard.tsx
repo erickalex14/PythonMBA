@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useReportQuery } from "../hooks/useReportQuery";
 import { Card } from "./ui/Card";
 import { FilterBar } from "./ui/FilterBar";
-import { getEmpresaLabel } from "../lib/empresa";
 import NovbiSplash from "./NovbiSplash";
 
 interface DailySalesDashboardProps {
@@ -39,13 +38,13 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
 
   const empresaOptions = useMemo(() => {
     const set = new Set<string>();
-    data.forEach((row: any) => set.add(getEmpresaLabel(row.codigo)));
+    data.forEach((row: any) => { if (row.empresa) set.add(String(row.empresa).trim()); });
     return Array.from(set).sort();
   }, [data]);
 
   const filteredData = useMemo(() => {
     return data.filter((row: any) => {
-      if (selectedEmpresa && getEmpresaLabel(row.codigo) !== selectedEmpresa) return false;
+      if (selectedEmpresa && String(row.empresa || "").trim() !== selectedEmpresa) return false;
       if (codigoSearch && !String(row.codigo || "").toLowerCase().includes(codigoSearch.trim().toLowerCase())) return false;
       return true;
     });
