@@ -51,6 +51,7 @@ export default function NovBILogin() {
   const [submitting, setSubmitting] = useState(false);
   const [loginErrorMsg, setLoginErrorMsg] = useState("");
   const [barDrag, setBarDrag] = useState<{ index: number; y: number } | null>(null);
+  const [logoHover, setLogoHover] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -164,11 +165,59 @@ export default function NovBILogin() {
         />
 
         <div style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, animation: "novbi-fade-up 0.7s ease-out both" }}>
+          <div
+            style={{ display: "flex", alignItems: "center", gap: 14, animation: "novbi-fade-up 0.7s ease-out both", cursor: "pointer" }}
+            onMouseEnter={() => setLogoHover(true)}
+            onMouseLeave={() => setLogoHover(false)}
+          >
             <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: 34, letterSpacing: "-0.01em", color: "#ffffff", lineHeight: 1 }}>NOV</div>
             <div style={{ width: 2, height: 30, background: "#ffffff", opacity: 0.5 }} />
-            <div style={{ background: "#ffffff", padding: "4px 10px", display: "flex", alignItems: "center" }}>
-              <div style={{ fontFamily: FONT, fontWeight: 300, fontSize: 34, letterSpacing: "-0.015em", color: "#0a0a0a", lineHeight: 1 }}>BI</div>
+            <div
+              style={{
+                position: "relative",
+                background: "#ffffff",
+                display: "flex",
+                alignItems: "center",
+                height: 42,
+                overflow: "hidden",
+                width: logoHover ? 250 : 62,
+                transition: "width 0.4s cubic-bezier(.2,.8,.2,1)",
+              }}
+            >
+              <div
+                style={{
+                  position: "absolute",
+                  left: 10,
+                  fontFamily: FONT,
+                  fontWeight: 300,
+                  fontSize: 34,
+                  letterSpacing: "-0.015em",
+                  color: "#0a0a0a",
+                  lineHeight: 1,
+                  whiteSpace: "nowrap",
+                  opacity: logoHover ? 0 : 1,
+                  transition: "opacity 0.2s ease",
+                }}
+              >
+                BI
+              </div>
+              <div
+                style={{
+                  position: "absolute",
+                  left: 14,
+                  fontFamily: FONT,
+                  fontWeight: 300,
+                  fontSize: 19,
+                  letterSpacing: "-0.01em",
+                  color: "#0a0a0a",
+                  lineHeight: 1,
+                  whiteSpace: "nowrap",
+                  opacity: logoHover ? 1 : 0,
+                  transition: "opacity 0.25s ease 0.1s",
+                }}
+              >
+                Business Intelligence
+              </div>
             </div>
           </div>
 
