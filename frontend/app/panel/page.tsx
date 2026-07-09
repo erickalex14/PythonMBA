@@ -423,8 +423,8 @@ export default function DashboardPage() {
     if (activeTab === "logs" || activeTab === "admin" || activeTab === "sync") return [];
     
     return data.filter((row) => {
-      // 1. Filtro de Búsqueda Global
-      if (searchQuery.trim() !== "") {
+      // 1. Filtro de Búsqueda Global (no aplica a Ventas: tiene sus propios filtros específicos)
+      if (activeTab !== "ventas" && searchQuery.trim() !== "") {
         const match = Object.values(row).some((val) =>
           String(val).toLowerCase().includes(searchQuery.toLowerCase())
         );
@@ -927,17 +927,19 @@ export default function DashboardPage() {
               </Button>
             </div>
 
-            <div className={styles.searchFilter}>
-              <div className={styles.filterGroup}>
-                <label>Búsqueda Global</label>
-                <input
-                  type="text"
-                  placeholder="Buscar en todos los campos..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+            {activeTab !== "ventas" && (
+              <div className={styles.searchFilter}>
+                <div className={styles.filterGroup}>
+                  <label>Búsqueda Global</label>
+                  <input
+                    type="text"
+                    placeholder="Buscar en todos los campos..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </section>
         )}
 
