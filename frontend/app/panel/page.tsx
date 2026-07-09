@@ -12,6 +12,7 @@ import { ChartsSection } from "../../components/ChartsSection";
 import { ReportTable } from "../../components/ReportTable";
 import { SyncSection } from "../../components/SyncSection";
 import { DailySalesDashboard } from "../../components/DailySalesDashboard";
+import NovbiSplash from "../../components/NovbiSplash";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { Card } from "../../components/ui/Card";
@@ -119,6 +120,10 @@ export default function DashboardPage() {
 
   // Al iniciar sesión, aterrizar en el dashboard de Ventas Diarias si el
   // usuario tiene permiso; si no, se queda en la pestaña por defecto.
+  // initialTabResolved evita pintar el sidebar/layout con la pestaña por
+  // defecto (Movimientos) durante el instante entre "autenticado" y que
+  // este efecto corra - sin eso se ve un flash antes del splash real.
+  const [initialTabResolved, setInitialTabResolved] = useState(false);
   useEffect(() => {
     if (status === "authenticated") {
       const perms: string[] = (session?.user as any)?.permissions || [];
@@ -126,6 +131,7 @@ export default function DashboardPage() {
       if (perms.includes("VIEW_VENTAS") || isAdmin) {
         setActiveTab("ventas-diarias");
       }
+      setInitialTabResolved(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
@@ -588,6 +594,17 @@ export default function DashboardPage() {
     }
     return 0;
   }, [data, activeTab]);
+
+  // Splash a pantalla completa mientras se resuelve la sesión y la pestaña
+  // inicial - así lo primero que se ve es la animación, no el sidebar con
+  // la pestaña por defecto (Movimientos) parpadeando antes del cambio.
+  if (status !== "authenticated" || !initialTabResolved) {
+    return (
+      <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#ffffff" }}>
+        <NovbiSplash loop />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>

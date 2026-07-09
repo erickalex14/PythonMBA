@@ -25,9 +25,15 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
   const { loading, data, error, fetchReportData } = useReportQuery();
   const [selectedEmpresa, setSelectedEmpresa] = useState("");
   const [codigoSearch, setCodigoSearch] = useState("");
+  // Empieza en true desde el primer render (sin esperar al useEffect) para
+  // que el splash cubra la pantalla desde el primer frame, sin dejar ver
+  // el layout/dashboard vacío mientras el efecto todavía no dispara el fetch.
+  const [firstLoadDone, setFirstLoadDone] = useState(false);
 
   useEffect(() => {
-    fetchReportData("ventas", dateNDaysAgo(RANGE_DAYS - 1), dateNDaysAgo(0));
+    fetchReportData("ventas", dateNDaysAgo(RANGE_DAYS - 1), dateNDaysAgo(0)).finally(() => {
+      setFirstLoadDone(true);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -108,7 +114,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
       .slice(0, 6);
   }, [filteredData]);
 
-  if (loading) {
+  if (loading || !firstLoadDone) {
     return (
       <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#ffffff" }}>
         <NovbiSplash loop />
