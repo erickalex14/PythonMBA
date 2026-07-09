@@ -3,6 +3,7 @@ import { useReportQuery } from "../hooks/useReportQuery";
 import { Card } from "./ui/Card";
 import { FilterBar } from "./ui/FilterBar";
 import { getEmpresaLabel } from "../lib/empresa";
+import NovbiSplash from "./NovbiSplash";
 
 interface DailySalesDashboardProps {
   styles: Record<string, string>;
@@ -109,9 +110,8 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
 
   if (loading) {
     return (
-      <div className={styles.loaderArea}>
-        <div className={styles.spinner}></div>
-        <p>Cargando ventas de los últimos {RANGE_DAYS} días...</p>
+      <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#ffffff" }}>
+        <NovbiSplash loop />
       </div>
     );
   }
