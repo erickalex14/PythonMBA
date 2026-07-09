@@ -39,22 +39,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <line x1="3" y1="18" x2="21" y2="18" />
           </svg>
         </button>
-        <img src="/reportesmba/novbi-logo.png" alt="NovBI Logo" className={styles.logoImg} style={{ maxWidth: "90px" }} />
+        <div className={styles.novbiLogoLockup}>
+          <span className={styles.novbiLogoNov}>NOV</span>
+          <span className={styles.novbiLogoSep} />
+          <span className={styles.novbiLogoBox}><span>BI</span></span>
+        </div>
       </div>
 
       {mobileOpen && <div className={styles.sidebarBackdrop} onClick={() => setMobileOpen(false)} />}
 
       <aside className={`${styles.sidebar} ${mobileOpen ? styles.sidebarOpen : ""}`}>
         <div className={styles.logoArea}>
-          <img
-            src="/reportesmba/novbi-logo.png"
-            alt="NovBI Logo"
-            className={styles.logoImg}
-            onError={(e) => {
-              // Fallback si no carga la imagen
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
-          />
+          <div className={styles.novbiLogoLockup}>
+            <span className={styles.novbiLogoNov}>NOV</span>
+            <span className={styles.novbiLogoSep} />
+            <span className={styles.novbiLogoBox}><span>BI</span></span>
+          </div>
         </div>
 
         <nav className={styles.navMenu}>
@@ -122,10 +122,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <button
             className={`${styles.navItem} ${activeTab === "sync" ? styles.active : ""}`}
             onClick={() => selectTab("sync")}
-            style={{ borderLeft: activeTab === "sync" ? "3px solid #70b92b" : "none" }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-            <span className="flex-1" style={{ color: activeTab === "sync" ? "#70b92b" : "inherit", fontWeight: activeTab === "sync" ? "700" : "inherit" }}>Sincronizar ERP</span>
+            <span className="flex-1">Sincronizar ERP</span>
           </button>
         )}
 
