@@ -112,6 +112,8 @@ export const REPORTS_CONFIG: Record<string, ReportConfig> = {
     columns: [
       { key: "factura_final", label: "Factura", type: "bold" },
       { key: "fecha", label: "Fecha", type: "text" },
+      { key: "empresa", label: "Empresa", type: "text" },
+      { key: "sucursal", label: "Sucursal", type: "text" },
       { key: "codigo", label: "Código", type: "text" },
       { key: "producto", label: "Producto", type: "text" },
       { key: "grupo", label: "Grupo", type: "text" },

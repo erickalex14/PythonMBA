@@ -94,10 +94,12 @@ async def lifespan(app: FastAPI):
             connection.execute(text(sql_view_ats))
             logging.info("Vista relacional SQL 'view_ats_reporte' creada o actualizada.")
 
+            # DROP antes de CREATE: al cambiar columnas, CREATE OR REPLACE falla.
+            connection.execute(text("DROP VIEW IF EXISTS view_ventas_espejo_reporte CASCADE;"))
             sql_view_ventas = """
-            CREATE OR REPLACE VIEW view_ventas_espejo_reporte AS
+            CREATE VIEW view_ventas_espejo_reporte AS
             SELECT
-                regexp_replace(COALESCE(f.doc_reference, k.doc_id_corp), '\\.0$', '') AS factura_final,
+                f.numero_factura AS factura_final,
                 k.trans_date AS fecha,
                 regexp_replace(k.product_id_corp, '\\.0$', '') AS codigo,
                 UPPER(TRIM(k.product_name)) AS producto,
@@ -105,17 +107,26 @@ async def lifespan(app: FastAPI):
                 COALESCE(k.codigo_subgrupo, 'GENERAL') AS subgrupo,
                 UPPER(TRIM(k.um)) AS unidad,
                 ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer AS cantidad,
-                ROUND(k.unit_cost, 4) AS precio_venta,
-                ROUND(ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer * k.unit_cost, 4) AS subtotal,
+                ROUND((k.net_line_total + k.discount_amount) / NULLIF(ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer, 0), 4) AS precio_venta,
+                ROUND(k.net_line_total + k.discount_amount, 4) AS subtotal,
                 ROUND(k.discount_amount, 4) AS descuento_aplicado,
-                ROUND(CASE WHEN k.net_line_total > 0 THEN k.net_line_total ELSE (ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer * k.unit_cost - k.discount_amount) END, 4) AS total_linea,
+                ROUND(k.net_line_total, 4) AS total_linea,
+                f.empresa AS empresa,
+                CASE WHEN f.empresa = 'ENV01' THEN 'ENV'
+                     WHEN f.empresa = 'NVC01' THEN 'NOVICOMPU'
+                     ELSE COALESCE(f.empresa, 'OTRO') END AS empresa_nombre,
+                f.codigo_local AS sucursal,
+                (f.codigo_local IN ('026','027')) AS es_mayorista,
                 k.doc_id_corp AS doc_id_corp_kardex,
                 f.doc_id_corp AS doc_id_corp_fact,
                 k.anulada
             FROM ventas_kardex_staging k
-            LEFT JOIN ventas_facturas_staging f 
-                ON regexp_replace(k.doc_id_corp, '[^0-9]', '', 'g') = regexp_replace(f.doc_id_corp, '[^0-9]', '', 'g')
-            WHERE k.anulada = false AND (k.original_qty > 0 OR k.quantity > 0);
+            INNER JOIN ventas_facturas_staging f
+                ON k.origin_ref = f.numero_factura
+            WHERE k.origin_memo = 'CLIENTES'
+              AND k.anulada = false
+              AND f.anulada = false
+              AND (k.original_qty > 0 OR k.quantity > 0);
             """
             connection.execute(text(sql_view_ventas))
             logging.info("Vista relacional SQL 'view_ventas_espejo_reporte' creada o actualizada.")
