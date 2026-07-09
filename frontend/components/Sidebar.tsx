@@ -69,6 +69,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         <nav className={styles.navMenu}>
+        {(permissions.includes("VIEW_VENTAS") || isUserAdmin) && (
+          <button
+            className={`${styles.navItem} ${activeTab === "ventas-diarias" ? styles.active : ""}`}
+            onClick={() => selectTab("ventas-diarias")}
+            style={{ ["--item-accent" as any]: NAV_ACCENTS["ventas-diarias"] }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <span className="flex-1">Dashboard</span>
+          </button>
+        )}
+
         {permissions.includes("VIEW_MOVIMIENTOS") && (
           <button
             className={`${styles.navItem} ${activeTab === "movimientos" ? styles.active : ""}`}
@@ -99,17 +110,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
             <span className="flex-1">Reporte ATS</span>
-          </button>
-        )}
-
-        {(permissions.includes("VIEW_VENTAS") || isUserAdmin) && (
-          <button
-            className={`${styles.navItem} ${activeTab === "ventas-diarias" ? styles.active : ""}`}
-            onClick={() => selectTab("ventas-diarias")}
-            style={{ ["--item-accent" as any]: NAV_ACCENTS["ventas-diarias"] }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-            <span className="flex-1">Dashboard</span>
           </button>
         )}
 
