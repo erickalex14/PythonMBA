@@ -1555,8 +1555,18 @@
 .subFiltersRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 1.25rem;
+  gap: 1.75rem;
   align-items: flex-end;
+}
+
+.subFiltersRow .filterGroup {
+  min-width: 200px;
+  flex: 1 1 200px;
+}
+
+.subFiltersRow .filterGroup select,
+.subFiltersRow .filterGroup input {
+  width: 100%;
 }
 
 /* Estados de carga y sin datos */

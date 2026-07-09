@@ -554,10 +554,10 @@ export default function DashboardPage() {
       { label: "Estado del Documento", value: selectedStatus, onChange: setSelectedStatus, placeholder: "Todos los Estados...", options: ["ACTIVO", "ANULADO"] },
     ],
     ventas: [
+      { label: "Buscar por Código de Producto", value: codigoSearch, onChange: setCodigoSearch, placeholder: "Ej: 1AENV8395-NVC01", options: [], type: "text" },
       { label: "Filtrar por Empresa", value: selectedEmpresa, onChange: setSelectedEmpresa, placeholder: "Todas las Empresas...", options: filterOptions.empresas },
       { label: "Filtrar por Producto", value: selectedProduct, onChange: setSelectedProduct, placeholder: "Todos los Productos...", options: filterOptions.products },
       { label: "Filtrar por Grupo", value: selectedBranch, onChange: setSelectedBranch, placeholder: "Todos los Grupos...", options: filterOptions.branches },
-      { label: "Buscar por Código de Producto", value: codigoSearch, onChange: setCodigoSearch, placeholder: "Ej: 1AENV8395-NVC01", options: [], type: "text" },
     ],
   };
 
