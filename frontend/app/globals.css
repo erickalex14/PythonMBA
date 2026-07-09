@@ -56,6 +56,16 @@
 
   /* Tipografía */
   --font-sans: var(--font-inter), 'Segoe UI', Arial, sans-serif;
+
+  /* Sidebar oscuro (marca NOV|BI, igual espíritu que el login) */
+  --color-sidebar-bg: #0a0a0a;
+  --color-sidebar-text: rgba(255, 255, 255, 0.68);
+  --color-sidebar-text-strong: #ffffff;
+  --color-sidebar-text-faint: rgba(255, 255, 255, 0.4);
+  --color-sidebar-hover-bg: rgba(255, 255, 255, 0.08);
+  --color-sidebar-border: rgba(255, 255, 255, 0.12);
+  --color-sidebar-active-bg: #ffffff;
+  --color-sidebar-active-text: #0a0a0a;
 }
 
 html {

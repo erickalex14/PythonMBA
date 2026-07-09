@@ -7,11 +7,11 @@
   font-family: var(--font-sans);
 }
 
-/* Sidebar Styling (Fondo Blanco) */
+/* Sidebar Styling (Oscuro, marca NOV|BI) */
 .sidebar {
   width: 240px;
-  background-color: var(--color-surface);
-  border-right: 1px solid var(--color-border);
+  background-color: var(--color-sidebar-bg);
+  border-right: 1px solid var(--color-sidebar-border);
   display: flex;
   flex-direction: column;
   padding: 1.5rem 1.25rem;
@@ -21,6 +21,64 @@
 
 .mobileNavToggle {
   display: none;
+}
+
+@keyframes sidebarLogoBounce {
+  0% { transform: translateY(0) scale(1, 1); }
+  30% { transform: translateY(-7px) scale(1, 1); }
+  55% { transform: translateY(0) scale(1.08, 0.9); }
+  75% { transform: translateY(-2px) scale(0.98, 1.03); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+
+@keyframes navItemFadeIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.novbiLogoLockup {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.novbiLogoNov {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+  color: var(--color-sidebar-text-strong);
+  line-height: 1;
+}
+
+.novbiLogoSep {
+  width: 1.5px;
+  height: 16px;
+  background: var(--color-sidebar-text-strong);
+  opacity: 0.5;
+}
+
+.novbiLogoBox {
+  background: #ffffff;
+  padding: 2px 7px;
+  display: flex;
+  align-items: center;
+  transform-origin: center bottom;
+}
+
+.novbiLogoLockup:hover .novbiLogoBox {
+  animation: sidebarLogoBounce 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.novbiLogoBox span {
+  font-family: var(--font-sans);
+  font-weight: 300;
+  font-size: 1.05rem;
+  letter-spacing: -0.015em;
+  color: #0a0a0a;
+  line-height: 1;
 }
 
 .sidebarBackdrop {
@@ -63,8 +121,8 @@
     left: 0;
     width: 100%;
     height: 3.25rem;
-    background-color: var(--color-surface);
-    border-bottom: 1px solid var(--color-border);
+    background-color: var(--color-sidebar-bg);
+    border-bottom: 1px solid var(--color-sidebar-border);
     z-index: 1000;
     padding: 0 1rem;
     gap: 0.65rem;
@@ -76,7 +134,7 @@
     border: none;
     padding: 0.25rem;
     cursor: pointer;
-    color: var(--color-text-primary);
+    color: var(--color-sidebar-text-strong);
     display: flex;
     align-items: center;
   }
@@ -90,45 +148,17 @@
   }
 }
 
-.sidebarHeader {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 2rem;
-}
-
-.logo {
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  width: 38px;
-  height: 38px;
-  background: linear-gradient(135deg, var(--color-brand-primary) 0%, var(--color-brand-accent) 100%);
-  color: var(--color-surface);
-  font-weight: 800;
-  font-size: 1.1rem;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 93, 170, 0.2);
-}
-
-.sidebarHeader h2 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin: 0;
-  color: var(--color-text-primary);
-}
-
 .navMenu {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.3rem;
   flex-grow: 1;
 }
 
 .navItem {
   background: none;
   border: none;
-  color: var(--color-text-muted);
+  color: var(--color-sidebar-text);
   font-size: 0.9rem;
   font-weight: 500;
   padding: 0.75rem 0.875rem;
@@ -138,25 +168,38 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  transition: all 0.15s ease-in-out;
+  transition: background-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
   width: 100%;
+  animation: navItemFadeIn 0.35s ease-out both;
 }
 
 .navItem:hover {
-  background-color: var(--color-surface-subtle);
-  color: var(--color-text-primary);
+  background-color: var(--color-sidebar-hover-bg);
+  color: var(--color-sidebar-text-strong);
+  transform: translateX(2px);
 }
 
 .navItem.active {
-  background-color: var(--color-surface-tint);
-  color: var(--color-brand-primary);
+  background-color: var(--color-sidebar-active-bg);
+  color: var(--color-sidebar-active-text);
   font-weight: 600;
-  border-left: 3px solid var(--color-brand-primary);
-  padding-left: calc(0.875rem - 3px);
 }
 
+.navItem.active:hover {
+  transform: none;
+}
+
+.navMenu .navItem:nth-child(1) { animation-delay: 0.03s; }
+.navMenu .navItem:nth-child(2) { animation-delay: 0.07s; }
+.navMenu .navItem:nth-child(3) { animation-delay: 0.11s; }
+.navMenu .navItem:nth-child(4) { animation-delay: 0.15s; }
+.navMenu .navItem:nth-child(5) { animation-delay: 0.19s; }
+.navMenu .navItem:nth-child(6) { animation-delay: 0.23s; }
+.navMenu .navItem:nth-child(7) { animation-delay: 0.27s; }
+.navMenu .navItem:nth-child(8) { animation-delay: 0.31s; }
+
 .sidebarFooter {
-  border-top: 1px solid var(--color-surface-subtle);
+  border-top: 1px solid var(--color-sidebar-border);
   padding-top: 1.25rem;
   display: flex;
   flex-direction: column;
@@ -164,16 +207,16 @@
 }
 
 .userInfo {
-  background-color: var(--color-surface-faint);
+  background-color: var(--color-sidebar-hover-bg);
   padding: 0.875rem;
   border-radius: 10px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--color-sidebar-border);
 }
 
 .userName {
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--color-sidebar-text-strong);
   margin: 0 0 0.15rem 0;
   white-space: nowrap;
   overflow: hidden;
@@ -182,21 +225,21 @@
 
 .userRole {
   font-size: 0.75rem;
-  color: var(--color-brand-primary);
+  color: var(--color-sidebar-text);
   margin: 0 0 0.15rem 0;
   font-weight: 600;
 }
 
 .userCedula {
   font-size: 0.7rem;
-  color: var(--color-text-muted);
+  color: var(--color-sidebar-text-faint);
   margin: 0;
 }
 
 .logoutBtn {
   background-color: transparent;
-  border: 1px solid var(--color-danger-light);
-  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #f87171;
   font-size: 0.85rem;
   font-weight: 600;
   padding: 0.65rem;
@@ -207,8 +250,9 @@
 }
 
 .logoutBtn:hover {
-  background-color: var(--color-danger-bg);
-  border-color: #f87171;
+  background-color: rgba(239, 68, 68, 0.12);
+  border-color: #ef4444;
+  color: #fca5a5;
 }
 
 /* Área de Contenido Principal */
@@ -1464,19 +1508,6 @@
   gap: 0.5rem;
   margin-bottom: 2rem;
   padding: 0.5rem 0.25rem;
-}
-
-.logoImg {
-  max-width: 100px;
-  height: auto;
-  object-fit: contain;
-}
-
-.logoText {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  white-space: nowrap;
 }
 
 /* Secciones de reporte y acciones */
