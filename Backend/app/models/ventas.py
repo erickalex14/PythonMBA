@@ -23,8 +23,12 @@ class VentasKardexStaging(Base):
     in_out = Column(String(10), nullable=True)
     codigo_grupo = Column(String(50), nullable=True)
     codigo_subgrupo = Column(String(50), nullable=True)
-    
-    created_at = Column(DateTime, server_default=func.now())
+    # ORIGIN_MEMO = tipo de movimiento (CLIENTES = venta real, resto se excluye).
+    # ORIGIN_REF = numero de factura, cruza con ventas_facturas_staging.numero_factura.
+    origin_memo = Column(String(50), nullable=True, index=True)
+    origin_ref = Column(String(50), nullable=True, index=True)
+
+    created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=True)
 
 class VentasFacturaStaging(Base):
@@ -36,6 +40,11 @@ class VentasFacturaStaging(Base):
     doc_id_corp = Column(String(50), primary_key=True, index=True)
     doc_reference = Column(String(100), nullable=True)
     invoice_date = Column(Date, index=True, nullable=False)
-    
-    created_at = Column(DateTime, server_default=func.now())
+    # numero_factura (solo digitos) = llave de cruce con kardex.origin_ref.
+    numero_factura = Column(String(50), nullable=True, index=True)
+    empresa = Column(String(20), nullable=True, index=True)      # NVC01 = Novicompu, ENV01 = ENV
+    codigo_local = Column(String(20), nullable=True, index=True) # sucursal (026/027 = mayoristas)
+    anulada = Column(Boolean, default=False)
+
+    created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=True)

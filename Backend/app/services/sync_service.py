@@ -9,13 +9,16 @@ from app.models.liquidacion import LiquidacionPrincipalStaging, LiquidacionProdu
 from app.models.ats import AtsFacturaStaging, AtsProveedorStaging, AtsFiscalStaging
 from app.models.ventas import VentasKardexStaging, VentasFacturaStaging
 
+
+#SERVICIO PARA SINCRONIZAR TABLAS Y DATOS DESDE EL ERP HACIA LA BASE DE DATOS STAGING
 class SyncService:
     def __init__(self, repository: IMba3Repository):
         self.repository = repository
 
+    #FUNCION PRINCIPAL PARA SINCRONIZAR MOVIMIENTOS
     def sync_movimientos(self, db: Session, fecha_inicio: str, fecha_fin: str, env: Optional[str] = None) -> dict:
         logging.info(f"SyncService: Iniciando sincronización de movimientos desde {fecha_inicio} hasta {fecha_fin} (Entorno: {env})")
-        
+
         try:
             dt_inicio = datetime.datetime.strptime(fecha_inicio, "%Y-%m-%d")
             dt_fin = datetime.datetime.strptime(fecha_fin, "%Y-%m-%d")
@@ -28,7 +31,8 @@ class SyncService:
             logging.error("SyncService: No se pudo obtener el token inicial del ERP.")
             return {"status": "error", "message": "No se pudo conectar al ERP para obtener el token."}
 
-        columnas = "TRANS_DATE,PRODUCT_NAME,Codigo_producto_convertido,ORIGINAL_QTY,ORIGIN_MEMO,ORIGIN_REF,BASE_COMISION,Info_Seriales,Codigo_Sucursal,BaseImponibleReal_1,COD_SALESMAN,Codigo_Marca"
+        columnas = ("TRANS_DATE,PRODUCT_NAME,Codigo_producto_convertido,ORIGINAL_QTY,ORIGIN_MEMO,ORIGIN_REF,"
+                    "BASE_COMISION,Info_Seriales,Codigo_Sucursal,BaseImponibleReal_1,COD_SALESMAN,Codigo_Marca")
         
         dt_actual = dt_inicio
         dias_totales = (dt_fin - dt_inicio).days + 1
@@ -153,8 +157,12 @@ class SyncService:
             logging.error("SyncService: No se pudo obtener el token inicial para liquidaciones.")
             return {"status": "error", "message": "No se pudo conectar al ERP para obtener el token."}
 
-        cols_cabecera = "CORP,LIQUIDACION_FECHA,OBSERVACIONES,ANTES_TOTAL_1,ANTES_TOTAL_2,ANTES_TOTAL_3,DESPUES_TOTAL_1,DESPUES_TOTAL_2,DESPUES_TOTAL_3,LIQUIDACION_ESTADO,LIQUIDACION_ID_CORP"
-        cols_productos = "FACTURA_ID_CORP,IdRecepcionRelacionada,VALOR_TOTAL_CIF,VALOR_SUBTOTAL_CIF,VALOR_ANTES_1,VALOR_ANTES_2,VALOR_ANTES_3,VALOR_DESPUES_1,VALOR_DESPUES_2,VALOR_DESPUES_3,PARTIDA_ID_CORP,PRODUCTO_ID_CORP,LIQUIDACION_ID,CANTIDAD,PRECIO,TOTAL,VALOR_TOTAL_CIF_MANUAL,VALOR_TOTAL_CIF_UNIDAD,LIQUIDACION_ID_CORP"
+        cols_cabecera = ("CORP,LIQUIDACION_FECHA,OBSERVACIONES,ANTES_TOTAL_1,ANTES_TOTAL_2,ANTES_TOTAL_3,DESPUES_TOTAL_1,"
+                         "DESPUES_TOTAL_2,DESPUES_TOTAL_3,LIQUIDACION_ESTADO,LIQUIDACION_ID_CORP")
+
+        cols_productos = ("FACTURA_ID_CORP,IdRecepcionRelacionada,VALOR_TOTAL_CIF,VALOR_SUBTOTAL_CIF,VALOR_ANTES_1,"
+                          "VALOR_ANTES_2,VALOR_ANTES_3,VALOR_DESPUES_1,VALOR_DESPUES_2,VALOR_DESPUES_3,PARTIDA_ID_CORP,PRODUCTO_ID_CORP,"
+                          "LIQUIDACION_ID,CANTIDAD,PRECIO,TOTAL,VALOR_TOTAL_CIF_MANUAL,VALOR_TOTAL_CIF_UNIDAD,LIQUIDACION_ID_CORP")
 
         def parse_float(val):
             try:
@@ -590,9 +598,11 @@ class SyncService:
         cols_movs = (
             "DOC_ID_CORP,TRANS_DATE,PRODUCT_ID_CORP,PRODUCT_NAME,QUANTITY,ORIGINAL_QTY,"
             "UNIT_COST,DISCOUNT_AMOUNT,NET_LINE_TOTAL,UM,Anulada,IN_OUT,"
-            "\"Codigo grupo\",\"Codigo subgrupo\",Codigo_grupo,Codigo_subgrupo"
+            "\"Codigo grupo\",\"Codigo subgrupo\",Codigo_grupo,Codigo_subgrupo,"
+            "ORIGIN_MEMO,ORIGIN_REF"
         )
-        cols_facturas = "CODIGO_FACTURA,NUMERO_FACTURA,FECHA_FACTURA"
+        # EMPRESA (NVC01/ENV01) y CODIGO_LOCAL (sucursal) para segmentar; ANULADA para excluir.
+        cols_facturas = "CODIGO_FACTURA,NUMERO_FACTURA,FECHA_FACTURA,EMPRESA,CODIGO_LOCAL,ANULADA"
         
         dt_actual = dt_inicio
         dias_totales = (dt_fin - dt_inicio).days + 1
@@ -704,6 +714,12 @@ class SyncService:
                         col_in_out = mapeo_item.get("INOUT")
                         col_grupo = mapeo_item.get("CODIGOGRUPO")
                         col_subgrupo = mapeo_item.get("CODIGOSUBGRUPO")
+                        col_memo = mapeo_item.get("ORIGINMEMO")
+                        col_ref = mapeo_item.get("ORIGINREF")
+
+                        # origin_ref normalizado a solo dígitos = llave de cruce con la factura
+                        ref_raw = clean_str(item.get(col_ref)) if col_ref else ""
+                        ref_num = "".join(ch for ch in (ref_raw or "") if ch.isdigit())
 
                         mov = VentasKardexStaging(
                             doc_id_corp=clean_str(item.get(col_doc)) if col_doc else "",
@@ -719,7 +735,9 @@ class SyncService:
                             anulada=parse_bool(item.get(col_anulada)) if col_anulada else False,
                             in_out=clean_str(item.get(col_in_out)) if col_in_out else "OUT",
                             codigo_grupo=clean_str(item.get(col_grupo)) if col_grupo else "GENERAL",
-                            codigo_subgrupo=clean_str(item.get(col_subgrupo)) if col_subgrupo else "GENERAL"
+                            codigo_subgrupo=clean_str(item.get(col_subgrupo)) if col_subgrupo else "GENERAL",
+                            origin_memo=clean_str(item.get(col_memo)) if col_memo else "",
+                            origin_ref=ref_num
                         )
                         nuevos_movs.append(mov)
 
@@ -729,16 +747,32 @@ class SyncService:
 
                 # Guardar Facturas
                 nuevas_facturas = []
+                _fact_vistas = set()
                 if datos_facturas:
                     for item in datos_facturas:
                         mapeo_fact = {k.replace(" ", "").replace("_", "").upper(): k for k in item.keys()}
                         col_fid = mapeo_fact.get("CODIGOFACTURA")
                         col_fref = mapeo_fact.get("NUMEROFACTURA")
+                        col_emp = mapeo_fact.get("EMPRESA")
+                        col_local = mapeo_fact.get("CODIGOLOCAL")
+                        col_fanul = mapeo_fact.get("ANULADA")
+
+                        num_raw = clean_str(item.get(col_fref)) if col_fref else ""
+                        num_dig = "".join(ch for ch in (num_raw or "") if ch.isdigit())
+
+                        doc_id_val = clean_str(item.get(col_fid)) if col_fid else ""
+                        if not doc_id_val or doc_id_val in _fact_vistas:
+                            continue
+                        _fact_vistas.add(doc_id_val)
 
                         fact = VentasFacturaStaging(
-                            doc_id_corp=clean_str(item.get(col_fid)) if col_fid else "",
-                            doc_reference=clean_str(item.get(col_fref)) if col_fref else "",
-                            invoice_date=dt_actual.date()
+                            doc_id_corp=doc_id_val,
+                            doc_reference=num_raw,
+                            invoice_date=dt_actual.date(),
+                            numero_factura=num_dig,
+                            empresa=clean_str(item.get(col_emp)) if col_emp else "",
+                            codigo_local=clean_str(item.get(col_local)) if col_local else "",
+                            anulada=parse_bool(item.get(col_fanul)) if col_fanul else False
                         )
                         nuevas_facturas.append(fact)
 

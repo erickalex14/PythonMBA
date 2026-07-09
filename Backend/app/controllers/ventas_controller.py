@@ -23,10 +23,11 @@ def read_ventas(
     if df.empty:
         return []
         
-    # Renombrar columnas para calzar con el DTO
     df_renamed = df.rename(columns={
         "# de factura": "factura_final",
         "FECHA": "fecha",
+        "EMPRESA": "empresa",
+        "SUCURSAL": "sucursal",
         "CODIGO": "codigo",
         "PRODUCTO": "producto",
         "GRUPO": "grupo",

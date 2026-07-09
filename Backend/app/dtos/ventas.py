@@ -4,6 +4,8 @@ from typing import Optional
 class VentasDTO(BaseModel):
     factura_final: Optional[str] = Field(None, alias="factura_final", description="Número comercial de factura o código corporativo")
     fecha: Optional[str] = Field(None, description="Fecha de la transacción")
+    empresa: Optional[str] = Field(None, description="Empresa (NOVICOMPU / ENV)")
+    sucursal: Optional[str] = Field(None, description="Código de sucursal / local")
     codigo: Optional[str] = Field(None, description="Código de producto")
     producto: Optional[str] = Field(None, description="Nombre de producto")
     grupo: Optional[str] = Field(None, description="Grupo")

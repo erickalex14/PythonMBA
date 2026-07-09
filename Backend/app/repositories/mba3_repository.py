@@ -7,7 +7,6 @@ from app.config import settings
 class IMba3Repository(ABC):
     """
     Interface para el Repositorio de Datos de MBA3 ERP.
-    Sigue el principio de Inversión de Dependencias (DIP) de SOLID.
     """
     @abstractmethod
     def obtener_token(self, force_refresh: bool = False, env: Optional[str] = None) -> Optional[str]:
@@ -64,10 +63,11 @@ class Mba3Repository(IMba3Repository):
     _cached_tokens: Dict[str, str] = {}
 
     def obtener_token(self, force_refresh: bool = False, env: Optional[str] = None) -> Optional[str]:
+        #SELECCIONA CREDENCIALES DE PRODUCCION O PRUEBAS DINAMICAMENTE SEGUN SE ELIJA EN EL FRONT
         target_env = env.strip().upper() if env else settings.MBA3_ENV
         if target_env not in ["PRUEBAS", "PROD"]:
             target_env = settings.MBA3_ENV
-
+        #SE USA EL TOKEN EN CACHE PARA EL ENTORNO
         if not force_refresh and target_env in Mba3Repository._cached_tokens:
             logging.info(f"Repository: Utilizando token JWT almacenado en caché para el entorno {target_env}.")
             return Mba3Repository._cached_tokens[target_env]
@@ -100,6 +100,7 @@ class Mba3Repository(IMba3Repository):
             logging.error(f"Repository: Error en la autenticación del ERP para entorno {target_env}: {e}")
             return None
 
+    #EJECUTAR LA CONSULTA EXTERNA NECESARIA PARA EL REPORTE
     def ejecutar_consulta(self, token: str, select: str, table: str, where: Optional[str] = None, limit: Optional[int] = None, env: Optional[str] = None) -> List[Dict]:
         target_env = env.strip().upper() if env else settings.MBA3_ENV
         if target_env not in ["PRUEBAS", "PROD"]:
