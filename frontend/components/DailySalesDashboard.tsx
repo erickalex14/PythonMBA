@@ -138,19 +138,19 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
       <FilterBar
         fields={[
           {
-            label: "Filtrar por Empresa",
-            value: selectedEmpresa,
-            onChange: setSelectedEmpresa,
-            placeholder: "Todas las Empresas...",
-            options: empresaOptions,
-          },
-          {
             label: "Buscar por Código de Producto",
             value: codigoSearch,
             onChange: setCodigoSearch,
             placeholder: "Ej: 1AENV8395-NVC01",
             options: [],
             type: "text",
+          },
+          {
+            label: "Filtrar por Empresa",
+            value: selectedEmpresa,
+            onChange: setSelectedEmpresa,
+            placeholder: "Todas las Empresas...",
+            options: empresaOptions,
           },
         ]}
         styles={styles}
