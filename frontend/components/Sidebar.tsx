@@ -109,7 +109,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             style={{ ["--item-accent" as any]: NAV_ACCENTS["ventas-diarias"] }}
           >
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ flexShrink: 0 }}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-            <span className="flex-1">Ventas Diarias</span>
+            <span className="flex-1">Dashboard</span>
           </button>
         )}
 
