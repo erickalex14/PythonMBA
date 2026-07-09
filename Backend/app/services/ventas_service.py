@@ -47,9 +47,11 @@ class VentasService:
 
             try:
                 query_sql = """
-                    SELECT 
+                    SELECT
                         factura_final AS "# de factura",
                         fecha AS "FECHA",
+                        empresa_nombre AS "EMPRESA",
+                        sucursal AS "SUCURSAL",
                         codigo AS "CODIGO",
                         producto AS "PRODUCTO",
                         grupo AS "GRUPO",
@@ -60,7 +62,7 @@ class VentasService:
                         subtotal AS "SUBTOTAL (C*PV)",
                         descuento_aplicado AS "DESCUENTO APLICADO",
                         total_linea AS "TOTAL LINEA"
-                    FROM view_ventas_espejo_reporte 
+                    FROM view_ventas_espejo_reporte
                     WHERE fecha BETWEEN :inicio AND :fin
                     ORDER BY factura_final, codigo
                 """
@@ -210,6 +212,9 @@ class VentasService:
 
                         df_realtime['# de factura'] = df_filtrado['FACTURA_FINAL']
                         df_realtime['FECHA'] = df_filtrado['TRANS_DATE'].astype(str)
+                        # El path en tiempo real (hoy) aún no resuelve empresa/sucursal por factura.
+                        df_realtime['EMPRESA'] = 'N/D'
+                        df_realtime['SUCURSAL'] = 'N/D'
                         df_realtime['CODIGO'] = df_filtrado['CODIGO_INT']
                         df_realtime['PRODUCTO'] = df_filtrado['PRODUCTO_INT']
                         df_realtime['GRUPO'] = df_filtrado['GRUPO_INT'].fillna('GENERAL')

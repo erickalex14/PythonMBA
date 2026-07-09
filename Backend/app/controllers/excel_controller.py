@@ -105,10 +105,10 @@ def download_ventas(
     df = ventas_service.obtener_ventas_espejo(inicio, fin, db)
     if df.empty:
         raise HTTPException(status_code=404, detail="No hay ventas registradas para exportar en este rango.")
-    
-    excel_file = excel_service.generar_reporte_excel(df, 'Detalle Productos - Periodo')
+
+    excel_file = excel_service.generar_reporte_ventas(df, inicio, fin)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"DETALLE_VENTAS_ESPEJO_{timestamp}.xlsx"
+    filename = f"VENTAS_{inicio}_a_{fin}_{timestamp}.xlsx"
     
     return StreamingResponse(
         excel_file,
@@ -118,12 +118,15 @@ def download_ventas(
 
 
 from pydantic import BaseModel
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 class CustomExportRequest(BaseModel):
     sheet_name: str
     filename_prefix: str
     data: List[Dict[str, Any]]
+    report_type: Optional[str] = None
+    inicio: Optional[str] = None
+    fin: Optional[str] = None
 
 @router.post("/export", dependencies=[Depends(verify_api_key)])
 def export_custom_data(
@@ -135,10 +138,16 @@ def export_custom_data(
     """
     if not payload.data:
         raise HTTPException(status_code=400, detail="El conjunto de datos a exportar está vacío.")
-        
+
     df = pd.DataFrame(payload.data)
-    
-    excel_file = excel_service.generar_reporte_excel(df, payload.sheet_name)
+
+    # Ventas usa el formato corporativo estilo MBA (encabezado, resumen, totales)
+    if (payload.report_type or "").lower() == "ventas":
+        excel_file = excel_service.generar_reporte_ventas(
+            df, payload.inicio or "", payload.fin or ""
+        )
+    else:
+        excel_file = excel_service.generar_reporte_excel(df, payload.sheet_name)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{payload.filename_prefix}_{timestamp}.xlsx"
     

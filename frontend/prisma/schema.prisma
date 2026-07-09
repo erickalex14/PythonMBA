@@ -171,19 +171,29 @@ model VentasKardexStaging {
   in_out          String?  @db.VarChar(10)
   codigo_grupo    String?  @db.VarChar(50)
   codigo_subgrupo String?  @db.VarChar(50)
+  origin_memo     String?  @db.VarChar(50)
+  origin_ref      String?  @db.VarChar(50)
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
+  @@index([origin_memo])
+  @@index([origin_ref])
   @@map("ventas_kardex_staging")
 }
 
 model VentasFacturaStaging {
-  doc_id_corp   String   @id @db.VarChar(50)
-  doc_reference String?  @db.VarChar(100)
-  invoice_date  DateTime @db.Date
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  doc_id_corp    String   @id @db.VarChar(50)
+  doc_reference  String?  @db.VarChar(100)
+  invoice_date   DateTime @db.Date
+  numero_factura String?  @db.VarChar(50)
+  empresa        String?  @db.VarChar(20)
+  codigo_local   String?  @db.VarChar(20)
+  anulada        Boolean  @default(false)
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 
+  @@index([numero_factura])
+  @@index([empresa])
   @@map("ventas_facturas_staging")
 }
 
