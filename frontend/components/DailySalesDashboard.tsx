@@ -146,6 +146,186 @@ function ComparisonMiniCard({
   );
 }
 
+const DONUT_COLORS = ["#7c3aed", "#2563eb", "#16a34a", "#f59e0b", "#0d9488", "#db2777", "#0891b2", "#dc2626"];
+
+function ChartTooltip({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        background: "#0f172a",
+        color: "#ffffff",
+        padding: "0.5rem 0.7rem",
+        borderRadius: 8,
+        fontSize: "0.72rem",
+        lineHeight: 1.4,
+        whiteSpace: "nowrap",
+        pointerEvents: "none",
+        boxShadow: "0 8px 20px rgba(15, 23, 42, 0.3)",
+        zIndex: 10,
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+// Composición de un todo (marcas como % del total vendido) - un donut deja
+// ver de un vistazo qué tan concentradas están las ventas, algo que una
+// lista de barras no comunica tan bien.
+function DonutChart({
+  items,
+  formatter,
+}: {
+  items: { marca: string; monto: number; percentage: number }[];
+  formatter: (n: number) => string;
+}) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const size = 180;
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = 62;
+  const strokeWidth = 26;
+  const circumference = 2 * Math.PI * r;
+  const total = items.reduce((acc, it) => acc + it.monto, 0);
+  let cumulative = 0;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
+      <div style={{ position: "relative", width: size, height: size }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: "visible" }}>
+          <g transform={`rotate(-90 ${cx} ${cy})`}>
+            {items.map((it, i) => {
+              const segLength = (it.percentage / 100) * circumference;
+              const dashoffset = -cumulative;
+              cumulative += segLength;
+              const isHovered = hovered === i;
+              return (
+                <circle
+                  key={i}
+                  cx={cx}
+                  cy={cy}
+                  r={r}
+                  fill="none"
+                  stroke={DONUT_COLORS[i % DONUT_COLORS.length]}
+                  strokeWidth={isHovered ? strokeWidth + 5 : strokeWidth}
+                  strokeDasharray={`${segLength} ${circumference - segLength}`}
+                  strokeDashoffset={dashoffset}
+                  style={{ transition: "stroke-width 0.15s ease", cursor: "pointer" }}
+                  onMouseEnter={() => setHovered(i)}
+                  onMouseLeave={() => setHovered(null)}
+                />
+              );
+            })}
+          </g>
+        </svg>
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            pointerEvents: "none",
+          }}
+        >
+          {hovered !== null && items[hovered] ? (
+            <div style={{ background: "#0f172a", color: "#fff", padding: "0.5rem 0.7rem", borderRadius: 8, fontSize: "0.72rem", boxShadow: "0 8px 20px rgba(15,23,42,0.3)", textAlign: "center" }}>
+              <div style={{ fontWeight: 700, marginBottom: 2 }}>{items[hovered].marca}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, justifyContent: "center" }}>
+                <span style={{ width: 7, height: 7, borderRadius: "50%", background: DONUT_COLORS[hovered % DONUT_COLORS.length], display: "inline-block" }} />
+                {formatter(items[hovered].monto)}
+              </div>
+            </div>
+          ) : (
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "0.68rem", color: "var(--color-text-faint)" }}>Total</div>
+              <div style={{ fontSize: "0.9rem", fontWeight: 700, color: "var(--color-text-primary)" }}>{formatter(total)}</div>
+            </div>
+          )}
+        </div>
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem 0.9rem", justifyContent: "center" }}>
+        {items.map((it, i) => (
+          <div
+            key={i}
+            style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.72rem", color: "var(--color-text-muted)", cursor: "pointer" }}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+          >
+            <span style={{ width: 9, height: 9, borderRadius: "50%", background: DONUT_COLORS[i % DONUT_COLORS.length], display: "inline-block", flexShrink: 0 }} />
+            {it.marca}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Ranking de items (productos): las barras siguen siendo lo más claro para
+// comparar magnitudes entre muchos items, pero con hover para ver el nombre
+// completo (el texto dentro del SVG queda truncado a ~11 caracteres).
+function RankedBarChart({
+  items,
+  color,
+  formatter,
+}: {
+  items: { label: string; total: number }[];
+  color: string;
+  formatter: (n: number) => string;
+}) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const max = Math.max(...items.map((it) => it.total), 1);
+
+  return (
+    <div style={{ position: "relative", width: "100%" }}>
+      <svg viewBox="0 0 500 200" style={{ width: "100%", height: "auto", overflow: "visible" }}>
+        {items.map((p, index) => {
+          const y = index * 22 + 15;
+          const barWidth = (p.total / max) * 310;
+          const isHovered = hovered === index;
+          const opacity = isHovered ? 1 : 0.45 + (p.total / max) * 0.55;
+          return (
+            <g
+              key={index}
+              onMouseEnter={() => setHovered(index)}
+              onMouseLeave={() => setHovered(null)}
+              style={{ cursor: "pointer" }}
+            >
+              <rect x="0" y={y - 2} width="500" height="19" fill="transparent" />
+              <text x="5" y={y + 11} fill="var(--color-text-tertiary)" fontSize="9" fontWeight="600">
+                {p.label.substring(0, 11)}
+              </text>
+              <rect x="90" y={y} width="320" height="13" rx="4" fill="var(--color-surface-subtle)" />
+              <rect x="90" y={y} width={barWidth} height="13" rx="4" fill={color} fillOpacity={opacity} />
+              <text x={95 + barWidth} y={y + 11} fill="var(--color-text-tertiary)" fontSize="8.5" fontWeight="700">
+                {formatter(p.total)}
+              </text>
+            </g>
+          );
+        })}
+        {items.length === 0 && (
+          <text x="250" y="100" textAnchor="middle" fill="var(--color-text-faint)" fontSize="10">
+            Sin datos en el período
+          </text>
+        )}
+      </svg>
+      {hovered !== null && items[hovered] && (
+        <ChartTooltip
+          style={{
+            left: "5%",
+            top: `${((hovered * 22 + 15 - 4) / 200) * 100}%`,
+            transform: "translateY(-100%)",
+          }}
+        >
+          {items[hovered].label}
+        </ChartTooltip>
+      )}
+    </div>
+  );
+}
+
 export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles }) => {
   const [data, setData] = useState<any[]>(dashboardCache?.data || []);
   const [movData, setMovData] = useState<any[]>(dashboardCache?.movData || []);
@@ -153,6 +333,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
   const [atsData, setAtsData] = useState<any[]>(dashboardCache?.atsData || []);
   const [error, setError] = useState<string | null>(null);
   const [selectedEmpresa, setSelectedEmpresa] = useState("");
+  const [hoveredDay, setHoveredDay] = useState<number | null>(null);
   // Empieza en true desde el primer render (sin esperar al useEffect) para
   // que el splash cubra la pantalla desde el primer frame, sin dejar ver
   // el layout/dashboard vacío mientras el efecto todavía no dispara el fetch.
@@ -370,8 +551,6 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
   }
 
   const maxDaily = Math.max(...dailySeries.map((d) => d.total), 1);
-  const maxProduct = Math.max(...topProducts.map((p) => p.total), 1);
-  const maxProductToday = Math.max(...topProductsToday.map((p) => p.total), 1);
 
   const points = dailySeries.map((d, index) => {
     const x = dailySeries.length > 1 ? (index / (dailySeries.length - 1)) * 400 + 50 : 250;
@@ -474,112 +653,99 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
                   </text>
                 </>
               )}
+
+              {hoveredDay !== null && points[hoveredDay] && (
+                <line
+                  x1={points[hoveredDay].x}
+                  y1={points[hoveredDay].y}
+                  x2={points[hoveredDay].x}
+                  y2="170"
+                  stroke="var(--color-brand-primary)"
+                  strokeWidth="1"
+                  strokeDasharray="3 3"
+                  opacity="0.5"
+                />
+              )}
+
+              {points.map((p, i) => (
+                <circle
+                  key={`dot-${i}`}
+                  cx={p.x}
+                  cy={p.y}
+                  r={hoveredDay === i ? 6 : 3}
+                  fill={hoveredDay === i ? "var(--color-brand-primary)" : "#ffffff"}
+                  stroke="var(--color-brand-primary)"
+                  strokeWidth={hoveredDay === i ? 2.5 : 1.5}
+                  style={{ transition: "r 0.15s ease" }}
+                />
+              ))}
+
+              {points.map((p, i) => (
+                <circle
+                  key={`hit-${i}`}
+                  cx={p.x}
+                  cy={p.y}
+                  r={14}
+                  fill="transparent"
+                  style={{ cursor: "pointer" }}
+                  onMouseEnter={() => setHoveredDay(i)}
+                  onMouseLeave={() => setHoveredDay(null)}
+                />
+              ))}
             </svg>
+
+            {hoveredDay !== null && points[hoveredDay] && (
+              <ChartTooltip
+                style={{
+                  left: `${(points[hoveredDay].x / 500) * 100}%`,
+                  top: `${(points[hoveredDay].y / 200) * 100}%`,
+                  transform: "translate(-50%, -125%)",
+                }}
+              >
+                <div style={{ fontWeight: 700, marginBottom: 2 }}>{dailySeries[hoveredDay].date}</div>
+                <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--color-brand-primary)", display: "inline-block" }} />
+                  Ventas: {fmtCurrency(dailySeries[hoveredDay].total)}
+                </div>
+              </ChartTooltip>
+            )}
           </div>
         </Card>
 
         <Card variant="chartCard" styles={styles}>
           <h3>Top Productos ({RANGE_DAYS} días)</h3>
-          <div className={styles.svgContainer}>
-            <svg viewBox="0 0 500 200" className={styles.svgChart}>
-              {topProducts.map((p, index) => {
-                const y = index * 22 + 15;
-                const barWidth = (p.total / maxProduct) * 310;
-                const opacity = 0.45 + (p.total / maxProduct) * 0.55;
-                return (
-                  <g key={index}>
-                    <text x="5" y={y + 11} fill="var(--color-text-tertiary)" fontSize="9" fontWeight="600">
-                      {p.producto.substring(0, 11)}
-                    </text>
-                    <rect x="90" y={y} width="320" height="13" rx="4" fill="var(--color-surface-subtle)" />
-                    <rect x="90" y={y} width={barWidth} height="13" rx="4" fill="var(--color-brand-primary)" fillOpacity={opacity} />
-                    <text x={95 + barWidth} y={y + 11} fill="var(--color-text-tertiary)" fontSize="8.5" fontWeight="700">
-                      {fmtCurrency(p.total)}
-                    </text>
-                  </g>
-                );
-              })}
-              {topProducts.length === 0 && (
-                <text x="250" y="100" textAnchor="middle" fill="var(--color-text-faint)" fontSize="10">
-                  Sin datos en el período
-                </text>
-              )}
-            </svg>
-          </div>
+          <RankedBarChart
+            items={topProducts.map((p) => ({ label: p.producto, total: p.total }))}
+            color="var(--color-brand-primary)"
+            formatter={fmtCurrency}
+          />
         </Card>
 
         <Card variant="chartCard" styles={styles}>
           <h3>Top Productos Diario ({today})</h3>
-          <div className={styles.svgContainer}>
-            <svg viewBox="0 0 500 200" className={styles.svgChart}>
-              {topProductsToday.map((p, index) => {
-                const y = index * 22 + 15;
-                const barWidth = (p.total / maxProductToday) * 310;
-                const opacity = 0.45 + (p.total / maxProductToday) * 0.55;
-                return (
-                  <g key={index}>
-                    <text x="5" y={y + 11} fill="var(--color-text-tertiary)" fontSize="9" fontWeight="600">
-                      {p.producto.substring(0, 11)}
-                    </text>
-                    <rect x="90" y={y} width="320" height="13" rx="4" fill="var(--color-surface-subtle)" />
-                    <rect x="90" y={y} width={barWidth} height="13" rx="4" fill="var(--color-brand-accent)" fillOpacity={opacity} />
-                    <text x={95 + barWidth} y={y + 11} fill="var(--color-text-tertiary)" fontSize="8.5" fontWeight="700">
-                      {fmtCurrency(p.total)}
-                    </text>
-                  </g>
-                );
-              })}
-              {topProductsToday.length === 0 && (
-                <text x="250" y="100" textAnchor="middle" fill="var(--color-text-faint)" fontSize="10">
-                  Sin datos en el período
-                </text>
-              )}
-            </svg>
-          </div>
+          <RankedBarChart
+            items={topProductsToday.map((p) => ({ label: p.producto, total: p.total }))}
+            color="var(--color-brand-accent)"
+            formatter={fmtCurrency}
+          />
         </Card>
 
         <Card variant="chartCard" styles={styles}>
           <h3>Top Marcas (Ventas, {RANGE_DAYS} días)</h3>
-          <div className={styles.branchProgressList}>
-            {topBrands.map((b, index) => (
-              <div key={index} className={styles.branchProgressItem}>
-                <div className={styles.branchMetaInfo}>
-                  <span className={styles.branchName}>{b.marca}</span>
-                  <span className={styles.branchQty}>
-                    {fmtCurrency(b.monto)} ({b.percentage}%)
-                  </span>
-                </div>
-                <div className={styles.branchProgressBarBg}>
-                  <div className={styles.branchProgressBarFill} style={{ width: `${b.percentage}%` }}></div>
-                </div>
-              </div>
-            ))}
-            {topBrands.length === 0 && (
-              <p style={{ fontSize: "0.85rem", color: "var(--color-text-faint)" }}>Sin datos en el período</p>
-            )}
-          </div>
+          {topBrands.length > 0 ? (
+            <DonutChart items={topBrands} formatter={fmtCurrency} />
+          ) : (
+            <p style={{ fontSize: "0.85rem", color: "var(--color-text-faint)" }}>Sin datos en el período</p>
+          )}
         </Card>
 
         <Card variant="chartCard" styles={styles}>
           <h3>Top Marcas Diario ({today})</h3>
-          <div className={styles.branchProgressList}>
-            {topBrandsToday.map((b, index) => (
-              <div key={index} className={styles.branchProgressItem}>
-                <div className={styles.branchMetaInfo}>
-                  <span className={styles.branchName}>{b.marca}</span>
-                  <span className={styles.branchQty}>
-                    {fmtCurrency(b.monto)} ({b.percentage}%)
-                  </span>
-                </div>
-                <div className={styles.branchProgressBarBg}>
-                  <div className={styles.branchProgressBarFill} style={{ width: `${b.percentage}%` }}></div>
-                </div>
-              </div>
-            ))}
-            {topBrandsToday.length === 0 && (
-              <p style={{ fontSize: "0.85rem", color: "var(--color-text-faint)" }}>Sin datos en el período</p>
-            )}
-          </div>
+          {topBrandsToday.length > 0 ? (
+            <DonutChart items={topBrandsToday} formatter={fmtCurrency} />
+          ) : (
+            <p style={{ fontSize: "0.85rem", color: "var(--color-text-faint)" }}>Sin datos en el período</p>
+          )}
         </Card>
       </section>
 
