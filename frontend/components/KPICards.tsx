@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { Card } from "./ui/Card";
 
 interface KPICardsProps {
   filteredData: any[];
@@ -70,85 +71,85 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
 
   return (
     <section className={styles.kpiGrid}>
-      <div className={styles.kpiCard}>
+      <Card variant="kpiCard" styles={styles}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <h3>Registros Encontrados</h3>
-          <div style={{ background: "#eff6ff", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#005DAA" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+          <div style={{ background: "var(--color-surface-tint-blue)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-primary)" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           </div>
         </div>
         <p className={styles.kpiValue}>{kpis.totalRecords.toLocaleString()}</p>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", color: "#64748b", borderTop: "1px solid #f1f5f9", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#70b92b" strokeWidth="3"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          <span style={{ color: "#70b92b", fontWeight: "700" }}>+8.3%</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-accent)" strokeWidth="3"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          <span style={{ color: "var(--color-brand-accent)", fontWeight: "700" }}>+8.3%</span>
           <span>vs. mes anterior</span>
         </div>
-      </div>
+      </Card>
 
-      <div className={styles.kpiCard}>
+      <Card variant="kpiCard" styles={styles}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <h3>{kpis.mainMetricLabel}</h3>
-          <div style={{ background: "#f4fbef", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#70b92b" strokeWidth="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <div style={{ background: "var(--color-surface-tint-accent)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-accent)" strokeWidth="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </div>
         </div>
         <p className={styles.kpiValue}>{kpis.mainMetricValue}</p>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", color: "#64748b", borderTop: "1px solid #f1f5f9", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#70b92b" strokeWidth="3"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          <span style={{ color: "#70b92b", fontWeight: "700" }}>+12.6%</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-accent)" strokeWidth="3"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          <span style={{ color: "var(--color-brand-accent)", fontWeight: "700" }}>+12.6%</span>
           <span>vs. mes anterior</span>
         </div>
-      </div>
+      </Card>
 
-      <div className={styles.kpiCard}>
+      <Card variant="kpiCard" styles={styles}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <h3>{kpis.secondMetricLabel}</h3>
-          <div style={{ background: "#f5f3ff", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          <div style={{ background: "var(--color-surface-tint-violet)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-violet)" strokeWidth="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
           </div>
         </div>
         <p className={styles.kpiValue}>{kpis.secondMetricValue}</p>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", color: "#64748b", borderTop: "1px solid #f1f5f9", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="3"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
-          <span style={{ color: "#dc2626", fontWeight: "700" }}>-3.2%</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="3"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
+          <span style={{ color: "var(--color-danger)", fontWeight: "700" }}>-3.2%</span>
           <span>vs. mes anterior</span>
         </div>
-      </div>
+      </Card>
 
       {kpis.ventasSeg && (
         <>
-          <div className={styles.kpiCard}>
+          <Card variant="kpiCard" styles={styles}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <h3>Novicompu</h3>
-              <div style={{ background: "#eff6ff", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#005DAA" strokeWidth="2.5"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+              <div style={{ background: "var(--color-surface-tint-blue)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-primary)" strokeWidth="2.5"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
               </div>
             </div>
             <p className={styles.kpiValue}>{kpis.ventasSeg.novicompu}</p>
-            <div style={{ fontSize: "0.75rem", color: "#64748b", borderTop: "1px solid #f1f5f9", paddingTop: "0.45rem", marginTop: "0.25rem" }}>Empresa NVC01</div>
-          </div>
+            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>Empresa NVC01</div>
+          </Card>
 
-          <div className={styles.kpiCard}>
+          <Card variant="kpiCard" styles={styles}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <h3>ENV</h3>
-              <div style={{ background: "#f4fbef", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#70b92b" strokeWidth="2.5"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+              <div style={{ background: "var(--color-surface-tint-accent)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-accent)" strokeWidth="2.5"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
               </div>
             </div>
             <p className={styles.kpiValue}>{kpis.ventasSeg.env}</p>
-            <div style={{ fontSize: "0.75rem", color: "#64748b", borderTop: "1px solid #f1f5f9", paddingTop: "0.45rem", marginTop: "0.25rem" }}>Empresa ENV01</div>
-          </div>
+            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>Empresa ENV01</div>
+          </Card>
 
-          <div className={styles.kpiCard}>
+          <Card variant="kpiCard" styles={styles}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <h3>Mayoristas</h3>
-              <div style={{ background: "#fef3c7", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" strokeWidth="2.5"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              <div style={{ background: "var(--color-surface-tint-violet)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" strokeWidth="2.5"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
               </div>
             </div>
             <p className={styles.kpiValue}>{kpis.ventasSeg.mayoristas}</p>
-            <div style={{ fontSize: "0.75rem", color: "#64748b", borderTop: "1px solid #f1f5f9", paddingTop: "0.45rem", marginTop: "0.25rem" }}>Novicompu suc. 026 + 027</div>
-          </div>
+            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>Novicompu suc. 026 + 027</div>
+          </Card>
         </>
       )}
     </section>

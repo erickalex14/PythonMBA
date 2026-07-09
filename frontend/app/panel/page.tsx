@@ -11,10 +11,19 @@ import { KPICards } from "../../components/KPICards";
 import { ChartsSection } from "../../components/ChartsSection";
 import { ReportTable } from "../../components/ReportTable";
 import { SyncSection } from "../../components/SyncSection";
+import { DailySalesDashboard } from "../../components/DailySalesDashboard";
+import NovbiSplash from "../../components/NovbiSplash";
+import { Badge } from "../../components/ui/Badge";
+import { Button } from "../../components/ui/Button";
+import { Card } from "../../components/ui/Card";
+import { Pagination } from "../../components/ui/Pagination";
+import { FilterBar, FilterFieldConfig } from "../../components/ui/FilterBar";
+import { Modal } from "../../components/ui/Modal";
 import { REPORTS_CONFIG } from "../../lib/reports-config";
+import { getEmpresaLabel } from "../../lib/empresa";
 import { useReportQuery } from "../../hooks/useReportQuery";
 
-type TabType = "movimientos" | "liquidaciones" | "ats" | "ventas" | "logs" | "admin" | "sync";
+type TabType = "movimientos" | "liquidaciones" | "ats" | "ventas" | "ventas-diarias" | "logs" | "admin" | "sync";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -67,6 +76,10 @@ export default function DashboardPage() {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedCorp, setSelectedCorp] = useState("");
 
+  // Filtros específicos en la tabla para Ventas (empresa y búsqueda de código)
+  const [selectedEmpresa, setSelectedEmpresa] = useState("");
+  const [codigoSearch, setCodigoSearch] = useState("");
+
   // Estados de administración
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [adminRoles, setAdminRoles] = useState<any[]>([]);
@@ -104,6 +117,24 @@ export default function DashboardPage() {
       router.push("/auth/acceso");
     }
   }, [status, router]);
+
+  // Al iniciar sesión, aterrizar en el dashboard de Ventas Diarias si el
+  // usuario tiene permiso; si no, se queda en la pestaña por defecto.
+  // initialTabResolved evita pintar el sidebar/layout con la pestaña por
+  // defecto (Movimientos) durante el instante entre "autenticado" y que
+  // este efecto corra - sin eso se ve un flash antes del splash real.
+  const [initialTabResolved, setInitialTabResolved] = useState(false);
+  useEffect(() => {
+    if (status === "authenticated") {
+      const perms: string[] = (session?.user as any)?.permissions || [];
+      const isAdmin = session?.user?.role === "Admin";
+      if (perms.includes("VIEW_VENTAS") || isAdmin) {
+        setActiveTab("ventas-diarias");
+      }
+      setInitialTabResolved(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status]);
 
   // Cargar datos administrativos
   const fetchAdminData = async () => {
@@ -398,8 +429,8 @@ export default function DashboardPage() {
     if (activeTab === "logs" || activeTab === "admin" || activeTab === "sync") return [];
     
     return data.filter((row) => {
-      // 1. Filtro de Búsqueda Global
-      if (searchQuery.trim() !== "") {
+      // 1. Filtro de Búsqueda Global (no aplica a Ventas: tiene sus propios filtros específicos)
+      if (activeTab !== "ventas" && searchQuery.trim() !== "") {
         const match = Object.values(row).some((val) =>
           String(val).toLowerCase().includes(searchQuery.toLowerCase())
         );
@@ -426,6 +457,8 @@ export default function DashboardPage() {
       } else if (activeTab === "ventas") {
         if (selectedProduct && String(row.producto).trim() !== selectedProduct) return false;
         if (selectedBranch && String(row.grupo).trim() !== selectedBranch) return false;
+        if (selectedEmpresa && getEmpresaLabel(row.codigo) !== selectedEmpresa) return false;
+        if (codigoSearch && !String(row.codigo || "").toLowerCase().includes(codigoSearch.trim().toLowerCase())) return false;
       }
 
       return true;
@@ -434,7 +467,8 @@ export default function DashboardPage() {
     data, activeTab, searchQuery,
     selectedBrand, selectedBranch, selectedSalesman,
     selectedProduct, selectedPartida, selectedRecepcion,
-    selectedVendor, selectedClassif, selectedStatus, selectedCorp
+    selectedVendor, selectedClassif, selectedStatus, selectedCorp,
+    selectedEmpresa, codigoSearch
   ]);
 
   // Filtros de bitácora
@@ -475,6 +509,7 @@ export default function DashboardPage() {
     const recepciones = new Set<string>();
     const vendors = new Set<string>();
     const classifs = new Set<string>();
+    const empresas = new Set<string>();
 
     data.forEach((row) => {
       if (activeTab === "movimientos") {
@@ -491,6 +526,7 @@ export default function DashboardPage() {
       } else if (activeTab === "ventas") {
         if (row.producto) products.add(String(row.producto).trim());
         if (row.grupo) branches.add(String(row.grupo).trim());
+        empresas.add(getEmpresaLabel(row.codigo));
       }
     });
 
@@ -502,9 +538,34 @@ export default function DashboardPage() {
       partidas: Array.from(partidas).sort(),
       recepciones: Array.from(recepciones).sort(),
       vendors: Array.from(vendors).sort(),
-      classifs: Array.from(classifs).sort()
+      classifs: Array.from(classifs).sort(),
+      empresas: Array.from(empresas).sort()
     };
   }, [data, activeTab]);
+
+  const FILTER_FIELDS_BY_TAB: Partial<Record<TabType, FilterFieldConfig[]>> = {
+    movimientos: [
+      { label: "Filtrar por Marca", value: selectedBrand, onChange: setSelectedBrand, placeholder: "Todas las Marcas...", options: filterOptions.brands },
+      { label: "Filtrar por Sucursal", value: selectedBranch, onChange: setSelectedBranch, placeholder: "Todas las Sucursales...", options: filterOptions.branches },
+      { label: "Filtrar por Vendedor", value: selectedSalesman, onChange: setSelectedSalesman, placeholder: "Todos los Vendedores...", options: filterOptions.salesmen },
+    ],
+    liquidaciones: [
+      { label: "Filtrar por ID Producto", value: selectedProduct, onChange: setSelectedProduct, placeholder: "Todos los Productos...", options: filterOptions.products },
+      { label: "Filtrar por Partida Arancelaria", value: selectedPartida, onChange: setSelectedPartida, placeholder: "Todas las Partidas...", options: filterOptions.partidas },
+      { label: "Filtrar por Recepción Relacionada", value: selectedRecepcion, onChange: setSelectedRecepcion, placeholder: "Todas las Recepciones...", options: filterOptions.recepciones },
+    ],
+    ats: [
+      { label: "Filtrar por Proveedor", value: selectedVendor, onChange: setSelectedVendor, placeholder: "Todos los Proveedores...", options: filterOptions.vendors },
+      { label: "Filtrar por SRI Clasificación", value: selectedClassif, onChange: setSelectedClassif, placeholder: "Todas las Clasificaciones...", options: filterOptions.classifs },
+      { label: "Estado del Documento", value: selectedStatus, onChange: setSelectedStatus, placeholder: "Todos los Estados...", options: ["ACTIVO", "ANULADO"] },
+    ],
+    ventas: [
+      { label: "Buscar por Código de Producto", value: codigoSearch, onChange: setCodigoSearch, placeholder: "Ej: 1AENV8395-NVC01", options: [], type: "text" },
+      { label: "Filtrar por Empresa", value: selectedEmpresa, onChange: setSelectedEmpresa, placeholder: "Todas las Empresas...", options: filterOptions.empresas },
+      { label: "Filtrar por Producto", value: selectedProduct, onChange: setSelectedProduct, placeholder: "Todos los Productos...", options: filterOptions.products },
+      { label: "Filtrar por Grupo", value: selectedBranch, onChange: setSelectedBranch, placeholder: "Todos los Grupos...", options: filterOptions.branches },
+    ],
+  };
 
   const isUserAdmin = session?.user?.role === "Admin";
   const reportConfig = REPORTS_CONFIG[activeTab];
@@ -533,6 +594,17 @@ export default function DashboardPage() {
     }
     return 0;
   }, [data, activeTab]);
+
+  // Splash a pantalla completa mientras se resuelve la sesión y la pestaña
+  // inicial - así lo primero que se ve es la animación, no el sidebar con
+  // la pestaña por defecto (Movimientos) parpadeando antes del cambio.
+  if (status !== "authenticated" || !initialTabResolved) {
+    return (
+      <div style={{ position: "fixed", inset: 0, zIndex: 9999, background: "#ffffff" }}>
+        <NovbiSplash loop />
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -594,6 +666,7 @@ export default function DashboardPage() {
             {activeTab === "liquidaciones" && "Liquidaciones de Importaciones"}
             {activeTab === "ats" && "ATS - Facturas de Compras"}
             {activeTab === "ventas" && "Ventas (Detalle)"}
+            {activeTab === "ventas-diarias" && "Ventas Diarias"}
             {activeTab === "logs" && "Bitácora de Auditoría"}
             {activeTab === "admin" && "Panel de Administración"}
             {activeTab === "sync" && "Sincronización Transaccional"}
@@ -603,6 +676,7 @@ export default function DashboardPage() {
             {activeTab === "liquidaciones" && "Consolidado de costos CIF y detalle de productos liquidados"}
             {activeTab === "ats" && "Resumen fiscal de compras autorizadas y anulaciones"}
             {activeTab === "ventas" && "Reporte consolidado de facturación de clientes y ventas transadas"}
+            {activeTab === "ventas-diarias" && "Resumen ejecutivo de ventas: hoy, ayer y tendencia de los últimos 7 días"}
             {activeTab === "logs" && "Historial de descargas de reportes para auditoría de seguridad"}
             {activeTab === "admin" && "Gestión de seguridad, control de acceso de usuarios y configuración del entorno"}
             {activeTab === "sync" && "Sincronización manual de datos históricos y diarios del ERP MBA3 a Staging local"}
@@ -614,13 +688,18 @@ export default function DashboardPage() {
           <SyncSection styles={styles} />
         )}
 
+        {/* SECCIÓN DE VENTAS DIARIAS (DASHBOARD EJECUTIVO) */}
+        {activeTab === "ventas-diarias" && (
+          <DailySalesDashboard styles={styles} />
+        )}
+
         {/* 2. SECCIÓN DE ADMINISTRACIÓN DE USUARIOS/CONFIG */}
         {activeTab === "admin" && (
           <section className={styles.adminGrid}>
             
             {/* Card 1: Configuración de Entorno ERP con Conmutación Dual */}
             {session?.user && (session.user as any).permissions?.includes("MANAGE_CONFIG") && (
-              <div className={styles.adminCard}>
+              <Card variant="adminCard" styles={styles}>
                 <h3>Configuración de Conexión ERP MBA3</h3>
                 
                 <div className={styles.adminFormGroup}>
@@ -637,8 +716,8 @@ export default function DashboardPage() {
                   </select>
                 </div>
 
-                <div style={{ marginTop: "1.25rem", borderTop: "1px solid #f1f5f9", paddingTop: "1.25rem" }}>
-                  <h4 style={{ margin: "0 0 0.85rem 0", color: "#005daa", fontSize: "0.85rem", fontWeight: "700", textTransform: "uppercase" }}>Variables de PRUEBAS (.env)</h4>
+                <div style={{ marginTop: "1.25rem", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "1.25rem" }}>
+                  <h4 style={{ margin: "0 0 0.85rem 0", color: "var(--color-brand-primary)", fontSize: "0.85rem", fontWeight: "700", textTransform: "uppercase" }}>Variables de PRUEBAS (.env)</h4>
                   <div className={styles.adminFormGroup}>
                     <label>URL Base del Servicio Pruebas</label>
                     <input
@@ -647,7 +726,7 @@ export default function DashboardPage() {
                       onChange={(e) => setErpConfig({ ...erpConfig, base_url_test: e.target.value })}
                       placeholder="http://192.168.80.201:8020"
                       className={styles.selectFilter}
-                      style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
+                      style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)", color: "var(--color-text-primary)", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
                     />
                   </div>
                   <div className={styles.adminFormRow} style={{ display: "flex", gap: "1rem", marginTop: "0.85rem" }}>
@@ -658,7 +737,7 @@ export default function DashboardPage() {
                         value={erpConfig.codigo_servicio_test}
                         onChange={(e) => setErpConfig({ ...erpConfig, codigo_servicio_test: e.target.value })}
                         className={styles.selectFilter}
-                        style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1" }}
+                        style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)" }}
                       />
                     </div>
                     <div className={styles.adminFormGroup} style={{ flex: 1 }}>
@@ -668,14 +747,14 @@ export default function DashboardPage() {
                         value={erpConfig.password_servicio_test}
                         onChange={(e) => setErpConfig({ ...erpConfig, password_servicio_test: e.target.value })}
                         className={styles.selectFilter}
-                        style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1" }}
+                        style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)" }}
                       />
                     </div>
                   </div>
                 </div>
 
-                <div style={{ marginTop: "1.5rem", borderTop: "1px solid #f1f5f9", paddingTop: "1.25rem" }}>
-                  <h4 style={{ margin: "0 0 0.85rem 0", color: "#70b92b", fontSize: "0.85rem", fontWeight: "700", textTransform: "uppercase" }}>Variables de PRODUCCIÓN (.env)</h4>
+                <div style={{ marginTop: "1.5rem", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "1.25rem" }}>
+                  <h4 style={{ margin: "0 0 0.85rem 0", color: "var(--color-brand-accent)", fontSize: "0.85rem", fontWeight: "700", textTransform: "uppercase" }}>Variables de PRODUCCIÓN (.env)</h4>
                   <div className={styles.adminFormGroup}>
                     <label>URL Base del Servicio Producción</label>
                     <input
@@ -684,7 +763,7 @@ export default function DashboardPage() {
                       onChange={(e) => setErpConfig({ ...erpConfig, base_url_prod: e.target.value })}
                       placeholder="http://192.168.80.201:8081"
                       className={styles.selectFilter}
-                      style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
+                      style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)", color: "var(--color-text-primary)", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
                     />
                   </div>
                   <div className={styles.adminFormRow} style={{ display: "flex", gap: "1rem", marginTop: "0.85rem" }}>
@@ -695,7 +774,7 @@ export default function DashboardPage() {
                         value={erpConfig.codigo_servicio_prod}
                         onChange={(e) => setErpConfig({ ...erpConfig, codigo_servicio_prod: e.target.value })}
                         className={styles.selectFilter}
-                        style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1" }}
+                        style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)" }}
                       />
                     </div>
                     <div className={styles.adminFormGroup} style={{ flex: 1 }}>
@@ -705,34 +784,36 @@ export default function DashboardPage() {
                         value={erpConfig.password_servicio_prod}
                         onChange={(e) => setErpConfig({ ...erpConfig, password_servicio_prod: e.target.value })}
                         className={styles.selectFilter}
-                        style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1" }}
+                        style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)" }}
                       />
                     </div>
                   </div>
                 </div>
 
-                <button
+                <Button
                   onClick={handleSaveErpConfig}
                   className={styles.saveConfigBtn}
                   disabled={savingConfig}
-                  style={{ width: "100%", marginTop: "1.5rem", padding: "0.75rem", background: "#70b92b", color: "#ffffff", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer" }}
+                  loading={savingConfig}
+                  loadingText="Guardando..."
+                  style={{ width: "100%", marginTop: "1.5rem", padding: "0.75rem", background: "var(--color-brand-accent)", color: "var(--color-surface)", border: "none", borderRadius: "8px", fontWeight: "700", cursor: "pointer" }}
                 >
-                  {savingConfig ? "Guardando..." : "Guardar Configuración Persistente (.env)"}
-                </button>
-              </div>
+                  Guardar Configuración Persistente (.env)
+                </Button>
+              </Card>
             )}
 
             {/* Card 2: CRUD de Usuarios y Roles */}
             {session?.user && (session.user as any).permissions?.includes("MANAGE_CONFIG") && (
-              <div className={styles.adminCard}>
+              <Card variant="adminCard" styles={styles}>
                 <div className={styles.adminCardHeader}>
                   <h3>Gestión de Cuentas de Usuarios</h3>
-                  <button
+                  <Button
                     onClick={() => handleOpenUserModal(null)}
                     className={styles.createUserBtn}
                   >
                     + Crear Usuario
-                  </button>
+                  </Button>
                 </div>
 
                 <div className={styles.tableWrapper}>
@@ -757,23 +838,23 @@ export default function DashboardPage() {
                             <td><strong>{u.cedula}</strong></td>
                             <td>{u.name}</td>
                             <td>
-                              <span className={`${styles.roleBadge} ${u.role?.name === "Admin" ? styles.badgeAdmin : styles.badgeUser}`}>
+                              <Badge status={u.role?.name === "Admin" ? "badgeAdmin" : "badgeUser"} styles={styles}>
                                 {u.role?.name}
-                              </span>
+                              </Badge>
                             </td>
                             <td>
-                              <button
+                              <Button
                                 onClick={() => handleOpenUserModal(u)}
                                 className={`${styles.actionBtn} ${styles.btnEdit}`}
                               >
                                 Editar
-                              </button>
-                              <button
+                              </Button>
+                              <Button
                                 onClick={() => handleDeleteUser(u)}
                                 className={`${styles.actionBtn} ${styles.btnDelete}`}
                               >
                                 Eliminar
-                              </button>
+                              </Button>
                             </td>
                           </tr>
                         ))}
@@ -783,15 +864,15 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Sub-Card: CRUD de Roles y Permisos */}
-                <div style={{ marginTop: "2rem", borderTop: "1px solid #f1f5f9", paddingTop: "1.5rem" }}>
+                <div style={{ marginTop: "2rem", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "1.5rem" }}>
                   <div className={styles.adminCardHeader}>
                     <h3>Gestión de Roles del Sistema</h3>
-                    <button
+                    <Button
                       onClick={() => handleOpenRoleModal(null)}
                       className={styles.createUserBtn}
                     >
                       + Crear Rol
-                    </button>
+                    </Button>
                   </div>
                   
                   <div className={styles.tableWrapper}>
@@ -817,13 +898,13 @@ export default function DashboardPage() {
                               </div>
                             </td>
                             <td>
-                              <button
+                              <Button
                                 onClick={() => handleOpenRoleModal(role)}
                                 className={`${styles.actionBtn} ${styles.btnEdit}`}
                                 disabled={role.name === "Admin" || role.name === "Visitante"}
                               >
                                 Editar
-                              </button>
+                              </Button>
                             </td>
                           </tr>
                         ))}
@@ -831,13 +912,13 @@ export default function DashboardPage() {
                     </table>
                   </div>
                 </div>
-              </div>
+              </Card>
             )}
           </section>
         )}
 
         {/* 3. FILTROS GENERALES DE REPORTES */}
-        {activeTab !== "admin" && activeTab !== "sync" && (
+        {activeTab !== "admin" && activeTab !== "sync" && activeTab !== "ventas-diarias" && (
           <section className={styles.filtersSection}>
             <div className={styles.filtersRow}>
               <div className={styles.filterGroup}>
@@ -858,153 +939,30 @@ export default function DashboardPage() {
                   disabled={loading}
                 />
               </div>
-              <button onClick={handleQuery} className={styles.queryBtn} disabled={loading}>
-                {loading ? "Consultando..." : "Consultar Datos"}
-              </button>
+              <Button onClick={handleQuery} className={styles.queryBtn} loading={loading} loadingText="Consultando...">
+                Consultar Datos
+              </Button>
             </div>
 
-            <div className={styles.searchFilter}>
-              <div className={styles.filterGroup}>
-                <label>Búsqueda Global</label>
-                <input
-                  type="text"
-                  placeholder="Buscar en todos los campos..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
+            {activeTab !== "ventas" && (
+              <div className={styles.searchFilter}>
+                <div className={styles.filterGroup}>
+                  <label>Búsqueda Global</label>
+                  <input
+                    type="text"
+                    placeholder="Buscar en todos los campos..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </section>
         )}
 
         {/* 4. FILTROS ESPECÍFICOS POR TABLA */}
-        {data.length > 0 && !loading && activeTab !== "admin" && activeTab !== "sync" && activeTab !== "logs" && (
-          <section className={styles.subFiltersSection}>
-            <h4 style={{ margin: "0 0 0.85rem 0", color: "#005daa", fontSize: "0.80rem", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-              Filtros de Segmentación Local (Sin recargar base de datos)
-            </h4>
-            <div className={styles.subFiltersRow}>
-              
-              {activeTab === "movimientos" && (
-                <>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por Marca</label>
-                    <select value={selectedBrand} onChange={(e) => setSelectedBrand(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todas las Marcas...</option>
-                      {filterOptions.brands.map((b) => (
-                        <option key={b} value={b}>{b}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por Sucursal</label>
-                    <select value={selectedBranch} onChange={(e) => setSelectedBranch(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todas las Sucursales...</option>
-                      {filterOptions.branches.map((b) => (
-                        <option key={b} value={b}>{b}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por Vendedor</label>
-                    <select value={selectedSalesman} onChange={(e) => setSelectedSalesman(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todos los Vendedores...</option>
-                      {filterOptions.salesmen.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {activeTab === "liquidaciones" && (
-                <>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por ID Producto</label>
-                    <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todos los Productos...</option>
-                      {filterOptions.products.map((p) => (
-                        <option key={p} value={p}>{p}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por Partida Arancelaria</label>
-                    <select value={selectedPartida} onChange={(e) => setSelectedPartida(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todas las Partidas...</option>
-                      {filterOptions.partidas.map((p) => (
-                        <option key={p} value={p}>{p}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por Recepción Relacionada</label>
-                    <select value={selectedRecepcion} onChange={(e) => setSelectedRecepcion(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todas las Recepciones...</option>
-                      {filterOptions.recepciones.map((r) => (
-                        <option key={r} value={r}>{r}</option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {activeTab === "ats" && (
-                <>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por Proveedor</label>
-                    <select value={selectedVendor} onChange={(e) => setSelectedVendor(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todos los Proveedores...</option>
-                      {filterOptions.vendors.map((v) => (
-                        <option key={v} value={v}>{v}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por SRI Clasificación</label>
-                    <select value={selectedClassif} onChange={(e) => setSelectedClassif(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todas las Clasificaciones...</option>
-                      {filterOptions.classifs.map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={styles.filterGroup}>
-                    <label>Estado del Documento</label>
-                    <select value={selectedStatus} onChange={(e) => setSelectedStatus(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todos los Estados...</option>
-                      <option value="ACTIVO">ACTIVO</option>
-                      <option value="ANULADO">ANULADO</option>
-                    </select>
-                  </div>
-                </>
-              )}
-
-              {activeTab === "ventas" && (
-                <>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por Producto</label>
-                    <select value={selectedProduct} onChange={(e) => setSelectedProduct(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todos los Productos...</option>
-                      {filterOptions.products.map((p) => (
-                        <option key={p} value={p}>{p}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className={styles.filterGroup}>
-                    <label>Filtrar por Grupo</label>
-                    <select value={selectedBranch} onChange={(e) => setSelectedBranch(e.target.value)} className={styles.selectFilter}>
-                      <option value="">Todos los Grupos...</option>
-                      {filterOptions.branches.map((b) => (
-                        <option key={b} value={b}>{b}</option>
-                      ))}
-                    </select>
-                  </div>
-                </>
-              )}
-
-            </div>
-          </section>
+        {data.length > 0 && !loading && activeTab !== "admin" && activeTab !== "sync" && activeTab !== "logs" && FILTER_FIELDS_BY_TAB[activeTab] && (
+          <FilterBar fields={FILTER_FIELDS_BY_TAB[activeTab]!} styles={styles} />
         )}
 
         {/* 5. CARGADOR PROGRESIVO DE CONSULTA DIARIA */}
@@ -1037,19 +995,19 @@ export default function DashboardPage() {
         )}
 
         {/* 8. CONTENEDOR DE TABLAS E INFORMES */}
-        {activeTab !== "admin" && activeTab !== "sync" && (
+        {activeTab !== "admin" && activeTab !== "sync" && activeTab !== "ventas-diarias" && (
           <section className={styles.reportSection}>
             <div className={styles.reportHeaderActions}>
               <h3>Detalle Consolidado de Datos</h3>
               
               {!loading && activeTab !== "logs" && filteredData.length > 0 && (
                 <div style={{ display: "flex", gap: "0.50rem" }}>
-                  <button onClick={handleDownloadExcel} className={styles.downloadExcelBtn} disabled={downloading}>
-                    {downloading ? "Generando..." : "Descargar Excel"}
-                  </button>
-                  <button onClick={handlePrintPdf} className={styles.downloadPdfBtn} disabled={downloadingPdf}>
+                  <Button onClick={handleDownloadExcel} className={styles.downloadExcelBtn} loading={downloading} loadingText="Generando...">
+                    Descargar Excel
+                  </Button>
+                  <Button onClick={handlePrintPdf} className={styles.downloadPdfBtn} disabled={downloadingPdf}>
                     Imprimir Certificado (PDF)
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>
@@ -1098,9 +1056,9 @@ export default function DashboardPage() {
                         <td><strong>{log.user_name}</strong></td>
                         <td>{log.user_cedula}</td>
                         <td>
-                          <span className={`${styles.roleBadge} ${log.user_role === "Admin" ? styles.badgeAdmin : styles.badgeUser}`}>
+                          <Badge status={log.user_role === "Admin" ? "badgeAdmin" : "badgeUser"} styles={styles}>
                             {log.user_role}
-                          </span>
+                          </Badge>
                         </td>
                         <td><strong>{log.download_type}</strong></td>
                         <td>{log.query_period}</td>
@@ -1115,108 +1073,29 @@ export default function DashboardPage() {
 
             {/* CONTROLES DE PAGINACIÓN DE REPORTES */}
             {!loading && activeTab !== "logs" && filteredData.length > 0 && (
-              <div className={styles.paginationRow}>
-                <div className={styles.paginationInfo}>
-                  Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(filteredData.length, currentPage * itemsPerPage)} de {filteredData.length} registros
-                </div>
-                <div className={styles.paginationButtons}>
-                  <button
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                    className={styles.pageBtn}
-                  >
-                    &lt;&lt;
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className={styles.pageBtn}
-                  >
-                    Anterior
-                  </button>
-                  <span className={styles.pageNumber}>
-                    Pág. {currentPage} de {Math.ceil(filteredData.length / itemsPerPage) || 1}
-                  </span>
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.min(Math.ceil(filteredData.length / itemsPerPage), p + 1))}
-                    disabled={currentPage >= Math.ceil(filteredData.length / itemsPerPage)}
-                    className={styles.pageBtn}
-                    style={currentPage >= Math.ceil(filteredData.length / itemsPerPage) ? {} : { background: "#ffffff", color: "#005daa" }}
-                  >
-                    Siguiente
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(Math.ceil(filteredData.length / itemsPerPage))}
-                    disabled={currentPage >= Math.ceil(filteredData.length / itemsPerPage)}
-                    className={styles.pageBtn}
-                  >
-                    &gt;&gt;
-                  </button>
-                </div>
-                <div className={styles.itemsPerPageSelect}>
-                  <select
-                    value={itemsPerPage}
-                    onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                  >
-                    <option value={10}>10 filas</option>
-                    <option value={25}>25 filas</option>
-                    <option value={50}>50 filas</option>
-                    <option value={100}>100 filas</option>
-                  </select>
-                </div>
-              </div>
+              <Pagination
+                currentPage={currentPage}
+                totalItems={filteredData.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(n) => { setItemsPerPage(n); setCurrentPage(1); }}
+                styles={styles}
+                itemLabel="registros"
+              />
             )}
 
             {/* CONTROLES DE PAGINACIÓN DE BITÁCORA */}
             {!loading && activeTab === "logs" && filteredLogs.length > 0 && (
-              <div className={styles.paginationRow}>
-                <div className={styles.paginationInfo}>
-                  Mostrando {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(filteredLogs.length, currentPage * itemsPerPage)} de {filteredLogs.length} logs
-                </div>
-                <div className={styles.paginationButtons}>
-                  <button
-                    onClick={() => setCurrentPage(1)}
-                    disabled={currentPage === 1}
-                    className={styles.pageBtn}
-                  >
-                    &lt;&lt;
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                    className={styles.pageBtn}
-                  >
-                    Anterior
-                  </button>
-                  <span className={styles.pageNumber}>
-                    Pág. {currentPage} de {Math.ceil(filteredLogs.length / itemsPerPage) || 1}
-                  </span>
-                  <button
-                    onClick={() => setCurrentPage((p) => Math.min(Math.ceil(filteredLogs.length / itemsPerPage), p + 1))}
-                    disabled={currentPage >= Math.ceil(filteredLogs.length / itemsPerPage)}
-                    className={styles.pageBtn}
-                  >
-                    Siguiente
-                  </button>
-                  <button
-                    onClick={() => setCurrentPage(Math.ceil(filteredLogs.length / itemsPerPage))}
-                    disabled={currentPage >= Math.ceil(filteredLogs.length / itemsPerPage)}
-                    className={styles.pageBtn}
-                  >
-                    &gt;&gt;
-                  </button>
-                </div>
-                <div className={styles.itemsPerPageSelect}>
-                  <select
-                    value={itemsPerPage}
-                    onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
-                  >
-                    <option value={10}>10 logs</option>
-                    <option value={25}>25 logs</option>
-                    <option value={50}>50 logs</option>
-                  </select>
-                </div>
-              </div>
+              <Pagination
+                currentPage={currentPage}
+                totalItems={filteredLogs.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(n) => { setItemsPerPage(n); setCurrentPage(1); }}
+                styles={styles}
+                itemLabel="logs"
+                pageSizeOptions={[10, 25, 50]}
+              />
             )}
           </section>
         )}
@@ -1244,17 +1123,13 @@ export default function DashboardPage() {
       </main>
 
       {/* Modal de CRUD de Usuarios */}
-      {isUserModalOpen && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent}>
-            <div className={styles.modalHeader}>
-              <h2>{editingUser ? "Editar Usuario" : "Crear Nuevo Usuario"}</h2>
-              <button onClick={() => setIsUserModalOpen(false)} className={styles.modalClose}>
-                &times;
-              </button>
-            </div>
-            <div className={styles.modalBody}>
-              {userError && <div className={styles.modalErrorAlert}>{userError}</div>}
+      <Modal
+        isOpen={isUserModalOpen}
+        onClose={() => setIsUserModalOpen(false)}
+        title={editingUser ? "Editar Usuario" : "Crear Nuevo Usuario"}
+        styles={styles}
+      >
+        {userError && <div className={styles.modalErrorAlert}>{userError}</div>}
               
               <div className={styles.adminFormGroup}>
                 <label>Número de Cédula</label>
@@ -1264,7 +1139,7 @@ export default function DashboardPage() {
                   onChange={(e) => setUserForm({ ...userForm, cedula: e.target.value })}
                   placeholder="Ej: 1712345678"
                   className={styles.selectFilter}
-                  style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
+                  style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)", color: "var(--color-text-primary)", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
                   disabled={editingUser !== null}
                 />
               </div>
@@ -1277,7 +1152,7 @@ export default function DashboardPage() {
                   onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
                   placeholder="Ej: Juan Pérez"
                   className={styles.selectFilter}
-                  style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
+                  style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)", color: "var(--color-text-primary)", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
                 />
               </div>
 
@@ -1289,7 +1164,7 @@ export default function DashboardPage() {
                   onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
                   placeholder={editingUser ? "Dejar vacío" : "Contraseña"}
                   className={styles.selectFilter}
-                  style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
+                  style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)", color: "var(--color-text-primary)", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
                 />
               </div>
 
@@ -1309,40 +1184,35 @@ export default function DashboardPage() {
               </div>
 
               <div className={styles.modalActions}>
-                <button
+                <Button
                   type="button"
                   onClick={() => setIsUserModalOpen(false)}
                   className={styles.btnCancel}
                   disabled={submittingUser}
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={handleSubmitUser}
                   className={styles.btnConfirm}
-                  disabled={submittingUser}
+                  loading={submittingUser}
+                  loadingText="Guardando..."
                 >
-                  {submittingUser ? "Guardando..." : "Guardar Usuario"}
-                </button>
+                  Guardar Usuario
+                </Button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+      </Modal>
 
       {/* Modal de CRUD de Roles */}
-      {isRoleModalOpen && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalContent} style={{ width: "520px" }}>
-            <div className={styles.modalHeader}>
-              <h2>{editingRole ? "Editar Rol" : "Crear Nuevo Rol"}</h2>
-              <button onClick={() => setIsRoleModalOpen(false)} className={styles.modalClose}>
-                &times;
-              </button>
-            </div>
-            <div className={styles.modalBody}>
-              {roleError && <div className={styles.modalErrorAlert}>{roleError}</div>}
+      <Modal
+        isOpen={isRoleModalOpen}
+        onClose={() => setIsRoleModalOpen(false)}
+        title={editingRole ? "Editar Rol" : "Crear Nuevo Rol"}
+        styles={styles}
+        contentStyle={{ width: "520px" }}
+      >
+        {roleError && <div className={styles.modalErrorAlert}>{roleError}</div>}
               
               <div className={styles.adminFormGroup}>
                 <label>Nombre del Rol</label>
@@ -1352,7 +1222,7 @@ export default function DashboardPage() {
                   onChange={(e) => setRoleForm({ ...roleForm, name: e.target.value })}
                   placeholder="Ej: Auditor Externo"
                   className={styles.selectFilter}
-                  style={{ width: "100%", background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
+                  style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)", color: "var(--color-text-primary)", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
                   disabled={editingRole?.name === "Admin" || editingRole?.name === "Visitante"}
                 />
               </div>
@@ -1363,7 +1233,7 @@ export default function DashboardPage() {
                   {adminPermissions.map((perm) => {
                     const isChecked = roleForm.permissionIds.includes(perm.id);
                     return (
-                      <label key={perm.id} style={{ display: "flex", alignItems: "flex-start", gap: "0.65rem", cursor: "pointer", fontSize: "0.85rem", color: "#0f172a" }}>
+                      <label key={perm.id} style={{ display: "flex", alignItems: "flex-start", gap: "0.65rem", cursor: "pointer", fontSize: "0.85rem", color: "var(--color-text-primary)" }}>
                         <input
                           type="checkbox"
                           checked={isChecked}
@@ -1372,7 +1242,7 @@ export default function DashboardPage() {
                         />
                         <div>
                           <span style={{ fontWeight: "700" }}>{perm.action}</span>
-                          <p style={{ margin: "0.05rem 0 0 0", fontSize: "0.75rem", color: "#64748b" }}>{perm.description}</p>
+                          <p style={{ margin: "0.05rem 0 0 0", fontSize: "0.75rem", color: "var(--color-text-muted)" }}>{perm.description}</p>
                         </div>
                       </label>
                     );
@@ -1381,27 +1251,25 @@ export default function DashboardPage() {
               </div>
 
               <div className={styles.modalActions}>
-                <button
+                <Button
                   type="button"
                   onClick={() => setIsRoleModalOpen(false)}
                   className={styles.btnCancel}
                   disabled={submittingRole}
                 >
                   Cancelar
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
                   onClick={handleSubmitRole}
                   className={styles.btnConfirm}
-                  disabled={submittingRole}
+                  loading={submittingRole}
+                  loadingText="Guardando..."
                 >
-                  {submittingRole ? "Guardando..." : "Guardar Rol"}
-                </button>
+                  Guardar Rol
+                </Button>
               </div>
-            </div>
-          </div>
-        </div>
-      )}
+      </Modal>
     </div>
   );
 }

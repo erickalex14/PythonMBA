@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
+import { Button } from "./ui/Button";
+import { Card } from "./ui/Card";
 
 interface SyncSectionProps {
   styles: any;
@@ -137,11 +139,11 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
   };
 
   return (
-    <div className={styles.adminCard} style={{ marginTop: "1rem" }}>
-      <h3 style={{ borderBottom: "2px solid #e2e8f0", paddingBottom: "0.50rem", color: "#005DAA" }}>
+    <Card variant="adminCard" styles={styles} style={{ marginTop: "1rem" }}>
+      <h3 style={{ borderBottom: "2px solid var(--color-border)", paddingBottom: "0.50rem", color: "var(--color-brand-primary)" }}>
         Sincronización Manual del ERP
       </h3>
-      <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "0.50rem 0 1.25rem 0" }}>
+      <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", margin: "0.50rem 0 1.25rem 0" }}>
         Utiliza esta herramienta para importar datos transaccionales del ERP por días de forma controlada y segura hacia la base de datos de staging local.
       </p>
 
@@ -154,7 +156,7 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
             onChange={(e) => setSelectedEnv(e.target.value as any)}
             disabled={syncing}
             className={styles.inputField}
-            style={{ border: "1px solid #70b92b", fontWeight: "700" }}
+            style={{ border: "1px solid var(--color-brand-accent)", fontWeight: "700" }}
           >
             <option value="PROD">Producción (ERP Real)</option>
             <option value="PRUEBAS">Pruebas (Puerto 8020)</option>
@@ -186,50 +188,50 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
 
       {/* Botonera de Acción */}
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
-        <button
+        <Button
           onClick={() => handleSync("movimientos")}
           disabled={syncing}
           className={styles.submitBtn}
-          style={{ background: "#005DAA", flex: "1 1 180px" }}
+          style={{ background: "var(--color-brand-primary)", flex: "1 1 180px" }}
         >
           Sincronizar Movimientos
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => handleSync("liquidaciones")}
           disabled={syncing}
           className={styles.submitBtn}
-          style={{ background: "#7c3aed", flex: "1 1 180px" }}
+          style={{ background: "var(--color-accent-violet)", flex: "1 1 180px" }}
         >
           Sincronizar Liquidaciones
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => handleSync("ats")}
           disabled={syncing}
           className={styles.submitBtn}
-          style={{ background: "#f59e0b", flex: "1 1 180px" }}
+          style={{ background: "var(--color-warning)", flex: "1 1 180px" }}
         >
           Sincronizar ATS
-        </button>
-        <button
+        </Button>
+        <Button
           onClick={() => handleSync("ventas")}
           disabled={syncing}
           className={styles.submitBtn}
-          style={{ background: "#70b92b", flex: "1 1 180px" }}
+          style={{ background: "var(--color-brand-accent)", flex: "1 1 180px" }}
         >
           Sincronizar Ventas
-        </button>
+        </Button>
       </div>
 
       {/* Indicadores de Progreso */}
       {(syncing || logs.length > 0) && (
-        <div style={{ background: "#fafafa", border: "1px solid #e2e8f0", borderRadius: "10px", padding: "1.25rem", marginBottom: "1rem" }}>
+        <div style={{ background: "var(--color-surface-zebra)", border: "1px solid var(--color-border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1rem" }}>
           {syncing && (
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.85rem", fontWeight: "600", marginBottom: "0.45rem" }}>
-                <span style={{ color: "#334155" }}>
-                  Procesando: <strong style={{ color: "#005DAA" }}>{currentDateProcessing}</strong>
+                <span style={{ color: "var(--color-text-secondary)" }}>
+                  Procesando: <strong style={{ color: "var(--color-brand-primary)" }}>{currentDateProcessing}</strong>
                 </span>
-                <span style={{ color: "#005DAA" }}>{currentProgress}%</span>
+                <span style={{ color: "var(--color-brand-primary)" }}>{currentProgress}%</span>
               </div>
               <div className={styles.branchProgressBarBg} style={{ height: "10px", borderRadius: "5px" }}>
                 <div
@@ -238,7 +240,7 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
                 ></div>
               </div>
               {estTimeRemaining !== null && (
-                <p style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "0.45rem" }}>
+                <p style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: "0.45rem" }}>
                   Tiempo estimado restante: <strong>{estTimeRemaining} segundos</strong>
                 </p>
               )}
@@ -248,7 +250,7 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
           {/* Consola de logs */}
           <div
             style={{
-              background: "#0f172a",
+              background: "var(--color-text-primary)",
               color: "#38bdf8",
               fontFamily: "Courier New, monospace",
               padding: "1rem",
@@ -256,12 +258,12 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
               height: "220px",
               overflowY: "auto",
               fontSize: "0.80rem",
-              border: "1px solid #334155",
+              border: "1px solid var(--color-text-secondary)",
               boxShadow: "inset 0 2px 4px rgba(0,0,0,0.6)"
             }}
           >
             {logs.length === 0 ? (
-              <p style={{ color: "#64748b" }}>Esperando inicio de proceso de sincronización...</p>
+              <p style={{ color: "var(--color-text-muted)" }}>Esperando inicio de proceso de sincronización...</p>
             ) : (
               logs.map((l, index) => {
                 let color = "#38bdf8"; // cyan
@@ -279,6 +281,6 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 };
