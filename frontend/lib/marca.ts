@@ -1,72 +1,73 @@
-// Mapeo Codigo_Marca (Movimientos) -> nombre real de marca, construido a partir
-// de muestras reales de PRODUCT_NAME por cada código (no son adivinanzas).
-export const MARCA_LABELS: Record<string, string> = {
-  ENVI: "ENV",
-  ENV: "ENV",
-  XIA: "Xiaomi",
-  SAMS: "Samsung",
-  MOT: "Motorola",
-  INF: "Infinix",
-  HONOR: "Honor",
-  EPSON: "Epson",
-  HP: "HP",
-  DELL: "Dell",
-  ASUS: "Asus",
-  LENO: "Lenovo",
-  MSI: "MSI",
-  TCL: "TCL",
-  LG: "LG",
-  AOC: "AOC",
-  SONY: "Sony",
-  NOKIA: "Nokia",
-  APPL: "Apple",
-  GOOG: "Google",
-  MSOFT: "Microsoft",
-  AMAZ: "Amazon",
-  JBL: "JBL",
-  ITEL: "Itel",
-  TEC: "Tecno",
-  BLU: "BLU",
-  BLACK: "Blackview",
-  DOOG: "Doogee",
-  CHUW: "Chuwi",
-  UMI: "Umidigi",
-  IPRO: "iPro",
-  REME: "Realme",
-  ZTE: "ZTE",
-  QCY: "QCY",
-  HAVI: "Havit",
-  HAY: "Haylou",
-  AMAF: "Amazfit",
-  JED: "Jedel",
-  LIDN: "LDNIO",
-  TPLI: "TP-Link",
-  MERCU: "Mercusys",
-  EZVI: "Ezviz",
-  KING: "Kingston",
-  SAND: "SanDisk",
-  ADAT: "ADATA",
-  SGATA: "Seagate",
-  WD: "WD",
-  TOSH: "Toshiba",
-  MITS: "Mitsubishi",
-  PHILI: "Philips",
-  BRE: "Brentwood",
-  ROKU: "Roku",
-  ONN: "onn",
-  VIDV: "Vidvie",
-  WESD: "Wesdar",
-  Zitro: "Zitro",
-  MIGGO: "Miggo",
-  COBY: "Coby",
-};
+// Deriva la marca a partir del texto real del producto (Ventas: campo
+// `producto`). Se probó primero extraer la marca desde el campo `codigo`
+// (misma idea que empresa.ts), pero el código no tiene una estructura fija
+// entre productos: para "SERVICIO TECNICO" daba "RTEC", para "TENSIOMETRO
+// DIGITAL" daba "NSIOMETRO" - basura. Buscar la marca como palabra dentro
+// del nombre real del producto es más lento por fila pero no inventa datos:
+// si ninguna palabra conocida aparece, el producto simplemente no se cuenta
+// en Top Marcas en vez de quedar mal etiquetado.
+//
+// Orden: más específico primero (ej. "REDMI" antes que nada ambiguo).
+const MARCA_KEYWORDS: [string, string][] = [
+  ["XIAOMI", "Xiaomi"],
+  ["REDMI", "Xiaomi"],
+  ["SAMSUNG", "Samsung"],
+  ["MOTOROLA", "Motorola"],
+  ["INFINIX", "Infinix"],
+  ["HONOR", "Honor"],
+  ["EPSON", "Epson"],
+  ["LENOVO", "Lenovo"],
+  ["ASUS", "Asus"],
+  ["DELL", "Dell"],
+  ["ACER", "Acer"],
+  ["HAVIT", "Havit"],
+  ["LDNIO", "LDNIO"],
+  ["APPLE", "Apple"],
+  ["IPHONE", "Apple"],
+  ["AMAZON", "Amazon"],
+  ["TP-LINK", "TP-Link"],
+  ["TPLINK", "TP-Link"],
+  ["ITEL", "Itel"],
+  ["KINGSTON", "Kingston"],
+  ["JBL", "JBL"],
+  ["CANON", "Canon"],
+  ["ZITRO", "Zitro"],
+  ["NOKIA", "Nokia"],
+  ["SONY", "Sony"],
+  ["REALME", "Realme"],
+  ["BLACKVIEW", "Blackview"],
+  ["DOOGEE", "Doogee"],
+  ["CHUWI", "Chuwi"],
+  ["UMIDIGI", "Umidigi"],
+  ["MICROSOFT", "Microsoft"],
+  ["GOOGLE", "Google"],
+  ["MERCUSYS", "Mercusys"],
+  ["EZVIZ", "Ezviz"],
+  ["SANDISK", "SanDisk"],
+  ["ADATA", "ADATA"],
+  ["SEAGATE", "Seagate"],
+  ["TOSHIBA", "Toshiba"],
+  ["HAYLOU", "Haylou"],
+  ["AMAZFIT", "Amazfit"],
+  ["PHILIPS", "Philips"],
+  ["ROKU", "Roku"],
+  ["VIDVIE", "Vidvie"],
+  ["WESDAR", "Wesdar"],
+  ["QCY", "QCY"],
+  ["HP ", "HP"],
+  ["TCL", "TCL"],
+  ["MSI", "MSI"],
+  ["AOC", "AOC"],
+  ["LG ", "LG"],
+  ["BLU ", "BLU"],
+  ["ENV ", "ENV"],
+];
 
-// Códigos que en la muestra real no corresponden a una marca consistente
-// (productos completamente distintos entre sí bajo el mismo código) - se
-// excluyen de "Top Marcas" para no mostrar un dato inventado/incorrecto.
-export const MARCA_EXCLUDE = new Set(["SM", "ONE", "KIS", "SING", "CAME"]);
-
-export function getMarcaLabel(code: string): string {
-  const trimmed = code.trim();
-  return MARCA_LABELS[trimmed] || trimmed;
+export function getMarcaFromProductName(productName: string | undefined | null): string | null {
+  if (!productName) return null;
+  const upper = ` ${String(productName).toUpperCase()} `;
+  for (const [keyword, label] of MARCA_KEYWORDS) {
+    if (upper.includes(keyword)) return label;
+  }
+  return null;
 }
