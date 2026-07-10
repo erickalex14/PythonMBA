@@ -71,7 +71,7 @@
 
 .novbiLogoLockup:hover .novbiLogoBox {
   animation: sidebarLogoBounce 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  box-shadow: 0 0 14px rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 14px rgba(0, 93, 170, 0.4);
 }
 
 .novbiLogoBox span {
@@ -228,6 +228,7 @@
   padding: 0.875rem;
   border-radius: 10px;
   border: 1px solid var(--color-sidebar-border);
+  border-left: 3px solid var(--color-brand-accent);
 }
 
 .userName {
@@ -242,7 +243,7 @@
 
 .userRole {
   font-size: 0.75rem;
-  color: var(--color-sidebar-text);
+  color: var(--color-brand-accent);
   margin: 0 0 0.15rem 0;
   font-weight: 600;
 }
