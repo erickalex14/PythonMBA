@@ -219,6 +219,22 @@ export default function DashboardPage() {
     }
   };
 
+  // Click en una tarjeta del Dashboard: salta al reporte correspondiente ya
+  // filtrado igual que la tarjeta (mismo rango de fechas, y para Ventas la
+  // misma Empresa activa en el Dashboard) - nada más, por eso se limpia
+  // codigoSearch y se deja que el efecto de reseteo de filtros por pestaña
+  // limpie el resto de filtros compartidos (producto/sucursal/etc).
+  const handleDashboardNavigate = (tab: TabType, start: string, end: string, empresa: string = "") => {
+    setActiveTab(tab);
+    setStartDate(start);
+    setEndDate(end);
+    if (tab === "ventas") {
+      setSelectedEmpresa(empresa);
+      setCodigoSearch("");
+    }
+    fetchReportData(tab, start, end);
+  };
+
   useEffect(() => {
     if (status === "authenticated") {
       if (activeTab === "logs") {
@@ -690,7 +706,7 @@ export default function DashboardPage() {
 
         {/* SECCIÓN DE VENTAS DIARIAS (DASHBOARD EJECUTIVO) */}
         {activeTab === "ventas-diarias" && (
-          <DailySalesDashboard styles={styles} />
+          <DailySalesDashboard styles={styles} onNavigate={handleDashboardNavigate} />
         )}
 
         {/* 2. SECCIÓN DE ADMINISTRACIÓN DE USUARIOS/CONFIG */}

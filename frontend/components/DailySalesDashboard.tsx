@@ -7,6 +7,29 @@ import NovbiSplash from "./NovbiSplash";
 
 interface DailySalesDashboardProps {
   styles: Record<string, string>;
+  onNavigate?: (
+    tab: "ventas" | "movimientos" | "liquidaciones" | "ats",
+    startDate: string,
+    endDate: string,
+    empresa?: string
+  ) => void;
+}
+
+function ClickableCard({
+  onClick,
+  styles,
+  children,
+}: {
+  onClick: () => void;
+  styles: Record<string, string>;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className={styles.clickableCard} onClick={onClick}>
+      {children}
+      <div className={styles.clickableCardOverlay}>Ir al Reporte →</div>
+    </div>
+  );
 }
 
 function fmtCurrency(n: number): string {
@@ -234,7 +257,7 @@ function RankedBarChart({
   );
 }
 
-export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles }) => {
+export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles, onNavigate }) => {
   const [data, setData] = useState<any[]>(dashboardCache?.data || []);
   const [movData, setMovData] = useState<any[]>(dashboardCache?.movData || []);
   const [liqData, setLiqData] = useState<any[]>(dashboardCache?.liqData || []);
@@ -531,38 +554,51 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
       </p>
 
       <section className={styles.kpiGrid}>
-        <Card variant="kpiCard" styles={styles}>
-          <h3>Ventas Hoy</h3>
-          <p className={styles.kpiValue}>{fmtCurrency(totalToday)}</p>
-          <span style={{ fontSize: "0.75rem", color: "var(--color-text-faint)" }}>
-            {pctChange !== null ? (
-              <span style={{ color: pctChange >= 0 ? "var(--color-success-dark)" : "var(--color-danger)", fontWeight: 700 }}>
-                {pctChange >= 0 ? "+" : ""}
-                {pctChange.toFixed(1)}%
-              </span>
-            ) : (
-              "Sin datos de ayer"
-            )}{" "}
-            vs. ayer
-          </span>
-        </Card>
+        <ClickableCard styles={styles} onClick={() => onNavigate?.("ventas", today, today, selectedEmpresa)}>
+          <Card variant="kpiCard" styles={styles}>
+            <h3>Ventas Hoy</h3>
+            <p className={styles.kpiValue}>{fmtCurrency(totalToday)}</p>
+            <span style={{ fontSize: "0.75rem", color: "var(--color-text-faint)" }}>
+              {pctChange !== null ? (
+                <span style={{ color: pctChange >= 0 ? "var(--color-success-dark)" : "var(--color-danger)", fontWeight: 700 }}>
+                  {pctChange >= 0 ? "+" : ""}
+                  {pctChange.toFixed(1)}%
+                </span>
+              ) : (
+                "Sin datos de ayer"
+              )}{" "}
+              vs. ayer
+            </span>
+          </Card>
+        </ClickableCard>
 
-        <Card variant="kpiCard" styles={styles}>
-          <h3>Ventas Ayer</h3>
-          <p className={styles.kpiValue}>{fmtCurrency(totalYesterday)}</p>
-          <span style={{ fontSize: "0.75rem", color: "var(--color-text-faint)" }}>{yesterday}</span>
-        </Card>
+        <ClickableCard styles={styles} onClick={() => onNavigate?.("ventas", yesterday, yesterday, selectedEmpresa)}>
+          <Card variant="kpiCard" styles={styles}>
+            <h3>Ventas Ayer</h3>
+            <p className={styles.kpiValue}>{fmtCurrency(totalYesterday)}</p>
+            <span style={{ fontSize: "0.75rem", color: "var(--color-text-faint)" }}>{yesterday}</span>
+          </Card>
+        </ClickableCard>
 
-        <Card variant="kpiCard" styles={styles} className={styles.kpiCardHighlight}>
-          <h3>Total Últimos {RANGE_DAYS} Días</h3>
-          <p className={styles.kpiValue}>{fmtCurrency(total30d)}</p>
-          <span style={{ fontSize: "0.75rem" }}>
-            Promedio diario: {fmtCurrency(avgDaily)}
-          </span>
-        </Card>
+        <ClickableCard
+          styles={styles}
+          onClick={() => onNavigate?.("ventas", daysBefore(latestVentasDate, RANGE_DAYS - 1), today, selectedEmpresa)}
+        >
+          <Card variant="kpiCard" styles={styles} className={styles.kpiCardHighlight}>
+            <h3>Total Últimos {RANGE_DAYS} Días</h3>
+            <p className={styles.kpiValue}>{fmtCurrency(total30d)}</p>
+            <span style={{ fontSize: "0.75rem" }}>
+              Promedio diario: {fmtCurrency(avgDaily)}
+            </span>
+          </Card>
+        </ClickableCard>
       </section>
 
       <section className={styles.chartsGrid}>
+        <ClickableCard
+          styles={styles}
+          onClick={() => onNavigate?.("ventas", daysBefore(latestVentasDate, RANGE_DAYS - 1), today, selectedEmpresa)}
+        >
         <Card variant="chartCard" styles={styles}>
           <h3>Tendencia Diaria de Ventas ({RANGE_DAYS} días)</h3>
           <div className={styles.svgContainer}>
@@ -641,102 +677,133 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
             )}
           </div>
         </Card>
+        </ClickableCard>
 
-        <Card variant="chartCard" styles={styles}>
-          <h3>Top Productos ({RANGE_DAYS} días)</h3>
-          <RankedBarChart
-            items={topProducts.map((p) => ({ label: p.producto, total: p.total }))}
-            color="var(--color-chart-accent)"
-            formatter={fmtCurrency}
-          />
-        </Card>
+        <ClickableCard
+          styles={styles}
+          onClick={() => onNavigate?.("ventas", daysBefore(latestVentasDate, RANGE_DAYS - 1), today, selectedEmpresa)}
+        >
+          <Card variant="chartCard" styles={styles}>
+            <h3>Top Productos ({RANGE_DAYS} días)</h3>
+            <RankedBarChart
+              items={topProducts.map((p) => ({ label: p.producto, total: p.total }))}
+              color="var(--color-chart-accent)"
+              formatter={fmtCurrency}
+            />
+          </Card>
+        </ClickableCard>
 
-        <Card variant="chartCard" styles={styles}>
-          <h3>Top Productos Diario ({today})</h3>
-          <RankedBarChart
-            items={topProductsToday.map((p) => ({ label: p.producto, total: p.total }))}
-            color="var(--color-chart-accent)"
-            formatter={fmtCurrency}
-          />
-        </Card>
+        <ClickableCard styles={styles} onClick={() => onNavigate?.("ventas", today, today, selectedEmpresa)}>
+          <Card variant="chartCard" styles={styles}>
+            <h3>Top Productos Diario ({today})</h3>
+            <RankedBarChart
+              items={topProductsToday.map((p) => ({ label: p.producto, total: p.total }))}
+              color="var(--color-chart-accent)"
+              formatter={fmtCurrency}
+            />
+          </Card>
+        </ClickableCard>
 
       </section>
 
       <section className={styles.chartsGridTwo}>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Top Marcas (Ventas, {RANGE_DAYS} días)</h3>
-          <RankedBarChart
-            items={topBrands.map((b) => ({ label: b.marca, total: b.monto }))}
-            color="var(--color-chart-accent)"
-            formatter={fmtCurrency}
-          />
-        </Card>
+        <ClickableCard
+          styles={styles}
+          onClick={() => onNavigate?.("ventas", daysBefore(latestVentasDate, RANGE_DAYS - 1), today, selectedEmpresa)}
+        >
+          <Card variant="chartCard" styles={styles}>
+            <h3>Top Marcas (Ventas, {RANGE_DAYS} días)</h3>
+            <RankedBarChart
+              items={topBrands.map((b) => ({ label: b.marca, total: b.monto }))}
+              color="var(--color-chart-accent)"
+              formatter={fmtCurrency}
+            />
+          </Card>
+        </ClickableCard>
 
-        <Card variant="chartCard" styles={styles}>
-          <h3>Top Marcas Diario ({today})</h3>
-          <RankedBarChart
-            items={topBrandsToday.map((b) => ({ label: b.marca, total: b.monto }))}
-            color="var(--color-chart-accent)"
-            formatter={fmtCurrency}
-          />
-        </Card>
+        <ClickableCard styles={styles} onClick={() => onNavigate?.("ventas", today, today, selectedEmpresa)}>
+          <Card variant="chartCard" styles={styles}>
+            <h3>Top Marcas Diario ({today})</h3>
+            <RankedBarChart
+              items={topBrandsToday.map((b) => ({ label: b.marca, total: b.monto }))}
+              color="var(--color-chart-accent)"
+              formatter={fmtCurrency}
+            />
+          </Card>
+        </ClickableCard>
       </section>
 
       <h2 style={{ fontSize: "1.05rem", fontWeight: 700, margin: "2rem 0 1rem", color: "var(--color-text-primary)" }}>
         Indicadores Ejecutivos
       </h2>
       <section className={styles.chartsGridTwo}>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Ventas por Empresa ({RANGE_DAYS} días)</h3>
-          <RankedBarChart
-            items={empresaSplit}
-            color="var(--color-chart-accent)"
-            formatter={fmtCurrency}
-          />
-        </Card>
-
-        <ComparisonMiniCard
-          title="Ticket Promedio de Venta"
-          currentLabel="Últimos 7 días"
-          previousLabel="7 días anteriores"
-          currentValue={avgTicketCurrent}
-          previousValue={avgTicketPrevious}
-          formatter={fmtCurrency}
+        <ClickableCard
           styles={styles}
-        />
+          onClick={() => onNavigate?.("ventas", daysBefore(latestVentasDate, RANGE_DAYS - 1), today, "")}
+        >
+          <Card variant="chartCard" styles={styles}>
+            <h3>Ventas por Empresa ({RANGE_DAYS} días)</h3>
+            <RankedBarChart
+              items={empresaSplit}
+              color="var(--color-chart-accent)"
+              formatter={fmtCurrency}
+            />
+          </Card>
+        </ClickableCard>
+
+        <ClickableCard
+          styles={styles}
+          onClick={() => onNavigate?.("ventas", daysBefore(latestVentasDate, RANGE_DAYS - 1), today, selectedEmpresa)}
+        >
+          <ComparisonMiniCard
+            title="Ticket Promedio de Venta"
+            currentLabel="Últimos 7 días"
+            previousLabel="7 días anteriores"
+            currentValue={avgTicketCurrent}
+            previousValue={avgTicketPrevious}
+            formatter={fmtCurrency}
+            styles={styles}
+          />
+        </ClickableCard>
       </section>
 
       <h2 style={{ fontSize: "1.05rem", fontWeight: 700, margin: "2rem 0 1rem", color: "var(--color-text-primary)" }}>
         Comparativa entre Módulos
       </h2>
       <section className={styles.chartsGrid}>
-        <ComparisonMiniCard
-          title="Movimientos de Inventario"
-          currentLabel="Esta semana"
-          previousLabel="Semana anterior"
-          currentValue={movThisWeek}
-          previousValue={movLastWeek}
-          formatter={fmtNumber}
-          styles={styles}
-        />
-        <ComparisonMiniCard
-          title="Liquidaciones (Monto CIF)"
-          currentLabel="Últimos 30 días"
-          previousLabel="30 días anteriores"
-          currentValue={liqLast30d}
-          previousValue={liqPrev30d}
-          formatter={fmtCurrency}
-          styles={styles}
-        />
-        <ComparisonMiniCard
-          title="ATS Compras (Facturado)"
-          currentLabel="Últimos 30 días"
-          previousLabel="30 días anteriores"
-          currentValue={atsLast30d}
-          previousValue={atsPrev30d}
-          formatter={fmtCurrency}
-          styles={styles}
-        />
+        <ClickableCard styles={styles} onClick={() => onNavigate?.("movimientos", movWeekSplit, dateNDaysAgo(0))}>
+          <ComparisonMiniCard
+            title="Movimientos de Inventario"
+            currentLabel="Esta semana"
+            previousLabel="Semana anterior"
+            currentValue={movThisWeek}
+            previousValue={movLastWeek}
+            formatter={fmtNumber}
+            styles={styles}
+          />
+        </ClickableCard>
+        <ClickableCard styles={styles} onClick={() => onNavigate?.("liquidaciones", periodSplit, dateNDaysAgo(0))}>
+          <ComparisonMiniCard
+            title="Liquidaciones (Monto CIF)"
+            currentLabel="Últimos 30 días"
+            previousLabel="30 días anteriores"
+            currentValue={liqLast30d}
+            previousValue={liqPrev30d}
+            formatter={fmtCurrency}
+            styles={styles}
+          />
+        </ClickableCard>
+        <ClickableCard styles={styles} onClick={() => onNavigate?.("ats", periodSplit, dateNDaysAgo(0))}>
+          <ComparisonMiniCard
+            title="ATS Compras (Facturado)"
+            currentLabel="Últimos 30 días"
+            previousLabel="30 días anteriores"
+            currentValue={atsLast30d}
+            previousValue={atsPrev30d}
+            formatter={fmtCurrency}
+            styles={styles}
+          />
+        </ClickableCard>
       </section>
     </div>
   );
