@@ -552,8 +552,16 @@
   margin-bottom: 1.5rem;
 }
 
+.chartsGridTwo {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
 @media (max-width: 1200px) {
-  .chartsGrid {
+  .chartsGrid,
+  .chartsGridTwo {
     grid-template-columns: 1fr;
   }
 }
