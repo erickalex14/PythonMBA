@@ -92,26 +92,20 @@ const RANGE_DAYS = 7;
 const MOV_RANGE_DAYS = 14;
 const PERIOD_RANGE_DAYS = 60; // ventana de Liquidaciones/ATS (necesitan 60d para comparar 30 vs 30)
 const FAST_RANGE_DAYS = 14;
-const VENTAS_FALLBACK_DAYS = 45; // suficiente margen sobre el atraso de sync conocido, sin pedir todo el historial
-const VENTAS_WIDE_FALLBACK_DAYS = 400; // último recurso si el atraso de sync supera incluso el fallback normal
+const VENTAS_GENESIS_DATE = "2020-01-01"; // fecha de origen fija, previa a cualquier dato real posible
 
 // Ventas viene de una tabla de staging sincronizada manualmente, no en vivo.
 // En producción con sync regular, los últimos FAST_RANGE_DAYS ya alcanzan
 // para encontrar "hoy" real - se pide esa ventana chica primero (rápido). Si
-// la sincronización está atrasada (pocos días con datos en esa ventana, como
-// pasa en este entorno de pruebas), se amplía recién ahí, en vez de pedir
-// siempre la ventana grande "por si acaso". Si incluso esa ventana ampliada
-// sigue vacía (atraso todavía mayor), se amplía una vez más antes de rendirse.
+// la sincronización está atrasada, no tiene sentido adivinar el tamaño del
+// atraso con ventanas cada vez más grandes: se pide directamente desde una
+// fecha de origen fija hasta hoy, así siempre se encuentra el último día
+// real con registros sin importar cuánto atraso tenga el sync.
 async function fetchVentasAdaptive(): Promise<any[]> {
   const fastRows = await fetchRange("ventas", dateNDaysAgo(FAST_RANGE_DAYS - 1), dateNDaysAgo(0));
   const populatedDays = new Set(fastRows.map((r: any) => r.fecha || r.FECHA)).size;
   if (populatedDays >= 5) return fastRows;
-
-  const fallbackRows = await fetchRange("ventas", dateNDaysAgo(VENTAS_FALLBACK_DAYS - 1), dateNDaysAgo(0));
-  const fallbackPopulatedDays = new Set(fallbackRows.map((r: any) => r.fecha || r.FECHA)).size;
-  if (fallbackPopulatedDays >= 5) return fallbackRows;
-
-  return fetchRange("ventas", dateNDaysAgo(VENTAS_WIDE_FALLBACK_DAYS - 1), dateNDaysAgo(0));
+  return fetchRange("ventas", VENTAS_GENESIS_DATE, dateNDaysAgo(0));
 }
 
 function deltaPct(current: number, previous: number): number | null {
