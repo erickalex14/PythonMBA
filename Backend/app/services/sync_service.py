@@ -722,10 +722,11 @@ class SyncService:
                             codigos_cliente_hoy.add(val)
                     if codigos_cliente_hoy:
                         try:
-                            lista_in = ",".join(f"'{c}'" for c in codigos_cliente_hoy)
+                            # Esta API (4D ORDA) no soporta "IN (...)"; solo comparaciones OR encadenadas.
+                            clausula_or = " OR ".join(f"CODIGO_CLIENTE = '{c}'" for c in codigos_cliente_hoy)
                             datos_clientes = self.repository.ejecutar_consulta(
                                 token=token_actual, select="CODIGO_CLIENTE,NOMBRE_CLIENTE", table="CLNT_Ficha_Principal",
-                                where=f"CODIGO_CLIENTE IN ({lista_in})", env=env
+                                where=clausula_or, env=env
                             )
                             for c in (datos_clientes or []):
                                 mapeo_c = {k.replace(" ", "").replace("_", "").upper(): k for k in c.keys()}
