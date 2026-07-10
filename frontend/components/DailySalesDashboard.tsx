@@ -184,10 +184,11 @@ function RankedBarChart({
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
   const max = Math.max(...items.map((it) => it.total), 1);
+  const chartHeight = Math.max(200, items.length * 22 + 20);
 
   return (
     <div style={{ position: "relative", width: "100%" }}>
-      <svg viewBox="0 0 500 200" style={{ width: "100%", height: "auto", overflow: "visible" }}>
+      <svg viewBox={`0 0 500 ${chartHeight}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
         {items.map((p, index) => {
           const y = index * 22 + 15;
           const barWidth = (p.total / max) * 310;
@@ -222,7 +223,7 @@ function RankedBarChart({
         <ChartTooltip
           style={{
             left: "5%",
-            top: `${((hovered * 22 + 15 - 4) / 200) * 100}%`,
+            top: `${((hovered * 22 + 15 - 4) / chartHeight) * 100}%`,
             transform: "translateY(-100%)",
           }}
         >
