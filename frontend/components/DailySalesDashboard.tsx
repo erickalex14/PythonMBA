@@ -615,6 +615,9 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
           />
         </Card>
 
+      </section>
+
+      <section className={styles.chartsGridTwo}>
         <Card variant="chartCard" styles={styles}>
           <h3>Top Marcas (Ventas, {RANGE_DAYS} días)</h3>
           <RankedBarChart
