@@ -420,6 +420,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
 
   const today = latestVentasDate;
   const yesterday = daysBefore(latestVentasDate, 1);
+  const isLatestRealToday = latestVentasDate === dateNDaysAgo(0);
   const totalToday = totalsByDay[today] || 0;
   const totalYesterday = totalsByDay[yesterday] || 0;
   const pctChange = totalYesterday > 0 ? ((totalToday - totalYesterday) / totalYesterday) * 100 : null;
@@ -567,9 +568,10 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
       <section className={styles.kpiGrid}>
         <ClickableCard styles={styles} onClick={() => onNavigate?.("ventas", today, today, selectedEmpresa)}>
           <Card variant="kpiCard" styles={styles}>
-            <h3>Ventas Hoy</h3>
+            <h3>{isLatestRealToday ? "Ventas Hoy" : "Ventas Último Registro"}</h3>
             <p className={styles.kpiValue}>{fmtCurrency(totalToday)}</p>
             <span style={{ fontSize: "0.75rem", color: "var(--color-text-faint)" }}>
+              {!isLatestRealToday && <>{today} · </>}
               {pctChange !== null ? (
                 <span style={{ color: pctChange >= 0 ? "var(--color-success-dark)" : "var(--color-danger)", fontWeight: 700 }}>
                   {pctChange >= 0 ? "+" : ""}
