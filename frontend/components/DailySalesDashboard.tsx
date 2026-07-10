@@ -329,6 +329,50 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
     });
   }, [filteredData, latestVentasDate]);
 
+  // Ventas por Empresa: a proposito NO respeta el filtro de Empresa (usa
+  // `data` en vez de `filteredData`) - si se filtrara por empresa este
+  // grafico siempre mostraria 100%/0%, perdiendo su sentido.
+  const empresaSplit = useMemo(() => {
+    const windowStart = daysBefore(latestVentasDate, RANGE_DAYS - 1);
+    const map: Record<string, number> = {};
+    data.forEach((row: any) => {
+      const date = String(row.fecha || row.FECHA || "");
+      if (date < windowStart || date > latestVentasDate) return;
+      const label = getEmpresaLabel(row.codigo);
+      const val = Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0;
+      map[label] = (map[label] || 0) + val;
+    });
+    return Object.entries(map)
+      .map(([label, total]) => ({ label, total }))
+      .sort((a, b) => b.total - a.total);
+  }, [data, latestVentasDate]);
+
+  // Ticket promedio = monto total / número de facturas únicas. Se compara
+  // contra el período de 7 días anterior (ya viene en filteredData: el
+  // fetch trae al menos 14 días incluso en el camino rápido).
+  const previousPeriodData = useMemo(() => {
+    const windowEnd = daysBefore(latestVentasDate, RANGE_DAYS);
+    const windowStart = daysBefore(latestVentasDate, RANGE_DAYS * 2 - 1);
+    return filteredData.filter((row: any) => {
+      const date = String(row.fecha || row.FECHA || "");
+      return date >= windowStart && date <= windowEnd;
+    });
+  }, [filteredData, latestVentasDate]);
+
+  const avgTicket = (rows: any[]): number => {
+    const facturas = new Set<string>();
+    let total = 0;
+    rows.forEach((row: any) => {
+      total += Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0;
+      const f = row.factura_final || row.FACTURA_FINAL;
+      if (f) facturas.add(String(f));
+    });
+    return facturas.size > 0 ? total / facturas.size : 0;
+  };
+
+  const avgTicketCurrent = useMemo(() => avgTicket(recentData), [recentData]);
+  const avgTicketPrevious = useMemo(() => avgTicket(previousPeriodData), [previousPeriodData]);
+
   const totalsByDay = useMemo(() => {
     const map: Record<string, number> = {};
     recentData.forEach((row: any) => {
@@ -636,6 +680,30 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
             formatter={fmtCurrency}
           />
         </Card>
+      </section>
+
+      <h2 style={{ fontSize: "1.05rem", fontWeight: 700, margin: "2rem 0 1rem", color: "var(--color-text-primary)" }}>
+        Indicadores Ejecutivos
+      </h2>
+      <section className={styles.chartsGridTwo}>
+        <Card variant="chartCard" styles={styles}>
+          <h3>Ventas por Empresa ({RANGE_DAYS} días)</h3>
+          <RankedBarChart
+            items={empresaSplit}
+            color="var(--color-chart-accent)"
+            formatter={fmtCurrency}
+          />
+        </Card>
+
+        <ComparisonMiniCard
+          title="Ticket Promedio de Venta"
+          currentLabel="Últimos 7 días"
+          previousLabel="7 días anteriores"
+          currentValue={avgTicketCurrent}
+          previousValue={avgTicketPrevious}
+          formatter={fmtCurrency}
+          styles={styles}
+        />
       </section>
 
       <h2 style={{ fontSize: "1.05rem", fontWeight: 700, margin: "2rem 0 1rem", color: "var(--color-text-primary)" }}>
