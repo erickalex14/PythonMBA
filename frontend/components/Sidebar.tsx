@@ -161,7 +161,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className={styles.sidebarFooter}>
         <div className={styles.userInfo}>
           <p className={styles.userName}>{session?.user?.name}</p>
-          <p className={styles.userRole}>{session?.user?.role}</p>
+          <p className={styles.userRole}>Rol: {session?.user?.role}</p>
           <p className={styles.userCedula}>Cédula: {(session?.user as any)?.cedula}</p>
         </div>
         <button onClick={() => signOut()} className={styles.logoutBtn}>
