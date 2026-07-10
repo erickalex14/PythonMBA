@@ -646,7 +646,17 @@ class SyncService:
         while dt_actual <= dt_fin:
             fecha_str = dt_actual.strftime('%Y-%m-%d')
             logging.info(f"SyncService [Ventas]: Procesando día {dia_contador}/{dias_totales} (Fecha: {fecha_str})")
-            
+
+            # El JWT del ERP expira a los 45 min. En rangos largos (meses) se refresca
+            # proactivamente cada 20 dias: sin esto, al expirar el token el ERP responde
+            # 401, ejecutar_consulta lo devuelve como [] (dia sin datos) y el DELETE de
+            # abajo borra datos buenos sin re-insertar.
+            if dia_contador > 1 and dia_contador % 20 == 0:
+                nuevo_token = self.repository.obtener_token(force_refresh=True, env=env)
+                if nuevo_token:
+                    token_actual = nuevo_token
+                    logging.info(f"SyncService [Ventas]: Token refrescado proactivamente en dia {dia_contador}.")
+
             # 1. Consultar Kardex de Inventario
             condicion_where = f"TRANS_DATE = '{fecha_str}'"
             datos_movs = None

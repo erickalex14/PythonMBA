@@ -173,11 +173,18 @@ model VentasKardexStaging {
   codigo_subgrupo String?  @db.VarChar(50)
   origin_memo     String?  @db.VarChar(50)
   origin_ref      String?  @db.VarChar(50)
+  trans_cost      Decimal  @default(0) @db.Decimal(18, 4)
+  war_code        String?  @db.VarChar(20)
+  bodega_nombre   String?  @db.VarChar(100)
+  codigo_cliente  String?  @db.VarChar(20)
+  nombre_cliente  String?  @db.VarChar(150)
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 
   @@index([origin_memo])
   @@index([origin_ref])
+  @@index([war_code])
+  @@index([codigo_cliente])
   @@map("ventas_kardex_staging")
 }
 
