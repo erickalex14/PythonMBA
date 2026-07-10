@@ -79,14 +79,21 @@ async function fetchRange(reportId: string, start: string, end: string): Promise
 
 // Cache en memoria a nivel de módulo (no React state): el componente se
 // desmonta/remonta cada vez que se cambia de pestaña, pero el módulo JS
-// sigue cargado mientras dure la sesión. Se limpia solo con un reload
-// completo de la página, que es lo que ocurre al cerrar sesión.
+// sigue cargado mientras dure la sesión. Tiene un TTL corto: Ventas es una
+// tabla de staging que en este entorno de pruebas sigue recibiendo filas en
+// tiempo real, así que un cache sin vencimiento se queda pegado a un
+// snapshot cada vez más viejo (el fallback anclaba en enero cuando ya había
+// datos de abril). Pasado el TTL se vuelve a pedir todo una vez, no en cada
+// cambio de pestaña.
 let dashboardCache: {
   data: any[];
   movData: any[];
   liqData: any[];
   atsData: any[];
+  fetchedAt: number;
 } | null = null;
+
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const RANGE_DAYS = 7;
 const MOV_RANGE_DAYS = 14;
@@ -258,27 +265,30 @@ function RankedBarChart({
   );
 }
 
+function isDashboardCacheFresh(): boolean {
+  return !!dashboardCache && Date.now() - dashboardCache.fetchedAt < CACHE_TTL_MS;
+}
+
 export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles, onNavigate }) => {
-  const [data, setData] = useState<any[]>(dashboardCache?.data || []);
-  const [movData, setMovData] = useState<any[]>(dashboardCache?.movData || []);
-  const [liqData, setLiqData] = useState<any[]>(dashboardCache?.liqData || []);
-  const [atsData, setAtsData] = useState<any[]>(dashboardCache?.atsData || []);
+  const [data, setData] = useState<any[]>(isDashboardCacheFresh() ? dashboardCache!.data : []);
+  const [movData, setMovData] = useState<any[]>(isDashboardCacheFresh() ? dashboardCache!.movData : []);
+  const [liqData, setLiqData] = useState<any[]>(isDashboardCacheFresh() ? dashboardCache!.liqData : []);
+  const [atsData, setAtsData] = useState<any[]>(isDashboardCacheFresh() ? dashboardCache!.atsData : []);
   const [error, setError] = useState<string | null>(null);
   const [selectedEmpresa, setSelectedEmpresa] = useState("");
   const [hoveredDay, setHoveredDay] = useState<number | null>(null);
   // Empieza en true desde el primer render (sin esperar al useEffect) para
   // que el splash cubra la pantalla desde el primer frame, sin dejar ver
   // el layout/dashboard vacío mientras el efecto todavía no dispara el fetch.
-  // Si ya hay cache de esta sesión, no hay nada que esperar.
-  const [firstLoadDone, setFirstLoadDone] = useState(!!dashboardCache);
+  // Si ya hay cache vigente de esta sesión, no hay nada que esperar.
+  const [firstLoadDone, setFirstLoadDone] = useState(isDashboardCacheFresh());
 
   useEffect(() => {
     // El Dashboard se desmonta/remonta cada vez que se cambia de pestaña y se
     // vuelve - sin este cache, volvería a pedir todo (ventas/movimientos/
-    // liquidaciones/ats) cada vez. Se pide una sola vez por sesión y se
-    // reutiliza hasta cerrar sesión (signOut hace un reload completo, que
-    // limpia este cache junto con todo el estado en memoria).
-    if (dashboardCache) return;
+    // liquidaciones/ats) cada vez. Se reutiliza mientras siga vigente (ver
+    // CACHE_TTL_MS); pasado eso, se vuelve a pedir todo una sola vez.
+    if (isDashboardCacheFresh()) return;
     let cancelled = false;
     Promise.all([
       fetchVentasAdaptive(),
@@ -288,7 +298,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
     ])
       .then(([ventasRows, movRows, liqRows, atsRows]) => {
         if (cancelled) return;
-        dashboardCache = { data: ventasRows, movData: movRows, liqData: liqRows, atsData: atsRows };
+        dashboardCache = { data: ventasRows, movData: movRows, liqData: liqRows, atsData: atsRows, fetchedAt: Date.now() };
         setData(ventasRows);
         setMovData(movRows);
         setLiqData(liqRows);
