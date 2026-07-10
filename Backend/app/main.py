@@ -26,6 +26,24 @@ async def lifespan(app: FastAPI):
         
         # 2. Crear o actualizar las vistas SQL
         with engine.begin() as connection:
+            # create_all no altera tablas ya existentes: columnas nuevas del modelo
+            # (bodega/cliente/costo) se agregan aqui de forma idempotente.
+            connection.execute(text("""
+                ALTER TABLE ventas_kardex_staging
+                    ADD COLUMN IF NOT EXISTS trans_cost NUMERIC(18, 4) DEFAULT 0.0,
+                    ADD COLUMN IF NOT EXISTS war_code VARCHAR(20),
+                    ADD COLUMN IF NOT EXISTS bodega_nombre VARCHAR(100),
+                    ADD COLUMN IF NOT EXISTS codigo_cliente VARCHAR(20),
+                    ADD COLUMN IF NOT EXISTS nombre_cliente VARCHAR(150);
+            """))
+            connection.execute(text("""
+                CREATE INDEX IF NOT EXISTS ix_ventas_kardex_staging_war_code ON ventas_kardex_staging (war_code);
+            """))
+            connection.execute(text("""
+                CREATE INDEX IF NOT EXISTS ix_ventas_kardex_staging_codigo_cliente ON ventas_kardex_staging (codigo_cliente);
+            """))
+            logging.info("Columnas de rentabilidad (bodega/cliente/costo) verificadas en ventas_kardex_staging.")
+
             sql_view_liq = """
             CREATE OR REPLACE VIEW view_liquidaciones_reporte AS
             SELECT
@@ -111,6 +129,16 @@ async def lifespan(app: FastAPI):
                 ROUND(k.net_line_total + k.discount_amount, 4) AS subtotal,
                 ROUND(k.discount_amount, 4) AS descuento_aplicado,
                 ROUND(k.net_line_total, 4) AS total_linea,
+                k.war_code AS bodega_codigo,
+                COALESCE(k.bodega_nombre, '') AS bodega_nombre,
+                k.codigo_cliente AS codigo_cliente,
+                COALESCE(k.nombre_cliente, '') AS nombre_cliente,
+                ROUND(k.trans_cost, 4) AS costo_unitario,
+                ROUND(k.trans_cost * ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer, 4) AS costo_total,
+                ROUND(((k.net_line_total + k.discount_amount) / NULLIF(ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer, 0)) - k.trans_cost, 4) AS utilidad_unidad,
+                ROUND(k.net_line_total - (k.trans_cost * ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer), 4) AS utilidad_total,
+                ROUND((k.net_line_total - (k.trans_cost * ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer)) / NULLIF(k.net_line_total, 0) * 100, 2) AS pct_utilidad_neto,
+                ROUND((k.net_line_total - (k.trans_cost * ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer)) / NULLIF(k.trans_cost * ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer, 0) * 100, 2) AS pct_utilidad_costo,
                 f.empresa AS empresa,
                 CASE WHEN f.empresa = 'ENV01' THEN 'ENV'
                      WHEN f.empresa = 'NVC01' THEN 'NOVICOMPU'

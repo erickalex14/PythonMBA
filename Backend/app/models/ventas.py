@@ -23,6 +23,12 @@ class VentasKardexStaging(Base):
     in_out = Column(String(10), nullable=True)
     codigo_grupo = Column(String(50), nullable=True)
     codigo_subgrupo = Column(String(50), nullable=True)
+    # TRANS_COST = costo real de la unidad (UNIT_COST del ERP es en realidad precio de venta, no costo).
+    trans_cost = Column(Numeric(18, 4), default=0.0)
+    war_code = Column(String(20), nullable=True, index=True)
+    bodega_nombre = Column(String(100), nullable=True)
+    codigo_cliente = Column(String(20), nullable=True, index=True)
+    nombre_cliente = Column(String(150), nullable=True)
     # ORIGIN_MEMO = tipo de movimiento (CLIENTES = venta real, resto se excluye).
     # ORIGIN_REF = numero de factura, cruza con ventas_facturas_staging.numero_factura.
     origin_memo = Column(String(50), nullable=True, index=True)
