@@ -183,8 +183,8 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ filteredData, acti
           <svg viewBox="0 0 500 200" className={styles.svgChart}>
             <defs>
               <linearGradient id="areaGradBlue" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--color-brand-primary)" stopOpacity="0.12" />
-                <stop offset="100%" stopColor="var(--color-brand-primary)" stopOpacity="0.0" />
+                <stop offset="0%" stopColor="var(--color-chart-accent)" stopOpacity="0.12" />
+                <stop offset="100%" stopColor="var(--color-chart-accent)" stopOpacity="0.0" />
               </linearGradient>
             </defs>
 
@@ -221,7 +221,7 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ filteredData, acti
               return (
                 <>
                   <path d={areaD} fill="url(#areaGradBlue)" />
-                  <path d={pathD} fill="none" stroke="var(--color-brand-primary)" strokeWidth="2.5" strokeLinecap="round" />
+                  <path d={pathD} fill="none" stroke="var(--color-chart-accent)" strokeWidth="2.5" strokeLinecap="round" />
                   {points.map((p, i) => (
                     <circle
                       key={i}
@@ -229,7 +229,7 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ filteredData, acti
                       cy={p.y}
                       r="3.5"
                       fill="var(--color-surface)"
-                      stroke="var(--color-brand-primary)"
+                      stroke="var(--color-chart-accent)"
                       strokeWidth="1.5"
                     />
                   ))}
@@ -289,7 +289,7 @@ export const ChartsSection: React.FC<ChartsSectionProps> = ({ filteredData, acti
                       {d.brand.substring(0, 11)}
                     </text>
                     <rect x="90" y={y} width="320" height="13" rx="4" fill="var(--color-surface-subtle)" />
-                    <rect x="90" y={y} width={barWidth} height="13" rx="4" fill="var(--color-brand-primary)" fillOpacity={opacity} />
+                    <rect x="90" y={y} width={barWidth} height="13" rx="4" fill="var(--color-chart-accent)" fillOpacity={opacity} />
                     <text x={95 + barWidth} y={y + 11} fill="var(--color-text-tertiary)" fontSize="8.5" fontWeight="700">
                       {activeTab === "movimientos"
                         ? d.qty.toLocaleString()
