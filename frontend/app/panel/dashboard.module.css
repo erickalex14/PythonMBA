@@ -572,6 +572,35 @@
   flex-direction: column;
 }
 
+/* Tarjetas del Dashboard que llevan al reporte detallado ya filtrado */
+.clickableCard {
+  position: relative;
+  cursor: pointer;
+  height: 100%;
+}
+
+.clickableCardOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(28, 63, 102, 0.94);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border-radius: var(--radius-lg);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+
+.clickableCard:hover .clickableCardOverlay {
+  opacity: 1;
+}
+
 .chartCard h3 {
   font-size: 0.85rem;
   font-weight: 700;
