@@ -15,9 +15,13 @@ const KEYFRAMES = `
 @keyframes novbi-draw-line { to { stroke-dashoffset: 0; } }
 @keyframes novbi-dot-in { from { opacity:0; transform:scale(0.4); } to { opacity:1; transform:scale(1); } }
 @keyframes novbi-pulse-ring { 0% { transform:scale(0.6); opacity:0.55; } 100% { transform:scale(2.4); opacity:0; } }
-@keyframes novbi-bar-wave { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.14); } }
-@keyframes novbi-line-wave { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-@keyframes novbi-dot-wave { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.4); } }
+@keyframes novbi-box-bounce {
+  0% { transform: translateY(0) scale(1,1); }
+  30% { transform: translateY(-14px) scale(1,1); }
+  55% { transform: translateY(0) scale(1.1,0.88); }
+  75% { transform: translateY(-4px) scale(0.97,1.04); }
+  100% { transform: translateY(0) scale(1,1); }
+}
 `;
 
 const BAR_HEIGHTS = [58, 92, 40, 130, 70, 110, 150];
@@ -53,8 +57,8 @@ export default function NovBILogin() {
   const [passwordError, setPasswordError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [loginErrorMsg, setLoginErrorMsg] = useState("");
-  const [chartHover, setChartHover] = useState(false);
-  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
+  const [barDrag, setBarDrag] = useState<{ index: number; y: number } | null>(null);
+  const [logoHover, setLogoHover] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -168,10 +172,23 @@ export default function NovBILogin() {
         />
 
         <div style={{ position: "relative", zIndex: 1 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14, animation: "novbi-fade-up 0.7s ease-out both" }}>
+          <div
+            style={{ display: "flex", alignItems: "center", gap: 14, animation: "novbi-fade-up 0.7s ease-out both", cursor: "pointer" }}
+            onMouseEnter={() => setLogoHover(true)}
+            onMouseLeave={() => setLogoHover(false)}
+          >
             <div style={{ fontFamily: FONT, fontWeight: 700, fontSize: 34, letterSpacing: "-0.01em", color: "#ffffff", lineHeight: 1 }}>NOV</div>
             <div style={{ width: 2, height: 30, background: "#ffffff", opacity: 0.5 }} />
-            <div style={{ background: "#ffffff", padding: "4px 10px", display: "flex", alignItems: "center" }}>
+            <div
+              style={{
+                background: "#ffffff",
+                padding: "4px 10px",
+                display: "flex",
+                alignItems: "center",
+                transformOrigin: "center bottom",
+                animation: logoHover ? "novbi-box-bounce 0.55s cubic-bezier(.34,1.56,.64,1) both" : undefined,
+              } as React.CSSProperties}
+            >
               <div style={{ fontFamily: FONT, fontWeight: 300, fontSize: 34, letterSpacing: "-0.015em", color: "#0a0a0a", lineHeight: 1 }}>BI</div>
             </div>
           </div>
@@ -187,21 +204,50 @@ export default function NovBILogin() {
         </div>
 
         <div style={{ position: "relative", zIndex: 1, display: isMobile ? "none" : "flex", alignItems: "center", justifyContent: "center", flex: 1 }}>
-          <svg viewBox="0 0 360 220" width="100%" height={220} style={{ maxWidth: 420, overflow: "visible" }}>
+          <svg
+            viewBox="0 0 360 220"
+            width="100%"
+            height={220}
+            style={{ maxWidth: 420, overflow: "visible" }}
+            onMouseMove={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const scale = Math.min(rect.width / 360, rect.height / 220);
+              const offsetX = (rect.width - 360 * scale) / 2;
+              const offsetY = (rect.height - 220 * scale) / 2;
+              const svgX = (e.clientX - rect.left - offsetX) / scale;
+              const svgY = (e.clientY - rect.top - offsetY) / scale;
+              const index = Math.max(0, Math.min(BAR_HEIGHTS.length - 1, Math.floor((svgX - 4) / 48)));
+              setBarDrag({ index, y: Math.max(15, Math.min(195, svgY)) });
+            }}
+            onMouseLeave={() => setBarDrag(null)}
+          >
             <line x1={0} y1={200} x2={360} y2={200} stroke="#ffffff" strokeOpacity={0.18} strokeWidth={1} />
-            {BAR_HEIGHTS.map((barH, i) => (
-              <rect
-                key={i}
-                x={i * 48 + 4}
-                y={200 - barH}
-                width={28}
-                height={barH}
-                fill="#ffffff"
-                fillOpacity={0.22 + (i % 3) * 0.12}
-                rx={2}
-                style={{ transformBox: "fill-box", transformOrigin: "bottom", animation: `novbi-grow-bar 0.6s cubic-bezier(.2,.8,.2,1) ${(0.15 + i * 0.06).toFixed(2)}s both` } as React.CSSProperties}
-              />
-            ))}
+            {BAR_HEIGHTS.map((barH, i) => {
+              const dragged = barDrag?.index === i;
+              const top = dragged ? barDrag!.y : 200 - barH;
+              const height = 200 - top;
+              return (
+                <rect
+                  key={i}
+                  x={i * 48 + 4}
+                  y={top}
+                  width={28}
+                  height={height}
+                  fill="#ffffff"
+                  fillOpacity={dragged ? 1 : 0.22 + (i % 3) * 0.12}
+                  rx={2}
+                  style={{
+                    transformBox: "fill-box",
+                    transformOrigin: "bottom",
+                    animation: `novbi-grow-bar 0.6s cubic-bezier(.2,.8,.2,1) ${(0.15 + i * 0.06).toFixed(2)}s both`,
+                    filter: dragged ? "brightness(1.8) drop-shadow(0 0 8px rgba(255,255,255,0.75))" : "none",
+                    transition: dragged
+                      ? "filter 0.15s ease"
+                      : "y 0.35s cubic-bezier(.2,.8,.2,1), height 0.35s cubic-bezier(.2,.8,.2,1), filter 0.2s ease, fill-opacity 0.2s ease",
+                  } as React.CSSProperties}
+                />
+              );
+            })}
             <path
               d={LINE_PATH}
               fill="none"
