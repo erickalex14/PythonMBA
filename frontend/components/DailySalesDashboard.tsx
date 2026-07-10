@@ -578,16 +578,16 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
                   {pctChange.toFixed(1)}%
                 </span>
               ) : (
-                "Sin datos de ayer"
+                `Sin datos del ${isLatestRealToday ? "ayer" : "día anterior"}`
               )}{" "}
-              vs. ayer
+              vs. {isLatestRealToday ? "ayer" : "día anterior"}
             </span>
           </Card>
         </ClickableCard>
 
         <ClickableCard styles={styles} onClick={() => onNavigate?.("ventas", yesterday, yesterday, selectedEmpresa)}>
           <Card variant="kpiCard" styles={styles}>
-            <h3>Ventas Ayer</h3>
+            <h3>{isLatestRealToday ? "Ventas Ayer" : "Ventas Día Anterior al Último Registro"}</h3>
             <p className={styles.kpiValue}>{fmtCurrency(totalYesterday)}</p>
             <span style={{ fontSize: "0.75rem", color: "var(--color-text-faint)" }}>{yesterday}</span>
           </Card>
