@@ -106,6 +106,16 @@ class ExcelService:
             "subtotal": "SUBTOTAL (C*PV)",
             "descuento_aplicado": "DESCUENTO APLICADO",
             "total_linea": "TOTAL LINEA",
+            "bodega": "BODEGA",
+            "bodega_nombre": "BODEGA NOMBRE",
+            "codigo_cliente": "CODIGO CLIENTE",
+            "nombre_cliente": "NOMBRE CLIENTE",
+            "costo_unitario": "COSTO UNITARIO",
+            "costo_total": "COSTO TOTAL",
+            "utilidad_unidad": "UTILIDAD UNIDAD",
+            "utilidad_total": "UTILIDAD TOTAL",
+            "pct_utilidad_neto": "% UTILIDAD/NETO",
+            "pct_utilidad_costo": "% UTILIDAD/COSTO",
         }
         df = df.rename(columns={k: v for k, v in rename_dto.items() if k in df.columns})
 
@@ -125,6 +135,16 @@ class ExcelService:
             ("SUBTOTAL (C*PV)", "SubTotal (C*PV)"),
             ("DESCUENTO APLICADO", "Descuento Aplicado"),
             ("TOTAL LINEA", "Total Linea"),
+            ("BODEGA", "Bodega"),
+            ("BODEGA NOMBRE", "Bodega Nombre"),
+            ("CODIGO CLIENTE", "Código Cliente"),
+            ("NOMBRE CLIENTE", "Nombre Cliente"),
+            ("COSTO UNITARIO", "Costo Unitario"),
+            ("COSTO TOTAL", "Costo Total"),
+            ("UTILIDAD UNIDAD", "Utilidad Unidad"),
+            ("UTILIDAD TOTAL", "Utilidad Total"),
+            ("% UTILIDAD/NETO", "% Utilidad/Neto"),
+            ("% UTILIDAD/COSTO", "% Utilidad/Costo"),
         ]
         cols_presentes = [(src, lbl) for src, lbl in columnas if src in df.columns]
 
@@ -191,19 +211,21 @@ class ExcelService:
                 cel.alignment = centro
 
             # --- Filas de detalle ---
-            money_cols = {"PRECIO VENTA", "SUBTOTAL (C*PV)", "DESCUENTO APLICADO", "TOTAL LINEA"}
+            money_cols = {"PRECIO VENTA", "SUBTOTAL (C*PV)", "DESCUENTO APLICADO", "TOTAL LINEA",
+                          "COSTO UNITARIO", "COSTO TOTAL", "UTILIDAD UNIDAD", "UTILIDAD TOTAL"}
+            pct_cols = {"% UTILIDAD/NETO", "% UTILIDAD/COSTO"}
             data_start = hdr_row + 1
             rr = data_start
             for _, fila in df.iterrows():
                 for j, (src, lbl) in enumerate(cols_presentes, start=1):
                     val = fila.get(src)
-                    if src in money_cols or src == "CANTIDAD":
+                    if src in money_cols or src == "CANTIDAD" or src in pct_cols:
                         try:
                             val = float(val)
                         except Exception:
                             val = 0
                         cel = ws.cell(row=rr, column=j, value=val)
-                        cel.number_format = '#,##0.00' if src in money_cols else '#,##0'
+                        cel.number_format = '#,##0.00' if (src in money_cols or src in pct_cols) else '#,##0'
                     else:
                         cel = ws.cell(row=rr, column=j, value=clean(val))
                     cel.border = borde
@@ -225,12 +247,16 @@ class ExcelService:
                 elif src == "DESCUENTO APLICADO":
                     c = ws.cell(row=tot_row, column=j, value=round(float(num("DESCUENTO APLICADO").sum()), 2))
                     c.number_format = '#,##0.00'; c.font = bold; c.fill = gris
+                elif src in ("COSTO TOTAL", "UTILIDAD TOTAL"):
+                    c = ws.cell(row=tot_row, column=j, value=round(float(num(src).sum()), 2))
+                    c.number_format = '#,##0.00'; c.font = bold; c.fill = gris
                 else:
                     ws.cell(row=tot_row, column=j).fill = gris
 
             # Anchos de columna
             anchos = {"# de factura": 18, "PRODUCTO": 38, "CODIGO": 16, "GRUPO": 10,
-                      "SUBGRUPO": 10, "EMPRESA": 12, "SUCURSAL": 10, "FECHA": 12}
+                      "SUBGRUPO": 10, "EMPRESA": 12, "SUCURSAL": 10, "FECHA": 12,
+                      "BODEGA NOMBRE": 22, "NOMBRE CLIENTE": 28}
             for j, (src, lbl) in enumerate(cols_presentes, start=1):
                 ws.column_dimensions[get_column_letter(j)].width = anchos.get(src, 14)
 

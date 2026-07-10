@@ -599,11 +599,26 @@ class SyncService:
             "DOC_ID_CORP,TRANS_DATE,PRODUCT_ID_CORP,PRODUCT_NAME,QUANTITY,ORIGINAL_QTY,"
             "UNIT_COST,DISCOUNT_AMOUNT,NET_LINE_TOTAL,UM,Anulada,IN_OUT,"
             "\"Codigo grupo\",\"Codigo subgrupo\",Codigo_grupo,Codigo_subgrupo,"
-            "ORIGIN_MEMO,ORIGIN_REF"
+            "ORIGIN_MEMO,ORIGIN_REF,TRANS_COST,WAR_CODE,COD_CLIENTE"
         )
         # EMPRESA (NVC01/ENV01) y CODIGO_LOCAL (sucursal) para segmentar; ANULADA para excluir.
         cols_facturas = "CODIGO_FACTURA,NUMERO_FACTURA,FECHA_FACTURA,EMPRESA,CODIGO_LOCAL,ANULADA"
-        
+
+        # Bodegas: catalogo estatico, se trae una sola vez para todo el rango (no cambia por dia).
+        bodegas_dict = {}
+        try:
+            datos_bodegas = self.repository.ejecutar_consulta(
+                token=token_actual, select="WARE_CODE,WARE_NAME", table="INVT_Bodegas_Lista", env=env
+            )
+            for b in (datos_bodegas or []):
+                mapeo_b = {k.replace(" ", "").replace("_", "").upper(): k for k in b.keys()}
+                code = b.get(mapeo_b.get("WARECODE"))
+                name = b.get(mapeo_b.get("WARENAME"))
+                if code:
+                    bodegas_dict[str(code).strip()] = str(name).strip() if name else ""
+        except Exception as e:
+            logging.error(f"SyncService [Ventas]: No se pudo precargar catalogo de bodegas: {e}")
+
         dt_actual = dt_inicio
         dias_totales = (dt_fin - dt_inicio).days + 1
         dia_contador = 1
@@ -695,12 +710,38 @@ class SyncService:
                 db.query(VentasKardexStaging).filter(VentasKardexStaging.trans_date == dt_actual.date()).delete()
                 db.query(VentasFacturaStaging).filter(VentasFacturaStaging.invoice_date == dt_actual.date()).delete()
 
+                # Clientes: solo los codigos que aparecen hoy (catalogo completo es demasiado grande para traer entero).
+                clientes_dict = {}
+                if datos_movs:
+                    codigos_cliente_hoy = set()
+                    for item in datos_movs:
+                        mapeo_probe = {k.replace(" ", "").replace("_", "").upper(): k for k in item.keys()}
+                        col_cli_probe = mapeo_probe.get("CODCLIENTE")
+                        val = clean_str(item.get(col_cli_probe)) if col_cli_probe else None
+                        if val:
+                            codigos_cliente_hoy.add(val)
+                    if codigos_cliente_hoy:
+                        try:
+                            lista_in = ",".join(f"'{c}'" for c in codigos_cliente_hoy)
+                            datos_clientes = self.repository.ejecutar_consulta(
+                                token=token_actual, select="CODIGO_CLIENTE,NOMBRE_CLIENTE", table="CLNT_Ficha_Principal",
+                                where=f"CODIGO_CLIENTE IN ({lista_in})", env=env
+                            )
+                            for c in (datos_clientes or []):
+                                mapeo_c = {k.replace(" ", "").replace("_", "").upper(): k for k in c.keys()}
+                                code = c.get(mapeo_c.get("CODIGOCLIENTE"))
+                                name = c.get(mapeo_c.get("NOMBRECLIENTE"))
+                                if code:
+                                    clientes_dict[str(code).strip()] = str(name).strip() if name else ""
+                        except Exception as e:
+                            logging.error(f"SyncService [Ventas]: No se pudo resolver nombres de clientes para {fecha_str}: {e}")
+
                 # Guardar Kardex
                 nuevos_movs = []
                 if datos_movs:
                     for item in datos_movs:
                         mapeo_item = {k.replace(" ", "").replace("_", "").upper(): k for k in item.keys()}
-                        
+
                         col_doc = mapeo_item.get("DOCIDCORP")
                         col_prod_id = mapeo_item.get("PRODUCTIDCORP")
                         col_prod_name = mapeo_item.get("PRODUCTNAME")
@@ -716,10 +757,16 @@ class SyncService:
                         col_subgrupo = mapeo_item.get("CODIGOSUBGRUPO")
                         col_memo = mapeo_item.get("ORIGINMEMO")
                         col_ref = mapeo_item.get("ORIGINREF")
+                        col_trans_cost = mapeo_item.get("TRANSCOST")
+                        col_war = mapeo_item.get("WARCODE")
+                        col_cliente = mapeo_item.get("CODCLIENTE")
 
                         # origin_ref normalizado a solo dígitos = llave de cruce con la factura
                         ref_raw = clean_str(item.get(col_ref)) if col_ref else ""
                         ref_num = "".join(ch for ch in (ref_raw or "") if ch.isdigit())
+
+                        war_code_val = clean_str(item.get(col_war)) if col_war else ""
+                        codigo_cliente_val = clean_str(item.get(col_cliente)) if col_cliente else ""
 
                         mov = VentasKardexStaging(
                             doc_id_corp=clean_str(item.get(col_doc)) if col_doc else "",
@@ -737,7 +784,12 @@ class SyncService:
                             codigo_grupo=clean_str(item.get(col_grupo)) if col_grupo else "GENERAL",
                             codigo_subgrupo=clean_str(item.get(col_subgrupo)) if col_subgrupo else "GENERAL",
                             origin_memo=clean_str(item.get(col_memo)) if col_memo else "",
-                            origin_ref=ref_num
+                            origin_ref=ref_num,
+                            trans_cost=parse_float(item.get(col_trans_cost)) if col_trans_cost else 0.0,
+                            war_code=war_code_val,
+                            bodega_nombre=bodegas_dict.get(war_code_val, ""),
+                            codigo_cliente=codigo_cliente_val,
+                            nombre_cliente=clientes_dict.get(codigo_cliente_val, "")
                         )
                         nuevos_movs.append(mov)
 
