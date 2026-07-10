@@ -62,13 +62,13 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <h3>Registros Encontrados</h3>
           <div style={{ background: "var(--color-surface-tint-blue)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-primary)" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-chart-accent)" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           </div>
         </div>
         <p className={styles.kpiValue}>{kpis.totalRecords.toLocaleString()}</p>
         <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-accent)" strokeWidth="3"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          <span style={{ color: "var(--color-brand-accent)", fontWeight: "700" }}>+8.3%</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-success-dark)" strokeWidth="3"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          <span style={{ color: "var(--color-success-dark)", fontWeight: "700" }}>+8.3%</span>
           <span>vs. mes anterior</span>
         </div>
       </Card>
@@ -77,13 +77,13 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <h3>{kpis.mainMetricLabel}</h3>
           <div style={{ background: "var(--color-surface-tint-accent)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-accent)" strokeWidth="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-chart-accent)" strokeWidth="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </div>
         </div>
         <p className={styles.kpiValue}>{kpis.mainMetricValue}</p>
         <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-accent)" strokeWidth="3"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          <span style={{ color: "var(--color-brand-accent)", fontWeight: "700" }}>+12.6%</span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-success-dark)" strokeWidth="3"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+          <span style={{ color: "var(--color-success-dark)", fontWeight: "700" }}>+12.6%</span>
           <span>vs. mes anterior</span>
         </div>
       </Card>

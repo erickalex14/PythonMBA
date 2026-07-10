@@ -1001,12 +1001,36 @@ export default function DashboardPage() {
               <h3>Detalle Consolidado de Datos</h3>
               
               {!loading && activeTab !== "logs" && filteredData.length > 0 && (
-                <div style={{ display: "flex", gap: "0.50rem" }}>
-                  <Button onClick={handleDownloadExcel} className={styles.downloadExcelBtn} loading={downloading} loadingText="Generando...">
-                    Descargar Excel
+                <div style={{ display: "flex", gap: "0.5rem" }}>
+                  <Button
+                    onClick={handleDownloadExcel}
+                    className={styles.iconActionBtn}
+                    disabled={downloading}
+                    title="Descargar Excel"
+                    aria-label="Descargar Excel"
+                  >
+                    {downloading ? (
+                      <span className={styles.iconBtnSpinner} />
+                    ) : (
+                      <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                        <path d="M10 3v9m0 0l-3.5-3.5M10 12l3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M4 15v1.5A1.5 1.5 0 0 0 5.5 18h9a1.5 1.5 0 0 0 1.5-1.5V15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      </svg>
+                    )}
                   </Button>
-                  <Button onClick={handlePrintPdf} className={styles.downloadPdfBtn} disabled={downloadingPdf}>
-                    Imprimir Certificado (PDF)
+                  <Button
+                    onClick={handlePrintPdf}
+                    className={styles.iconActionBtn}
+                    disabled={downloadingPdf}
+                    title="Imprimir Certificado (PDF)"
+                    aria-label="Imprimir Certificado (PDF)"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
+                      <path d="M6 8V4.5A1 1 0 0 1 7 3.5h6a1 1 0 0 1 1 1V8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <rect x="4" y="8" width="12" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.5" />
+                      <path d="M6.5 14v2a1 1 0 0 0 1 1h5a1 1 0 0 0 1-1v-2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      <circle cx="13" cy="10" r="0.6" fill="currentColor" />
+                    </svg>
                   </Button>
                 </div>
               )}
