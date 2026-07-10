@@ -176,30 +176,30 @@
 }
 
 .navItem svg {
-  color: rgb(var(--item-accent, 255 255 255) / 0.85);
+  color: #8a93a3;
   transition: color 0.18s ease;
 }
 
 .navItem:hover {
-  background-color: rgb(var(--item-accent, 255 255 255) / 0.08);
+  background-color: rgba(255, 255, 255, 0.05);
   color: var(--color-sidebar-text-strong);
   transform: translateX(2px);
 }
 
 .navItem:hover svg {
-  color: rgb(var(--item-accent, 255 255 255));
+  color: #c2c8d2;
 }
 
 .navItem.active {
-  background-color: rgb(var(--item-accent, 255 255 255) / 0.12);
+  background-color: rgba(58, 110, 165, 0.22);
   color: #ffffff;
-  font-weight: 600;
-  border-left: 3px solid rgb(var(--item-accent, 255 255 255));
+  font-weight: 700;
+  border-left: 3px solid #4a8fd6;
   padding-left: calc(0.875rem - 3px);
 }
 
 .navItem.active svg {
-  color: rgb(var(--item-accent, 255 255 255));
+  color: #ffffff;
 }
 
 .navItem.active:hover {
@@ -224,11 +224,10 @@
 }
 
 .userInfo {
-  background-color: var(--color-sidebar-hover-bg);
+  background-color: rgba(255, 255, 255, 0.06);
   padding: 0.875rem;
   border-radius: 10px;
-  border: 1px solid var(--color-sidebar-border);
-  border-left: 3px solid var(--color-brand-accent);
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .userName {
@@ -243,7 +242,7 @@
 
 .userRole {
   font-size: 0.75rem;
-  color: var(--color-brand-accent);
+  color: #8fb3d6;
   margin: 0 0 0.15rem 0;
   font-weight: 600;
 }
@@ -256,10 +255,10 @@
 
 .logoutBtn {
   background-color: transparent;
-  border: 1px solid rgba(239, 68, 68, 0.4);
-  color: #f87171;
-  font-size: 0.85rem;
-  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #e5e7eb;
+  font-size: 0.8rem;
+  font-weight: 700;
   padding: 0.65rem;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -268,9 +267,8 @@
 }
 
 .logoutBtn:hover {
-  background-color: rgba(239, 68, 68, 0.12);
-  border-color: #ef4444;
-  color: #fca5a5;
+  background-color: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
 /* Área de Contenido Principal */
@@ -527,6 +525,25 @@
   color: var(--color-text-faint);
 }
 
+/* Tarjeta KPI invertida (fondo oscuro) para destacar la métrica más
+   importante entre las tres, en vez de repetir el mismo fondo blanco */
+.kpiCardHighlight {
+  background-color: #0a0a0a !important;
+  border-color: #0a0a0a !important;
+}
+
+.kpiCardHighlight h3 {
+  color: #8fb3d6;
+}
+
+.kpiCardHighlight .kpiValue {
+  color: #ffffff;
+}
+
+.kpiCardHighlight span {
+  color: rgba(255, 255, 255, 0.55);
+}
+
 /* Gráficos Grid */
 .chartsGrid {
   display: grid;
@@ -551,8 +568,8 @@
   font-size: 0.85rem;
   font-weight: 700;
   margin: 0 0 1rem 0;
-  color: var(--color-text-primary);
-  border-left: 3px solid var(--color-brand-primary);
+  color: var(--color-chart-accent);
+  border-left: 3px solid var(--color-chart-accent);
   padding-left: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;

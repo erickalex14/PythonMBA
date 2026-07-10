@@ -118,7 +118,7 @@ function ComparisonMiniCard({
             <span style={{ fontWeight: 700, color: "var(--color-text-primary)" }}>{formatter(currentValue)}</span>
           </div>
           <div style={{ height: 10, borderRadius: 6, background: "var(--color-surface-subtle)", overflow: "hidden" }}>
-            <div style={{ height: "100%", width: `${(currentValue / max) * 100}%`, background: "var(--color-brand-primary)", borderRadius: 6 }} />
+            <div style={{ height: "100%", width: `${(currentValue / max) * 100}%`, background: "var(--color-chart-accent)", borderRadius: 6 }} />
           </div>
         </div>
         <div>
@@ -134,7 +134,7 @@ function ComparisonMiniCard({
           {pct === null ? (
             "Sin datos del período anterior"
           ) : (
-            <span style={{ color: pct >= 0 ? "var(--color-brand-accent)" : "var(--color-danger)", fontWeight: 700 }}>
+            <span style={{ color: pct >= 0 ? "var(--color-success-dark)" : "var(--color-danger)", fontWeight: 700 }}>
               {pct >= 0 ? "+" : ""}
               {pct.toFixed(1)}%
             </span>
@@ -465,9 +465,6 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
     return { x, y };
   });
   const pathD = points.length > 0 ? `M ${points.map((p) => `${p.x} ${p.y}`).join(" L ")}` : "";
-  const areaD = points.length > 0
-    ? `${pathD} L ${points[points.length - 1].x} 170 L ${points[0].x} 170 Z`
-    : "";
 
   return (
     <div>
@@ -494,7 +491,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
           <p className={styles.kpiValue}>{fmtCurrency(totalToday)}</p>
           <span style={{ fontSize: "0.75rem", color: "var(--color-text-faint)" }}>
             {pctChange !== null ? (
-              <span style={{ color: pctChange >= 0 ? "var(--color-brand-accent)" : "var(--color-danger)", fontWeight: 700 }}>
+              <span style={{ color: pctChange >= 0 ? "var(--color-success-dark)" : "var(--color-danger)", fontWeight: 700 }}>
                 {pctChange >= 0 ? "+" : ""}
                 {pctChange.toFixed(1)}%
               </span>
@@ -511,10 +508,10 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
           <span style={{ fontSize: "0.75rem", color: "var(--color-text-faint)" }}>{yesterday}</span>
         </Card>
 
-        <Card variant="kpiCard" styles={styles}>
+        <Card variant="kpiCard" styles={styles} className={styles.kpiCardHighlight}>
           <h3>Total Últimos {RANGE_DAYS} Días</h3>
           <p className={styles.kpiValue}>{fmtCurrency(total30d)}</p>
-          <span style={{ fontSize: "0.75rem", color: "var(--color-text-faint)" }}>
+          <span style={{ fontSize: "0.75rem" }}>
             Promedio diario: {fmtCurrency(avgDaily)}
           </span>
         </Card>
@@ -525,37 +522,18 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
           <h3>Tendencia Diaria de Ventas ({RANGE_DAYS} días)</h3>
           <div className={styles.svgContainer}>
             <svg viewBox="0 0 500 200" className={styles.svgChart}>
-              <defs>
-                <linearGradient id="areaGradSales" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="var(--color-brand-primary)" stopOpacity="0.12" />
-                  <stop offset="100%" stopColor="var(--color-brand-primary)" stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
-
-              {[0, 0.25, 0.5, 0.75, 1].map((p, i) => (
-                <line key={i} x1="50" y1={170 - p * 140} x2="470" y2={170 - p * 140} stroke="var(--color-surface-subtle)" strokeWidth="1" />
-              ))}
+              <line x1="50" y1="170" x2="450" y2="170" stroke="var(--color-border)" strokeWidth="1" />
 
               {points.length > 0 && (
-                <>
-                  <path d={areaD} fill="url(#areaGradSales)" />
-                  <path d={pathD} fill="none" stroke="var(--color-brand-primary)" strokeWidth="2.5" strokeLinecap="round" />
-                </>
+                <path d={pathD} fill="none" stroke="var(--color-chart-accent)" strokeWidth="2.5" strokeLinecap="round" />
               )}
 
-              <line x1="50" y1="170" x2="470" y2="170" stroke="var(--color-border-strong)" strokeWidth="1" />
-              <line x1="50" y1="30" x2="50" y2="170" stroke="var(--color-border-strong)" strokeWidth="1" />
-
-              <text x="42" y="173" textAnchor="end" fill="var(--color-text-faint)" fontSize="8">$0</text>
-              <text x="42" y="34" textAnchor="end" fill="var(--color-text-faint)" fontSize="8">
-                {fmtCurrency(maxDaily)}
-              </text>
               {dailySeries.length > 0 && (
                 <>
-                  <text x="50" y="184" textAnchor="middle" fill="var(--color-text-faint)" fontSize="8">
+                  <text x="50" y="184" textAnchor="start" fill="var(--color-text-faint)" fontSize="9">
                     {dailySeries[0].date.substring(5)}
                   </text>
-                  <text x="470" y="184" textAnchor="middle" fill="var(--color-text-faint)" fontSize="8">
+                  <text x="450" y="184" textAnchor="end" fill="var(--color-text-faint)" fontSize="9">
                     {dailySeries[dailySeries.length - 1].date.substring(5)}
                   </text>
                 </>
@@ -567,7 +545,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
                   y1={points[hoveredDay].y}
                   x2={points[hoveredDay].x}
                   y2="170"
-                  stroke="var(--color-brand-primary)"
+                  stroke="var(--color-chart-accent)"
                   strokeWidth="1"
                   strokeDasharray="3 3"
                   opacity="0.5"
@@ -579,10 +557,10 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
                   key={`dot-${i}`}
                   cx={p.x}
                   cy={p.y}
-                  r={hoveredDay === i ? 6 : 3}
-                  fill={hoveredDay === i ? "var(--color-brand-primary)" : "#ffffff"}
-                  stroke="var(--color-brand-primary)"
-                  strokeWidth={hoveredDay === i ? 2.5 : 1.5}
+                  r={hoveredDay === i ? 6 : 4}
+                  fill={hoveredDay === i ? "var(--color-chart-accent)" : "#ffffff"}
+                  stroke="var(--color-chart-accent)"
+                  strokeWidth={hoveredDay === i ? 2.5 : 2}
                   style={{ transition: "r 0.15s ease" }}
                 />
               ))}
@@ -611,7 +589,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
               >
                 <div style={{ fontWeight: 700, marginBottom: 2 }}>{dailySeries[hoveredDay].date}</div>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--color-brand-primary)", display: "inline-block" }} />
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--color-chart-accent)", display: "inline-block" }} />
                   Ventas: {fmtCurrency(dailySeries[hoveredDay].total)}
                 </div>
               </ChartTooltip>
@@ -623,7 +601,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
           <h3>Top Productos ({RANGE_DAYS} días)</h3>
           <RankedBarChart
             items={topProducts.map((p) => ({ label: p.producto, total: p.total }))}
-            color="var(--color-brand-primary)"
+            color="var(--color-chart-accent)"
             formatter={fmtCurrency}
           />
         </Card>
@@ -632,7 +610,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
           <h3>Top Productos Diario ({today})</h3>
           <RankedBarChart
             items={topProductsToday.map((p) => ({ label: p.producto, total: p.total }))}
-            color="var(--color-brand-accent)"
+            color="var(--color-chart-accent)"
             formatter={fmtCurrency}
           />
         </Card>
@@ -641,7 +619,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
           <h3>Top Marcas (Ventas, {RANGE_DAYS} días)</h3>
           <RankedBarChart
             items={topBrands.map((b) => ({ label: b.marca, total: b.monto }))}
-            color="var(--color-brand-primary)"
+            color="var(--color-chart-accent)"
             formatter={fmtCurrency}
           />
         </Card>
@@ -650,7 +628,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
           <h3>Top Marcas Diario ({today})</h3>
           <RankedBarChart
             items={topBrandsToday.map((b) => ({ label: b.marca, total: b.monto }))}
-            color="var(--color-brand-accent)"
+            color="var(--color-chart-accent)"
             formatter={fmtCurrency}
           />
         </Card>
