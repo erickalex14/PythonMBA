@@ -3,6 +3,7 @@ import { Card } from "./ui/Card";
 import { FilterBar } from "./ui/FilterBar";
 import { getMarcaFromProductName } from "../lib/marca";
 import { getEmpresaLabel } from "../lib/empresa";
+import { ChartTooltip, RankedBarChart } from "./charts/ChartPrimitives";
 import NovbiSplash from "./NovbiSplash";
 
 interface DailySalesDashboardProps {
@@ -174,94 +175,6 @@ function ComparisonMiniCard({
         </span>
       </div>
     </Card>
-  );
-}
-
-function ChartTooltip({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
-  return (
-    <div
-      style={{
-        position: "absolute",
-        background: "#0f172a",
-        color: "#ffffff",
-        padding: "0.5rem 0.7rem",
-        borderRadius: 8,
-        fontSize: "0.72rem",
-        lineHeight: 1.4,
-        whiteSpace: "nowrap",
-        pointerEvents: "none",
-        boxShadow: "0 8px 20px rgba(15, 23, 42, 0.3)",
-        zIndex: 10,
-        ...style,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
-
-
-// Ranking de items (productos): las barras siguen siendo lo más claro para
-// comparar magnitudes entre muchos items, pero con hover para ver el nombre
-// completo (el texto dentro del SVG queda truncado a ~11 caracteres).
-function RankedBarChart({
-  items,
-  color,
-  formatter,
-}: {
-  items: { label: string; total: number }[];
-  color: string;
-  formatter: (n: number) => string;
-}) {
-  const [hovered, setHovered] = useState<number | null>(null);
-  const max = Math.max(...items.map((it) => it.total), 1);
-  const chartHeight = Math.max(200, items.length * 22 + 20);
-
-  return (
-    <div style={{ position: "relative", width: "100%" }}>
-      <svg viewBox={`0 0 500 ${chartHeight}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
-        {items.map((p, index) => {
-          const y = index * 22 + 15;
-          const barWidth = (p.total / max) * 310;
-          const isHovered = hovered === index;
-          const opacity = isHovered ? 1 : 0.45 + (p.total / max) * 0.55;
-          return (
-            <g
-              key={index}
-              onMouseEnter={() => setHovered(index)}
-              onMouseLeave={() => setHovered(null)}
-              style={{ cursor: "pointer" }}
-            >
-              <rect x="0" y={y - 2} width="500" height="19" fill="transparent" />
-              <text x="5" y={y + 11} fill="var(--color-text-tertiary)" fontSize="9" fontWeight="600">
-                {p.label.substring(0, 11)}
-              </text>
-              <rect x="90" y={y} width="320" height="13" rx="4" fill="var(--color-surface-subtle)" />
-              <rect x="90" y={y} width={barWidth} height="13" rx="4" fill={color} fillOpacity={opacity} />
-              <text x={95 + barWidth} y={y + 11} fill="var(--color-text-tertiary)" fontSize="8.5" fontWeight="700">
-                {formatter(p.total)}
-              </text>
-            </g>
-          );
-        })}
-        {items.length === 0 && (
-          <text x="250" y="100" textAnchor="middle" fill="var(--color-text-faint)" fontSize="10">
-            Sin datos en el período
-          </text>
-        )}
-      </svg>
-      {hovered !== null && items[hovered] && (
-        <ChartTooltip
-          style={{
-            left: "5%",
-            top: `${((hovered * 22 + 15 - 4) / chartHeight) * 100}%`,
-            transform: "translateY(-100%)",
-          }}
-        >
-          {items[hovered].label}
-        </ChartTooltip>
-      )}
-    </div>
   );
 }
 

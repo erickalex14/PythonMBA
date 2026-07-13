@@ -8,8 +8,10 @@ import styles from "./dashboard.module.css";
 // Componentes Modularizados (SOLID)
 import { Sidebar } from "../../components/Sidebar";
 import { KPICards } from "../../components/KPICards";
-import { ChartsSection } from "../../components/ChartsSection";
 import { RentabilidadCharts } from "../../components/RentabilidadCharts";
+import { MovimientosCharts } from "../../components/MovimientosCharts";
+import { LiquidacionesCharts } from "../../components/LiquidacionesCharts";
+import { AtsCharts } from "../../components/AtsCharts";
 import { ReportTable } from "../../components/ReportTable";
 import { SyncSection } from "../../components/SyncSection";
 import { DailySalesDashboard } from "../../components/DailySalesDashboard";
@@ -1009,8 +1011,14 @@ export default function DashboardPage() {
         {!loading && activeTab === "ventas" && (
           <RentabilidadCharts data={filteredData} styles={styles} />
         )}
-        {!loading && activeTab !== "ventas" && (
-          <ChartsSection filteredData={filteredData} activeTab={activeTab} styles={styles} />
+        {!loading && activeTab === "movimientos" && (
+          <MovimientosCharts data={filteredData} styles={styles} />
+        )}
+        {!loading && activeTab === "liquidaciones" && (
+          <LiquidacionesCharts data={filteredData} styles={styles} />
+        )}
+        {!loading && activeTab === "ats" && (
+          <AtsCharts data={filteredData} styles={styles} />
         )}
 
         {/* 8. CONTENEDOR DE TABLAS E INFORMES */}
