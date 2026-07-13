@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Card } from "./ui/Card";
 import { FilterBar } from "./ui/FilterBar";
 import { getMarcaFromProductName } from "../lib/marca";
+import { getEmpresaLabel } from "../lib/empresa";
 import NovbiSplash from "./NovbiSplash";
 
 interface DailySalesDashboardProps {
