@@ -1,7 +1,16 @@
 import React, { useMemo } from "react";
 import { Card } from "./ui/Card";
 import { EMPRESA_LABELS } from "../lib/empresa";
-import { RankedBarChart, TierHeading, TwoBarComparison, ParetoChart, TrendLine } from "./charts/ChartPrimitives";
+import {
+  RankedBarChart,
+  TierHeading,
+  TwoBarComparison,
+  ParetoChart,
+  TrendLine,
+  DonutChart,
+  Treemap,
+  ScatterXY,
+} from "./charts/ChartPrimitives";
 
 interface LiquidacionesChartsProps {
   data: any[];
@@ -37,8 +46,8 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
       map[label] = (map[label] || 0) + num(row, "VALOR_TOTAL_CIF");
     });
     return Object.entries(map)
-      .map(([label, total]) => ({ label, total }))
-      .sort((a, b) => b.total - a.total);
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value);
   }, [data]);
 
   const subtotalVsTotal = useMemo(() => {
@@ -58,8 +67,8 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
       map[partida] = (map[partida] || 0) + num(row, "VALOR_TOTAL_CIF");
     });
     return Object.entries(map)
-      .map(([label, total]) => ({ label, total }))
-      .sort((a, b) => b.total - a.total)
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value)
       .slice(0, 10);
   }, [data]);
 
@@ -75,16 +84,21 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
       .slice(0, 10);
   }, [data]);
 
-  const topProductosCantidad = useMemo(() => {
-    const map: Record<string, number> = {};
+  // Cantidad importada vs Monto CIF por producto: distingue productos de
+  // alto volumen/bajo valor unitario de los de bajo volumen/alto valor,
+  // algo que un ranking simple no muestra.
+  const scatterProductos = useMemo(() => {
+    const map: Record<string, { cantidad: number; cif: number }> = {};
     data.forEach((row) => {
       const producto = str(row, "PRODUCTO_ID_CORP") || "Sin Producto";
-      map[producto] = (map[producto] || 0) + num(row, "CANTIDAD");
+      const cur = map[producto] || { cantidad: 0, cif: 0 };
+      cur.cantidad += num(row, "CANTIDAD");
+      cur.cif += num(row, "VALOR_TOTAL_CIF");
+      map[producto] = cur;
     });
     return Object.entries(map)
-      .map(([label, total]) => ({ label, total }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 10);
+      .filter(([, v]) => v.cantidad > 0 && v.cif > 0)
+      .map(([key, v]) => ({ key, label: key, x: v.cantidad, y: v.cif, size: v.cif }));
   }, [data]);
 
   const tendenciaDiaria = useMemo(() => {
@@ -120,7 +134,7 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
       <div className={styles.chartsGridTwo} style={cardStyle}>
         <Card variant="chartCard" styles={styles}>
           <h3>Distribución de CIF por Empresa</h3>
-          <RankedBarChart items={porEmpresa} color="var(--color-chart-accent)" formatter={fmtMoney} />
+          <DonutChart items={porEmpresa} formatter={fmtMoney} />
         </Card>
         <Card variant="chartCard" styles={styles}>
           <h3>Subtotal CIF vs Total CIF</h3>
@@ -135,7 +149,7 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
       </div>
       <Card variant="chartCard" styles={styles} style={cardStyle}>
         <h3>Top 10 Partidas Arancelarias por Monto CIF</h3>
-        <RankedBarChart items={topPartidas} color="var(--color-chart-accent)" formatter={fmtMoney} />
+        <Treemap items={topPartidas} formatter={fmtMoney} />
       </Card>
 
       <TierHeading title="Detalle de Productos" />
@@ -144,9 +158,16 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
           <h3>Top 10 Productos por Monto CIF</h3>
           <RankedBarChart items={topProductosCif} color="var(--color-chart-accent)" formatter={fmtMoney} />
         </Card>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Top 10 Productos por Cantidad Importada</h3>
-          <RankedBarChart items={topProductosCantidad} color="var(--color-chart-accent)" formatter={fmtNumber} />
+        <Card variant="chartCard" styles={styles} style={{ minHeight: 320 }}>
+          <h3>Cantidad Importada vs Monto CIF por Producto</h3>
+          <ScatterXY
+            points={scatterProductos}
+            xLabel="Cantidad Importada →"
+            yLabel="Monto CIF →"
+            xFormatter={fmtNumber}
+            yFormatter={fmtMoney2}
+            color="var(--color-chart-accent)"
+          />
         </Card>
       </div>
 
