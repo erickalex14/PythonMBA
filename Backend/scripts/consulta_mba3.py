@@ -15,12 +15,12 @@ logging.basicConfig(
 )
 
 # Constants de configuracion
-BASE_URL = "http://181.198.104.181:8081"
+BASE_URL = "http://181.198.104.181:8020"
 URL_LOGIN = f"{BASE_URL}/ws2_mba3_serv_/login_servicio"
 URL_CONSULTA = f"{BASE_URL}/ws2_mba3_serv_Consultas_Externas_/"
 
-CODIGO_SERVICIO = "SERIALES"
-PASSWORD_SERVICIO = "Admin2026@@"
+CODIGO_SERVICIO = "ERICKDEV"
+PASSWORD_SERVICIO = "Er1ck2026$$"
 
 
 def solicitar_fecha(mensaje_prompt):
@@ -248,6 +248,8 @@ def exportar_a_excel_empresarial(df_datos, fecha_inicio, fecha_fin):
         logging.error("Fallo critico I/O durante la escritura del archivo Excel: %s", e)
 
 
+
+
 if __name__ == "__main__":
     fecha_inicio, fecha_fin = solicitar_rango_fechas()
 
@@ -258,3 +260,6 @@ if __name__ == "__main__":
         exportar_a_excel_empresarial(df_resultado, fecha_inicio, fecha_fin)
     else:
         logging.critical("Secuencia interrumpida. No fue posible establecer conexion.")
+
+
+

@@ -23,10 +23,11 @@ def read_ventas(
     if df.empty:
         return []
         
-    # Renombrar columnas para calzar con el DTO
     df_renamed = df.rename(columns={
         "# de factura": "factura_final",
         "FECHA": "fecha",
+        "EMPRESA": "empresa",
+        "SUCURSAL": "sucursal",
         "CODIGO": "codigo",
         "PRODUCTO": "producto",
         "GRUPO": "grupo",
@@ -36,7 +37,17 @@ def read_ventas(
         "PRECIO VENTA": "precio_venta",
         "SUBTOTAL (C*PV)": "subtotal",
         "DESCUENTO APLICADO": "descuento_aplicado",
-        "TOTAL LINEA": "total_linea"
+        "TOTAL LINEA": "total_linea",
+        "BODEGA": "bodega",
+        "BODEGA NOMBRE": "bodega_nombre",
+        "CODIGO CLIENTE": "codigo_cliente",
+        "NOMBRE CLIENTE": "nombre_cliente",
+        "COSTO UNITARIO": "costo_unitario",
+        "COSTO TOTAL": "costo_total",
+        "UTILIDAD UNIDAD": "utilidad_unidad",
+        "UTILIDAD TOTAL": "utilidad_total",
+        "% UTILIDAD/NETO": "pct_utilidad_neto",
+        "% UTILIDAD/COSTO": "pct_utilidad_costo"
     })
     
     return df_renamed.to_dict(orient='records')
