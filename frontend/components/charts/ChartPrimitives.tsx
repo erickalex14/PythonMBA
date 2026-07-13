@@ -322,11 +322,18 @@ export function DonutChart({
             />
           ))}
         </svg>
-        {hovered !== null && (
-          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+          {hovered !== null ? (
             <span style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--color-text-primary)" }}>{arcs[hovered].pct.toFixed(0)}%</span>
-          </div>
-        )}
+          ) : arcs.length === 1 ? (
+            <>
+              <span style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--color-text-primary)" }}>100%</span>
+              <span style={{ fontSize: "0.62rem", color: "var(--color-text-faint)", maxWidth: 80, textAlign: "center", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {arcs[0].label}
+              </span>
+            </>
+          ) : null}
+        </div>
       </div>
       <div style={{ flex: 1, minWidth: 140, display: "flex", flexDirection: "column", gap: "0.45rem" }}>
         {arcs.map((a, i) => (
