@@ -1,7 +1,7 @@
 export interface ColumnConfig {
   key: string;
   label: string;
-  type: "text" | "currency" | "number" | "badge" | "bold";
+  type: "text" | "currency" | "number" | "percent" | "badge" | "bold";
   badgeStyles?: (value: any) => { label: string; className: string };
 }
 
@@ -105,23 +105,31 @@ export const REPORTS_CONFIG: Record<string, ReportConfig> = {
   },
   ventas: {
     id: "ventas",
-    title: "Reporte de Ventas",
-    subtitle: "Detalle y consolidado de facturación de clientes",
+    title: "Reporte de Rentabilidad",
+    subtitle: "Costo, utilidad y margen por línea de venta",
     endpoint: "/api/data/ventas",
     excelType: "ventas",
     columns: [
       { key: "factura_final", label: "Factura", type: "bold" },
       { key: "fecha", label: "Fecha", type: "text" },
+      { key: "empresa", label: "Empresa", type: "text" },
+      { key: "sucursal", label: "Sucursal", type: "text" },
+      { key: "bodega_nombre", label: "Bodega", type: "text" },
       { key: "codigo", label: "Código", type: "text" },
       { key: "producto", label: "Producto", type: "text" },
       { key: "grupo", label: "Grupo", type: "text" },
       { key: "subgrupo", label: "Subgrupo", type: "text" },
+      { key: "nombre_cliente", label: "Cliente", type: "text" },
       { key: "unidad", label: "Unidad", type: "text" },
       { key: "cantidad", label: "Cantidad", type: "number" },
       { key: "precio_venta", label: "Precio Venta", type: "currency" },
       { key: "subtotal", label: "Subtotal", type: "currency" },
       { key: "descuento_aplicado", label: "Descuento", type: "currency" },
-      { key: "total_linea", label: "Total", type: "currency" }
+      { key: "total_linea", label: "Neto", type: "currency" },
+      { key: "costo_unitario", label: "Costo Unitario", type: "currency" },
+      { key: "costo_total", label: "Costo Total", type: "currency" },
+      { key: "utilidad_total", label: "Utilidad", type: "currency" },
+      { key: "pct_utilidad_costo", label: "% Margen", type: "percent" }
     ],
     kpis: {
       mainMetricLabel: "Monto Total de Ventas",

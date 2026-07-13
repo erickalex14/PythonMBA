@@ -49,7 +49,20 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
       secondMetricValue = totalUnits.toLocaleString("es-EC", { maximumFractionDigits: 0 });
     }
 
-    return { totalRecords, mainMetricLabel, mainMetricValue, secondMetricLabel, secondMetricValue };
+    // Desglose por empresa/sucursal (solo Ventas)
+    let ventasSeg: { novicompu: string; env: string; mayoristas: string } | null = null;
+    if (activeTab === "ventas") {
+      const fmt = (n: number) => n.toLocaleString("es-EC", { style: "currency", currency: "USD" });
+      const lineTotal = (row: any) => Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0;
+      const emp = (row: any) => String(row.empresa || row.EMPRESA || "").toUpperCase();
+      const suc = (row: any) => String(row.sucursal || row.SUCURSAL || "").trim();
+      const novi = filteredData.reduce((a, r) => a + (emp(r).includes("NOVI") ? lineTotal(r) : 0), 0);
+      const env = filteredData.reduce((a, r) => a + (emp(r).includes("ENV") ? lineTotal(r) : 0), 0);
+      const may = filteredData.reduce((a, r) => a + (["026", "027"].includes(suc(r)) ? lineTotal(r) : 0), 0);
+      ventasSeg = { novicompu: fmt(novi), env: fmt(env), mayoristas: fmt(may) };
+    }
+
+    return { totalRecords, mainMetricLabel, mainMetricValue, secondMetricLabel, secondMetricValue, ventasSeg };
   }, [filteredData, activeTab]);
 
   if (activeTab === "logs" || activeTab === "admin" || activeTab === "sync" || filteredData.length === 0) {
@@ -102,6 +115,43 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
           <span>vs. mes anterior</span>
         </div>
       </Card>
+
+      {kpis.ventasSeg && (
+        <>
+          <Card variant="kpiCard" styles={styles}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <h3>Novicompu</h3>
+              <div style={{ background: "var(--color-surface-tint-blue)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-primary)" strokeWidth="2.5"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+              </div>
+            </div>
+            <p className={styles.kpiValue}>{kpis.ventasSeg.novicompu}</p>
+            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>Empresa NVC01</div>
+          </Card>
+
+          <Card variant="kpiCard" styles={styles}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <h3>ENV</h3>
+              <div style={{ background: "var(--color-surface-tint-accent)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-accent)" strokeWidth="2.5"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+              </div>
+            </div>
+            <p className={styles.kpiValue}>{kpis.ventasSeg.env}</p>
+            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>Empresa ENV01</div>
+          </Card>
+
+          <Card variant="kpiCard" styles={styles}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <h3>Mayoristas</h3>
+              <div style={{ background: "var(--color-surface-tint-violet)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" strokeWidth="2.5"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              </div>
+            </div>
+            <p className={styles.kpiValue}>{kpis.ventasSeg.mayoristas}</p>
+            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>Novicompu suc. 026 + 027</div>
+          </Card>
+        </>
+      )}
     </section>
   );
 };

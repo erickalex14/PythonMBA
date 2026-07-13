@@ -29,8 +29,8 @@ def download_movimientos(
     df = movimientos_service.obtener_movimientos(inicio, fin, db)
     if df.empty:
         raise HTTPException(status_code=404, detail="No hay movimientos registrados para exportar en este rango.")
-    
-    excel_file = excel_service.generar_reporte_excel(df, 'Movimientos')
+
+    excel_file = excel_service.generar_reporte_movimientos(df, inicio, fin)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"Reporte_Movimientos_MBA3_{timestamp}.xlsx"
     
@@ -55,8 +55,8 @@ def download_liquidaciones(
 
     if df.empty:
         raise HTTPException(status_code=404, detail="No hay liquidaciones registradas para exportar en este rango.")
-    
-    excel_file = excel_service.generar_reporte_excel(df, 'Consolidado')
+
+    excel_file = excel_service.generar_reporte_liquidaciones(df, inicio, fin)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"Reporte_Liquidaciones_Consolidado_{timestamp}.xlsx"
     
@@ -80,8 +80,8 @@ def download_ats(
     df = ats_service.obtener_ats(inicio, fin, db)
     if df.empty:
         raise HTTPException(status_code=404, detail="No hay facturas fiscales registradas para exportar en este rango.")
-    
-    excel_file = excel_service.generar_reporte_excel(df, 'Consolidado')
+
+    excel_file = excel_service.generar_reporte_ats(df, inicio, fin)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"Reporte_Facturacion_Fiscal_{timestamp}.xlsx"
     
@@ -105,10 +105,10 @@ def download_ventas(
     df = ventas_service.obtener_ventas_espejo(inicio, fin, db)
     if df.empty:
         raise HTTPException(status_code=404, detail="No hay ventas registradas para exportar en este rango.")
-    
-    excel_file = excel_service.generar_reporte_excel(df, 'Detalle Productos - Periodo')
+
+    excel_file = excel_service.generar_reporte_ventas(df, inicio, fin)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    filename = f"DETALLE_VENTAS_ESPEJO_{timestamp}.xlsx"
+    filename = f"VENTAS_{inicio}_a_{fin}_{timestamp}.xlsx"
     
     return StreamingResponse(
         excel_file,
@@ -118,12 +118,15 @@ def download_ventas(
 
 
 from pydantic import BaseModel
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 class CustomExportRequest(BaseModel):
     sheet_name: str
     filename_prefix: str
     data: List[Dict[str, Any]]
+    report_type: Optional[str] = None
+    inicio: Optional[str] = None
+    fin: Optional[str] = None
 
 @router.post("/export", dependencies=[Depends(verify_api_key)])
 def export_custom_data(
@@ -135,10 +138,21 @@ def export_custom_data(
     """
     if not payload.data:
         raise HTTPException(status_code=400, detail="El conjunto de datos a exportar está vacío.")
-        
+
     df = pd.DataFrame(payload.data)
-    
-    excel_file = excel_service.generar_reporte_excel(df, payload.sheet_name)
+
+    # Todos los tipos conocidos usan el formato corporativo (encabezado, resumen, totales).
+    generadores = {
+        "ventas": excel_service.generar_reporte_ventas,
+        "movimientos": excel_service.generar_reporte_movimientos,
+        "liquidaciones": excel_service.generar_reporte_liquidaciones,
+        "ats": excel_service.generar_reporte_ats,
+    }
+    generador = generadores.get((payload.report_type or "").lower())
+    if generador:
+        excel_file = generador(df, payload.inicio or "", payload.fin or "")
+    else:
+        excel_file = excel_service.generar_reporte_excel(df, payload.sheet_name)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{payload.filename_prefix}_{timestamp}.xlsx"
     

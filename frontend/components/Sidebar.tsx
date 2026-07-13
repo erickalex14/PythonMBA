@@ -104,7 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={() => selectTab("ventas")}
           >
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><line x1="4" y1="17" x2="4" y2="9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><line x1="10" y1="17" x2="10" y2="3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><line x1="16" y1="17" x2="16" y2="12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
-            <span className="flex-1">Ventas</span>
+            <span className="flex-1">Rentabilidad</span>
           </button>
         )}
 

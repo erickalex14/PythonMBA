@@ -120,8 +120,8 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
         } else if (type === "ats") {
           details = `${result.facturas_count || 0} facturas, ${result.fiscal_count || 0} registros fiscales`;
         } else if (type === "ventas") {
-          // Ambos tablas
-          details = `${result.records_count || 0} movimientos transaccionados`;
+          // El backend de ventas devuelve kardex_count / facturas_count
+          details = `${result.kardex_count || 0} movimientos, ${result.facturas_count || 0} facturas`;
         }
 
         addLog(`[OK] Día ${currentDate} sincronizado con éxito (${details}).`);

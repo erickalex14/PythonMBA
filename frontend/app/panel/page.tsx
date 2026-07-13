@@ -9,6 +9,7 @@ import styles from "./dashboard.module.css";
 import { Sidebar } from "../../components/Sidebar";
 import { KPICards } from "../../components/KPICards";
 import { ChartsSection } from "../../components/ChartsSection";
+import { RentabilidadCharts } from "../../components/RentabilidadCharts";
 import { ReportTable } from "../../components/ReportTable";
 import { SyncSection } from "../../components/SyncSection";
 import { DailySalesDashboard } from "../../components/DailySalesDashboard";
@@ -20,7 +21,6 @@ import { Pagination } from "../../components/ui/Pagination";
 import { FilterBar, FilterFieldConfig } from "../../components/ui/FilterBar";
 import { Modal } from "../../components/ui/Modal";
 import { REPORTS_CONFIG } from "../../lib/reports-config";
-import { getEmpresaLabel } from "../../lib/empresa";
 import { useReportQuery } from "../../hooks/useReportQuery";
 
 type TabType = "movimientos" | "liquidaciones" | "ats" | "ventas" | "ventas-diarias" | "logs" | "admin" | "sync";
@@ -473,7 +473,7 @@ export default function DashboardPage() {
       } else if (activeTab === "ventas") {
         if (selectedProduct && String(row.producto).trim() !== selectedProduct) return false;
         if (selectedBranch && String(row.grupo).trim() !== selectedBranch) return false;
-        if (selectedEmpresa && getEmpresaLabel(row.codigo) !== selectedEmpresa) return false;
+        if (selectedEmpresa && String(row.empresa || "").trim() !== selectedEmpresa) return false;
         if (codigoSearch && !String(row.codigo || "").toLowerCase().includes(codigoSearch.trim().toLowerCase())) return false;
       }
 
@@ -542,7 +542,7 @@ export default function DashboardPage() {
       } else if (activeTab === "ventas") {
         if (row.producto) products.add(String(row.producto).trim());
         if (row.grupo) branches.add(String(row.grupo).trim());
-        empresas.add(getEmpresaLabel(row.codigo));
+        if (row.empresa) empresas.add(String(row.empresa).trim());
       }
     });
 
@@ -647,7 +647,7 @@ export default function DashboardPage() {
             {activeTab === "movimientos" && "INFORME CERTIFICADO DE MOVIMIENTOS DE INVENTARIOS Y SERIALES"}
             {activeTab === "liquidaciones" && "INFORME CERTIFICADO DE COSTOS Y LIQUIDACIONES DE IMPORTACIÓN"}
             {activeTab === "ats" && "INFORME FISCAL CONSOLIDADO DE COMPRAS (ATS)"}
-            {activeTab === "ventas" && "INFORME CERTIFICADO DE VENTAS"}
+            {activeTab === "ventas" && "INFORME CERTIFICADO DE RENTABILIDAD"}
             {activeTab === "logs" && "BITÁCORA DE AUDITORÍA Y CONTROL DE ACCESOS AL PORTAL BI"}
           </h1>
           <div className={styles.printMetaGrid}>
@@ -670,7 +670,7 @@ export default function DashboardPage() {
               {activeTab === "movimientos" && `El volumen neto de mercancía movilizada asciende a ${totalQty.toLocaleString()} unidades, registrando una base de comisión real acumulada de $${totalAmount.toFixed(2)} distribuida entre la fuerza de ventas registrada.`}
               {activeTab === "liquidaciones" && `El costo CIF acumulado de las importaciones analizadas totaliza $${totalAmount.toFixed(2)}, consolidando un total de ${totalQty.toLocaleString()} unidades físicas que han completado el proceso de recepción y liquidación.`}
               {activeTab === "ats" && `El consolidado fiscal del periodo reporta compras brutas por un valor total facturado de $${totalAmount.toFixed(2)}.`}
-              {activeTab === "ventas" && `El volumen de ventas consolidado reporta transacciones brutas por un valor total de $${totalAmount.toFixed(2)}, distribuidas en un volumen acumulado de ${totalQty.toLocaleString()} unidades físicas vendidas.`}
+              {activeTab === "ventas" && `El análisis de rentabilidad reporta ventas netas por un valor total de $${totalAmount.toFixed(2)}, distribuidas en un volumen acumulado de ${totalQty.toLocaleString()} unidades físicas vendidas, con desglose de costo y utilidad por línea.`}
             </p>
           </div>
         </div>
@@ -681,7 +681,7 @@ export default function DashboardPage() {
             {activeTab === "movimientos" && "Movimientos de Productos (Seriales)"}
             {activeTab === "liquidaciones" && "Liquidaciones de Importaciones"}
             {activeTab === "ats" && "ATS - Facturas de Compras"}
-            {activeTab === "ventas" && "Ventas (Detalle)"}
+            {activeTab === "ventas" && "Rentabilidad (Detalle)"}
             {activeTab === "ventas-diarias" && "Dashboard"}
             {activeTab === "logs" && "Bitácora de Auditoría"}
             {activeTab === "admin" && "Panel de Administración"}
@@ -691,7 +691,7 @@ export default function DashboardPage() {
             {activeTab === "movimientos" && "Reporte de transacciones de inventario, seriales y comisiones"}
             {activeTab === "liquidaciones" && "Consolidado de costos CIF y detalle de productos liquidados"}
             {activeTab === "ats" && "Resumen fiscal de compras autorizadas y anulaciones"}
-            {activeTab === "ventas" && "Reporte consolidado de facturación de clientes y ventas transadas"}
+            {activeTab === "ventas" && "Costo, utilidad y margen por línea de venta — facturación de clientes"}
             {activeTab === "ventas-diarias" && "Resumen ejecutivo de ventas y comparativa con Movimientos, Liquidaciones y ATS"}
             {activeTab === "logs" && "Historial de descargas de reportes para auditoría de seguridad"}
             {activeTab === "admin" && "Gestión de seguridad, control de acceso de usuarios y configuración del entorno"}
@@ -1006,7 +1006,10 @@ export default function DashboardPage() {
         )}
 
         {/* 7. SECCIÓN DE GRÁFICOS MODULARIZADOS */}
-        {!loading && (
+        {!loading && activeTab === "ventas" && (
+          <RentabilidadCharts data={filteredData} styles={styles} />
+        )}
+        {!loading && activeTab !== "ventas" && (
           <ChartsSection filteredData={filteredData} activeTab={activeTab} styles={styles} />
         )}
 

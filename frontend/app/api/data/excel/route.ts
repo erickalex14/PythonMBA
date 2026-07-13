@@ -95,7 +95,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { type, inicio, fin, data } = await request.json();
+    const body = await request.json();
+    const type = body.type;
+    // El frontend puede enviar inicio/fin o start_date/end_date: aceptar ambos.
+    const inicio = body.inicio || body.start_date;
+    const fin = body.fin || body.end_date;
+    const data = body.data;
 
     if (!type || !inicio || !fin || !data || !Array.isArray(data)) {
       return new Response(JSON.stringify({ error: "Parámetros faltantes (type, inicio, fin, data)." }), {
@@ -132,7 +137,10 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         sheet_name: sheetName,
         filename_prefix: filenamePrefix,
-        data: data
+        data: data,
+        report_type: type,
+        inicio: inicio,
+        fin: fin
       }),
       cache: "no-store",
     });

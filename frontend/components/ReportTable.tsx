@@ -42,6 +42,15 @@ export const ReportTable: React.FC<ReportTableProps> = ({ config, paginatedData,
                 );
               }
 
+              if (col.type === "percent") {
+                const numVal = Number(val) || 0;
+                return (
+                  <td key={col.key}>
+                    {numVal.toFixed(1)}%
+                  </td>
+                );
+              }
+
               if (col.type === "bold") {
                 return (
                   <td key={col.key}>

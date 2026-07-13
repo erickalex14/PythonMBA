@@ -47,9 +47,11 @@ class VentasService:
 
             try:
                 query_sql = """
-                    SELECT 
+                    SELECT
                         factura_final AS "# de factura",
                         fecha AS "FECHA",
+                        empresa_nombre AS "EMPRESA",
+                        sucursal AS "SUCURSAL",
                         codigo AS "CODIGO",
                         producto AS "PRODUCTO",
                         grupo AS "GRUPO",
@@ -59,8 +61,18 @@ class VentasService:
                         precio_venta AS "PRECIO VENTA",
                         subtotal AS "SUBTOTAL (C*PV)",
                         descuento_aplicado AS "DESCUENTO APLICADO",
-                        total_linea AS "TOTAL LINEA"
-                    FROM view_ventas_espejo_reporte 
+                        total_linea AS "TOTAL LINEA",
+                        bodega_codigo AS "BODEGA",
+                        bodega_nombre AS "BODEGA NOMBRE",
+                        codigo_cliente AS "CODIGO CLIENTE",
+                        nombre_cliente AS "NOMBRE CLIENTE",
+                        costo_unitario AS "COSTO UNITARIO",
+                        costo_total AS "COSTO TOTAL",
+                        utilidad_unidad AS "UTILIDAD UNIDAD",
+                        utilidad_total AS "UTILIDAD TOTAL",
+                        pct_utilidad_neto AS "% UTILIDAD/NETO",
+                        pct_utilidad_costo AS "% UTILIDAD/COSTO"
+                    FROM view_ventas_espejo_reporte
                     WHERE fecha BETWEEN :inicio AND :fin
                     ORDER BY factura_final, codigo
                 """
@@ -92,7 +104,8 @@ class VentasService:
                 cols_movs = (
                     "DOC_ID_CORP,TRANS_DATE,PRODUCT_ID_CORP,PRODUCT_NAME,QUANTITY,ORIGINAL_QTY,"
                     "UNIT_COST,DISCOUNT_AMOUNT,NET_LINE_TOTAL,UM,Anulada,IN_OUT,"
-                    "\"Codigo grupo\",\"Codigo subgrupo\",Codigo_grupo,Codigo_subgrupo"
+                    "\"Codigo grupo\",\"Codigo subgrupo\",Codigo_grupo,Codigo_subgrupo,"
+                    "TRANS_COST,WAR_CODE,COD_CLIENTE"
                 )
                 cols_facturas = "CODIGO_FACTURA,NUMERO_FACTURA,FECHA_FACTURA"
                 
@@ -130,6 +143,9 @@ class VentasService:
                     col_total_linea = mapeo_movs.get("NETLINETOTAL")
                     col_um = mapeo_movs.get("UM")
                     col_anulada = mapeo_movs.get("ANULADA")
+                    col_costo = mapeo_movs.get("TRANSCOST")
+                    col_bodega = mapeo_movs.get("WARCODE")
+                    col_cliente = mapeo_movs.get("CODCLIENTE")
 
                     df_movs = df_movs.rename(columns={
                         col_movs_doc: 'DOC_ID_CORP_KARDEX',
@@ -142,7 +158,10 @@ class VentasService:
                         col_descuento: 'DESCUENTO_INT',
                         col_total_linea: 'TOTAL_INT',
                         col_um: 'UM_INT',
-                        col_anulada: 'ANULADA_INT'
+                        col_anulada: 'ANULADA_INT',
+                        col_costo: 'COSTO_INT',
+                        col_bodega: 'BODEGA_INT',
+                        col_cliente: 'CLIENTE_INT'
                     })
 
                     df_facturas = pd.DataFrame(datos_facturas) if datos_facturas else pd.DataFrame()
@@ -187,6 +206,9 @@ class VentasService:
                     df_consolidado['PRECIO_INT'] = pd.to_numeric(df_consolidado['PRECIO_INT'], errors='coerce').fillna(0.0)
                     df_consolidado['DESCUENTO_INT'] = pd.to_numeric(df_consolidado['DESCUENTO_INT'], errors='coerce').fillna(0.0)
                     df_consolidado['TOTAL_INT'] = pd.to_numeric(df_consolidado['TOTAL_INT'], errors='coerce').fillna(0.0)
+                    df_consolidado['COSTO_INT'] = pd.to_numeric(df_consolidado.get('COSTO_INT'), errors='coerce').fillna(0.0) if 'COSTO_INT' in df_consolidado.columns else 0.0
+                    df_consolidado['BODEGA_INT'] = df_consolidado['BODEGA_INT'].astype(str).str.strip() if 'BODEGA_INT' in df_consolidado.columns else ''
+                    df_consolidado['CLIENTE_INT'] = df_consolidado['CLIENTE_INT'].astype(str).str.strip() if 'CLIENTE_INT' in df_consolidado.columns else ''
 
                     def evaluar_anulada(val):
                         if pd.isna(val): return False
@@ -210,6 +232,9 @@ class VentasService:
 
                         df_realtime['# de factura'] = df_filtrado['FACTURA_FINAL']
                         df_realtime['FECHA'] = df_filtrado['TRANS_DATE'].astype(str)
+                        # El path en tiempo real (hoy) aún no resuelve empresa/sucursal por factura.
+                        df_realtime['EMPRESA'] = 'N/D'
+                        df_realtime['SUCURSAL'] = 'N/D'
                         df_realtime['CODIGO'] = df_filtrado['CODIGO_INT']
                         df_realtime['PRODUCTO'] = df_filtrado['PRODUCTO_INT']
                         df_realtime['GRUPO'] = df_filtrado['GRUPO_INT'].fillna('GENERAL')
@@ -220,6 +245,20 @@ class VentasService:
                         df_realtime['SUBTOTAL (C*PV)'] = df_filtrado['SUBTOTAL_INT'].round(4)
                         df_realtime['DESCUENTO APLICADO'] = df_filtrado['DESCUENTO_INT'].round(4)
                         df_realtime['TOTAL LINEA'] = df_filtrado['TOTAL_INT'].round(4)
+
+                        # Costo/utilidad si; nombre de cliente/bodega aun no se resuelven en el path de hoy.
+                        costo_total = (df_filtrado['CANTIDAD_INT'] * df_filtrado['COSTO_INT'])
+                        utilidad_total = df_filtrado['TOTAL_INT'] - costo_total
+                        df_realtime['BODEGA'] = df_filtrado['BODEGA_INT']
+                        df_realtime['BODEGA NOMBRE'] = 'N/D'
+                        df_realtime['CODIGO CLIENTE'] = df_filtrado['CLIENTE_INT']
+                        df_realtime['NOMBRE CLIENTE'] = 'N/D'
+                        df_realtime['COSTO UNITARIO'] = df_filtrado['COSTO_INT'].round(4)
+                        df_realtime['COSTO TOTAL'] = costo_total.round(4)
+                        df_realtime['UTILIDAD UNIDAD'] = (df_filtrado['PRECIO_INT'] - df_filtrado['COSTO_INT']).round(4)
+                        df_realtime['UTILIDAD TOTAL'] = utilidad_total.round(4)
+                        df_realtime['% UTILIDAD/NETO'] = (utilidad_total / df_filtrado['TOTAL_INT'].replace(0, pd.NA) * 100).round(2)
+                        df_realtime['% UTILIDAD/COSTO'] = (utilidad_total / costo_total.replace(0, pd.NA) * 100).round(2)
 
         # 3. CONSOLIDACIÓN FINAL
         if df_historico.empty and df_realtime.empty:
