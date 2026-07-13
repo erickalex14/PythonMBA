@@ -1,6 +1,15 @@
 import React, { useMemo } from "react";
 import { Card } from "./ui/Card";
-import { RankedBarChart, TierHeading, TwoBarComparison, StatGauge, ParetoChart, TrendLine } from "./charts/ChartPrimitives";
+import {
+  RankedBarChart,
+  TierHeading,
+  TwoBarComparison,
+  RadialGauge,
+  ParetoChart,
+  TrendLine,
+  DonutChart,
+  Treemap,
+} from "./charts/ChartPrimitives";
 
 interface AtsChartsProps {
   data: any[];
@@ -42,7 +51,10 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
       conIva += num(row, "SUMA_CON_IVA");
       sinIva += num(row, "SUMA_SIN_IVA");
     });
-    return { conIva, sinIva };
+    return [
+      { label: "Con IVA", value: conIva },
+      { label: "Sin IVA", value: sinIva },
+    ];
   }, [data]);
 
   const topProveedores = useMemo(() => {
@@ -65,8 +77,8 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
       map[clasif] = (map[clasif] || 0) + num(row, "INVOICE_TOTAL");
     });
     return Object.entries(map)
-      .map(([label, total]) => ({ label, total }))
-      .sort((a, b) => b.total - a.total)
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value)
       .slice(0, 10);
   }, [data]);
 
@@ -119,13 +131,7 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
         </Card>
         <Card variant="chartCard" styles={styles}>
           <h3>Bases Con IVA vs Sin IVA</h3>
-          <TwoBarComparison
-            labelA="Con IVA"
-            valueA={conIvaVsSinIva.conIva}
-            labelB="Sin IVA"
-            valueB={conIvaVsSinIva.sinIva}
-            formatter={fmtMoney2}
-          />
+          <DonutChart items={conIvaVsSinIva} formatter={fmtMoney} />
         </Card>
       </div>
       <Card variant="chartCard" styles={styles} style={cardStyle}>
@@ -137,11 +143,11 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
       <div className={styles.chartsGridTwo} style={cardStyle}>
         <Card variant="chartCard" styles={styles}>
           <h3>Distribución por Clasificación SRI</h3>
-          <RankedBarChart items={porClasificacion} color="var(--color-chart-accent)" formatter={fmtMoney} />
+          <Treemap items={porClasificacion} formatter={fmtMoney} />
         </Card>
         <Card variant="chartCard" styles={styles} style={{ minHeight: 280 }}>
           <h3>% Facturas Anuladas</h3>
-          <StatGauge pct={pctAnulado} label={`${anuladosCount.toLocaleString("es-EC")} anuladas de ${data.length.toLocaleString("es-EC")} facturas`} goodDirection="low" />
+          <RadialGauge pct={pctAnulado} label={`${anuladosCount.toLocaleString("es-EC")} anuladas de ${data.length.toLocaleString("es-EC")} facturas`} goodDirection="low" />
         </Card>
       </div>
 

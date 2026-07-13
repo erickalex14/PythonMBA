@@ -257,6 +257,318 @@ export function ParetoChart({
   );
 }
 
+// Paleta categórica fija (reutiliza tokens de estado ya existentes) para
+// Donut/Treemap - evita inventar colores nuevos fuera del sistema.
+const CATEGORY_PALETTE = [
+  "var(--color-chart-accent)",
+  "var(--color-brand-primary)",
+  "var(--color-success-dark)",
+  "var(--color-warning)",
+  "var(--color-danger)",
+  "var(--color-text-tertiary)",
+  "var(--color-text-faint)",
+  "var(--color-brand-accent)",
+];
+
+// Donut chart con leyenda - para distribuciones de pocas categorías (2-8)
+// donde ver la proporción del total importa más que comparar magnitudes
+// exactas entre sí (para eso ya está RankedBarChart).
+export function DonutChart({
+  items,
+  formatter,
+}: {
+  items: { label: string; value: number }[];
+  formatter: (n: number) => string;
+}) {
+  const [hovered, setHovered] = useState<number | null>(null);
+  const total = items.reduce((a, i) => a + i.value, 0) || 1;
+  const R = 60, CX = 70, CY = 70, STROKE = 26;
+  const circumference = 2 * Math.PI * R;
+
+  let acc = 0;
+  const arcs = items.map((it, i) => {
+    const frac = it.value / total;
+    const dash = frac * circumference;
+    const offset = acc * circumference;
+    acc += frac;
+    return { ...it, dash, offset, color: CATEGORY_PALETTE[i % CATEGORY_PALETTE.length], pct: frac * 100 };
+  });
+
+  if (items.length === 0 || total === 0) {
+    return <div style={{ fontSize: "0.8rem", color: "var(--color-text-faint)", textAlign: "center", padding: "1rem" }}>Sin datos en el período</div>;
+  }
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
+      <div style={{ position: "relative", flexShrink: 0 }}>
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--color-surface-subtle)" strokeWidth={STROKE} />
+          {arcs.map((a, i) => (
+            <circle
+              key={i}
+              cx={CX}
+              cy={CY}
+              r={R}
+              fill="none"
+              stroke={a.color}
+              strokeWidth={STROKE}
+              strokeDasharray={`${a.dash} ${circumference - a.dash}`}
+              strokeDashoffset={-a.offset}
+              strokeOpacity={hovered === null || hovered === i ? 1 : 0.35}
+              transform={`rotate(-90 ${CX} ${CY})`}
+              style={{ cursor: "pointer", transition: "stroke-opacity 0.15s ease" }}
+              onMouseEnter={() => setHovered(i)}
+              onMouseLeave={() => setHovered(null)}
+            />
+          ))}
+        </svg>
+        {hovered !== null && (
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+            <span style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--color-text-primary)" }}>{arcs[hovered].pct.toFixed(0)}%</span>
+          </div>
+        )}
+      </div>
+      <div style={{ flex: 1, minWidth: 140, display: "flex", flexDirection: "column", gap: "0.45rem" }}>
+        {arcs.map((a, i) => (
+          <div
+            key={i}
+            style={{ display: "flex", alignItems: "center", gap: "0.5rem", cursor: "pointer", opacity: hovered === null || hovered === i ? 1 : 0.5 }}
+            onMouseEnter={() => setHovered(i)}
+            onMouseLeave={() => setHovered(null)}
+          >
+            <span style={{ width: 10, height: 10, borderRadius: 3, background: a.color, flexShrink: 0 }} />
+            <span style={{ fontSize: "0.74rem", color: "var(--color-text-tertiary)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+              {a.label}
+            </span>
+            <span style={{ fontSize: "0.74rem", fontWeight: 700, color: "var(--color-text-primary)" }}>{formatter(a.value)}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Gauge radial (arco de 270°) para una métrica en % - misma info que
+// StatGauge pero con forma circular, para no repetir la misma silueta de
+// barra horizontal en cada tarjeta de indicador.
+export function RadialGauge({
+  pct,
+  label,
+  goodDirection = "low",
+}: {
+  pct: number;
+  label: string;
+  goodDirection?: "low" | "high";
+}) {
+  const isGood = goodDirection === "low" ? pct <= 10 : pct >= 90;
+  const isWarn = goodDirection === "low" ? pct <= 25 : pct >= 75;
+  const color = isGood ? "var(--color-success-dark)" : isWarn ? "var(--color-warning)" : "var(--color-danger)";
+
+  const R = 54, CX = 65, CY = 65;
+  const startAngle = 135, sweep = 270;
+  const angleToXY = (deg: number) => {
+    const rad = (deg * Math.PI) / 180;
+    return { x: CX + R * Math.cos(rad), y: CY + R * Math.sin(rad) };
+  };
+  const describeArc = (fracOfSweep: number) => {
+    const endDeg = startAngle + sweep * fracOfSweep;
+    const start = angleToXY(startAngle);
+    const end = angleToXY(endDeg);
+    const largeArc = sweep * fracOfSweep > 180 ? 1 : 0;
+    return `M ${start.x} ${start.y} A ${R} ${R} 0 ${largeArc} 1 ${end.x} ${end.y}`;
+  };
+
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", flexWrap: "wrap" }}>
+      <svg width="130" height="120" viewBox="0 0 130 120" style={{ flexShrink: 0 }}>
+        <path d={describeArc(1)} fill="none" stroke="var(--color-surface-subtle)" strokeWidth="12" strokeLinecap="round" />
+        <path d={describeArc(Math.min(pct, 100) / 100)} fill="none" stroke={color} strokeWidth="12" strokeLinecap="round" />
+        <text x={CX} y={CY + 6} textAnchor="middle" fontSize="20" fontWeight="800" fill={color}>
+          {pct.toFixed(1)}%
+        </text>
+      </svg>
+      <div style={{ fontSize: "0.78rem", color: "var(--color-text-muted)", flex: 1, minWidth: 120 }}>{label}</div>
+    </div>
+  );
+}
+
+// Treemap genérico de un solo nivel (slice-and-dice): mosaico 2D donde el
+// área de cada bloque es proporcional a su valor - da una sensación de
+// distribución muy distinta a una lista de barras horizontales.
+type TreemapItem = { key: string; label: string; value: number };
+function sliceTreemap(
+  items: TreemapItem[],
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  horizontal: boolean
+): { item: TreemapItem; x: number; y: number; w: number; h: number }[] {
+  if (items.length === 0) return [];
+  if (items.length === 1) return [{ item: items[0], x, y, w, h }];
+  const total = items.reduce((a, i) => a + i.value, 0) || 1;
+  let acc = 0;
+  let splitIdx = 0;
+  for (let i = 0; i < items.length; i++) {
+    acc += items[i].value;
+    if (acc >= total / 2) {
+      splitIdx = i + 1;
+      break;
+    }
+  }
+  splitIdx = Math.max(1, Math.min(splitIdx, items.length - 1));
+  const left = items.slice(0, splitIdx);
+  const right = items.slice(splitIdx);
+  const leftTotal = left.reduce((a, i) => a + i.value, 0);
+  const frac = leftTotal / total;
+
+  if (horizontal) {
+    const wLeft = w * frac;
+    return [
+      ...sliceTreemap(left, x, y, wLeft, h, false),
+      ...sliceTreemap(right, x + wLeft, y, w - wLeft, h, false),
+    ];
+  } else {
+    const hTop = h * frac;
+    return [
+      ...sliceTreemap(left, x, y, w, hTop, true),
+      ...sliceTreemap(right, x, y + hTop, w, h - hTop, true),
+    ];
+  }
+}
+
+export function Treemap({
+  items,
+  formatter,
+}: {
+  items: { label: string; value: number }[];
+  formatter: (n: number) => string;
+}) {
+  const [hovered, setHovered] = useState<string | null>(null);
+  const W = 500, H = 280;
+  const sorted = [...items].filter((i) => i.value > 0).sort((a, b) => b.value - a.value).map((i, idx) => ({ ...i, key: `${i.label}-${idx}` }));
+  const rects = sliceTreemap(sorted, 0, 0, W, H, true);
+
+  if (rects.length === 0) {
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 280 }}>
+        <text x={W / 2} y={H / 2} textAnchor="middle" fill="var(--color-text-faint)" fontSize="11">Sin datos en el período</text>
+      </svg>
+    );
+  }
+
+  return (
+    <div style={{ position: "relative", width: "100%" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 280, overflow: "visible" }}>
+        {rects.map((r, i) => {
+          const isHovered = hovered === r.item.key;
+          const color = CATEGORY_PALETTE[i % CATEGORY_PALETTE.length];
+          return (
+            <g
+              key={r.item.key}
+              onMouseEnter={() => setHovered(r.item.key)}
+              onMouseLeave={() => setHovered(null)}
+              style={{ cursor: "pointer" }}
+            >
+              <rect
+                x={r.x} y={r.y} width={Math.max(r.w - 2, 0)} height={Math.max(r.h - 2, 0)}
+                fill={color} fillOpacity={isHovered ? 1 : 0.78} stroke="var(--color-surface)" strokeWidth="2"
+              />
+              {r.w > 50 && r.h > 18 && (
+                <text x={r.x + 6} y={r.y + 16} fontSize="9" fontWeight="700" fill="#ffffff">
+                  {r.item.label.substring(0, Math.floor(r.w / 6))}
+                </text>
+              )}
+              {r.w > 50 && r.h > 32 && (
+                <text x={r.x + 6} y={r.y + 29} fontSize="8" fill="rgba(255,255,255,0.85)">
+                  {formatter(r.item.value)}
+                </text>
+              )}
+            </g>
+          );
+        })}
+      </svg>
+      {hovered && (() => {
+        const r = rects.find((x) => x.item.key === hovered);
+        if (!r) return null;
+        return (
+          <ChartTooltip style={{ left: `${((r.x + r.w / 2) / W) * 100}%`, top: `${((r.y + r.h / 2) / H) * 100}%`, transform: "translate(-50%, -50%)" }}>
+            <strong>{r.item.label}</strong>
+            <br />{formatter(r.item.value)}
+          </ChartTooltip>
+        );
+      })()}
+    </div>
+  );
+}
+
+// Scatter XY genérico (ejes lineales) con tamaño de punto opcional.
+export function ScatterXY({
+  points,
+  xLabel,
+  yLabel,
+  xFormatter,
+  yFormatter,
+  color,
+}: {
+  points: { key: string; label: string; x: number; y: number; size?: number }[];
+  xLabel: string;
+  yLabel: string;
+  xFormatter: (n: number) => string;
+  yFormatter: (n: number) => string;
+  color: string;
+}) {
+  const [hovered, setHovered] = useState<string | null>(null);
+  const W = 500, H = 300, pad = 40;
+
+  if (points.length === 0) {
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 300 }}>
+        <text x={W / 2} y={H / 2} textAnchor="middle" fill="var(--color-text-faint)" fontSize="11">Sin datos en el período</text>
+      </svg>
+    );
+  }
+
+  const maxX = Math.max(...points.map((p) => p.x), 1);
+  const maxY = Math.max(...points.map((p) => p.y), 1);
+  const maxSize = Math.max(...points.map((p) => p.size ?? 1), 1);
+  const toX = (v: number) => pad + (v / maxX) * (W - pad * 2);
+  const toY = (v: number) => H - pad - (v / maxY) * (H - pad * 2);
+  const toR = (v: number) => 3 + Math.sqrt((v ?? 1) / maxSize) * 12;
+
+  return (
+    <div style={{ position: "relative", width: "100%", maxWidth: 620, margin: "0 auto" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 300, overflow: "visible" }}>
+        <line x1={pad} y1={pad} x2={pad} y2={H - pad} stroke="var(--color-border-strong)" strokeWidth="1" />
+        <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="var(--color-border-strong)" strokeWidth="1" />
+        <text x={W / 2} y={H - 6} textAnchor="middle" fontSize="9" fill="var(--color-text-muted)">{xLabel}</text>
+        <text x={12} y={H / 2} textAnchor="middle" fontSize="9" fill="var(--color-text-muted)" transform={`rotate(-90 12 ${H / 2})`}>{yLabel}</text>
+        {points.map((p) => (
+          <circle
+            key={p.key}
+            cx={toX(p.x)} cy={toY(p.y)} r={toR(p.size ?? 1)}
+            fill={color} fillOpacity={hovered === p.key ? 0.95 : 0.5} stroke={color} strokeWidth={hovered === p.key ? 2 : 1}
+            style={{ cursor: "pointer" }}
+            onMouseEnter={() => setHovered(p.key)}
+            onMouseLeave={() => setHovered(null)}
+          />
+        ))}
+      </svg>
+      {hovered && (() => {
+        const p = points.find((x) => x.key === hovered);
+        if (!p) return null;
+        return (
+          <ChartTooltip style={{ left: `${(toX(p.x) / W) * 100}%`, top: `${(toY(p.y) / H) * 100}%`, transform: "translate(-50%, -120%)" }}>
+            <strong>{p.label}</strong>
+            <br />{xLabel}: {xFormatter(p.x)}
+            <br />{yLabel}: {yFormatter(p.y)}
+          </ChartTooltip>
+        );
+      })()}
+    </div>
+  );
+}
+
 // Tendencia diaria simple (una sola serie), con hover.
 export function TrendLine({
   points,
