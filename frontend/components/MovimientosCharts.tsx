@@ -1,6 +1,15 @@
 import React, { useMemo } from "react";
 import { Card } from "./ui/Card";
-import { RankedBarChart, TierHeading, TwoBarComparison, StatGauge, TrendLine } from "./charts/ChartPrimitives";
+import {
+  RankedBarChart,
+  TierHeading,
+  TwoBarComparison,
+  RadialGauge,
+  TrendLine,
+  DonutChart,
+  Treemap,
+  ParetoChart,
+} from "./charts/ChartPrimitives";
 
 interface MovimientosChartsProps {
   data: any[];
@@ -38,8 +47,8 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
       map[tipo] = (map[tipo] || 0) + 1;
     });
     return Object.entries(map)
-      .map(([label, total]) => ({ label, total }))
-      .sort((a, b) => b.total - a.total);
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value);
   }, [data]);
 
   const entradasVsSalidas = useMemo(() => {
@@ -60,8 +69,8 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
       map[marca] = (map[marca] || 0) + 1;
     });
     return Object.entries(map)
-      .map(([label, total]) => ({ label, total }))
-      .sort((a, b) => b.total - a.total)
+      .map(([label, value]) => ({ label, value }))
+      .sort((a, b) => b.value - a.value)
       .slice(0, 10);
   }, [data]);
 
@@ -77,7 +86,7 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
       .slice(0, 10);
   }, [data]);
 
-  const topVendedores = useMemo(() => {
+  const paretoVendedores = useMemo(() => {
     const map: Record<string, number> = {};
     data.forEach((row) => {
       const v = str(row, "COD_SALESMAN");
@@ -85,9 +94,9 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
       map[v] = (map[v] || 0) + 1;
     });
     return Object.entries(map)
-      .map(([label, total]) => ({ label, total }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 10);
+      .map(([key, value]) => ({ key, label: key, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 20);
   }, [data]);
 
   const tendenciaDiaria = useMemo(() => {
@@ -103,7 +112,7 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
   }, [data]);
 
   const pctDevoluciones = useMemo(() => {
-    const devoluciones = porTipo.find((t) => t.label === "Devolución")?.total || 0;
+    const devoluciones = porTipo.find((t) => t.label === "Devolución")?.value || 0;
     return data.length > 0 ? (devoluciones / data.length) * 100 : 0;
   }, [porTipo, data.length]);
 
@@ -115,7 +124,7 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
       <div className={styles.chartsGridTwo} style={cardStyle}>
         <Card variant="chartCard" styles={styles}>
           <h3>Distribución por Tipo de Movimiento</h3>
-          <RankedBarChart items={porTipo} color="var(--color-chart-accent)" formatter={fmtNumber} />
+          <DonutChart items={porTipo} formatter={fmtNumber} />
         </Card>
         <Card variant="chartCard" styles={styles}>
           <h3>Entradas (Proveedores) vs Salidas (Clientes)</h3>
@@ -130,7 +139,7 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
       </div>
       <Card variant="chartCard" styles={styles} style={cardStyle}>
         <h3>Top 10 Marcas por Cantidad de Movimientos</h3>
-        <RankedBarChart items={topMarcas} color="var(--color-chart-accent)" formatter={fmtNumber} />
+        <Treemap items={topMarcas} formatter={fmtNumber} />
       </Card>
 
       <TierHeading title="Detalle Operativo" />
@@ -139,9 +148,9 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
           <h3>Top 10 Sucursales con Más Movimientos</h3>
           <RankedBarChart items={topSucursales} color="var(--color-chart-accent)" formatter={fmtNumber} />
         </Card>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Top 10 Vendedores por Movimientos</h3>
-          <RankedBarChart items={topVendedores} color="var(--color-chart-accent)" formatter={fmtNumber} />
+        <Card variant="chartCard" styles={styles} style={{ minHeight: 300 }}>
+          <h3>Concentración de Movimientos por Vendedor (80/20)</h3>
+          <ParetoChart items={paretoVendedores} formatter={fmtNumber} />
         </Card>
       </div>
 
@@ -153,7 +162,7 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
         </Card>
         <Card variant="chartCard" styles={styles} style={{ minHeight: 280 }}>
           <h3>% Devoluciones sobre el Total</h3>
-          <StatGauge pct={pctDevoluciones} label={`${fmtNumber(porTipo.find((t) => t.label === "Devolución")?.total || 0)} devoluciones de ${fmtNumber(data.length)} movimientos`} goodDirection="low" />
+          <RadialGauge pct={pctDevoluciones} label={`${fmtNumber(porTipo.find((t) => t.label === "Devolución")?.value || 0)} devoluciones de ${fmtNumber(data.length)} movimientos`} goodDirection="low" />
         </Card>
       </div>
     </section>
