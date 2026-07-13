@@ -248,6 +248,8 @@ def exportar_a_excel_empresarial(df_datos, fecha_inicio, fecha_fin):
         logging.error("Fallo critico I/O durante la escritura del archivo Excel: %s", e)
 
 
+
+
 if __name__ == "__main__":
     fecha_inicio, fecha_fin = solicitar_rango_fechas()
 
@@ -258,3 +260,6 @@ if __name__ == "__main__":
         exportar_a_excel_empresarial(df_resultado, fecha_inicio, fecha_fin)
     else:
         logging.critical("Secuencia interrumpida. No fue posible establecer conexion.")
+
+
+
