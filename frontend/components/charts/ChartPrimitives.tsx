@@ -299,9 +299,9 @@ export function DonutChart({
   }
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", flexWrap: "wrap" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "2rem", flexWrap: "wrap", padding: "0.5rem 0" }}>
       <div style={{ position: "relative", flexShrink: 0 }}>
-        <svg width="140" height="140" viewBox="0 0 140 140">
+        <svg width="170" height="170" viewBox="0 0 140 140">
           <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--color-surface-subtle)" strokeWidth={STROKE} />
           {arcs.map((a, i) => (
             <circle
@@ -335,7 +335,7 @@ export function DonutChart({
           ) : null}
         </div>
       </div>
-      <div style={{ flex: 1, minWidth: 140, display: "flex", flexDirection: "column", gap: "0.45rem" }}>
+      <div style={{ width: 220, flexShrink: 0, display: "flex", flexDirection: "column", gap: "0.6rem" }}>
         {arcs.map((a, i) => (
           <div
             key={i}
@@ -344,10 +344,10 @@ export function DonutChart({
             onMouseLeave={() => setHovered(null)}
           >
             <span style={{ width: 10, height: 10, borderRadius: 3, background: a.color, flexShrink: 0 }} />
-            <span style={{ fontSize: "0.74rem", color: "var(--color-text-tertiary)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: "0.76rem", color: "var(--color-text-tertiary)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {a.label}
             </span>
-            <span style={{ fontSize: "0.74rem", fontWeight: 700, color: "var(--color-text-primary)" }}>{formatter(a.value)}</span>
+            <span style={{ fontSize: "0.76rem", fontWeight: 700, color: "var(--color-text-primary)", flexShrink: 0 }}>{formatter(a.value)}</span>
           </div>
         ))}
       </div>
