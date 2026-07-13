@@ -9,13 +9,16 @@ from app.models.liquidacion import LiquidacionPrincipalStaging, LiquidacionProdu
 from app.models.ats import AtsFacturaStaging, AtsProveedorStaging, AtsFiscalStaging
 from app.models.ventas import VentasKardexStaging, VentasFacturaStaging
 
+
+#SERVICIO PARA SINCRONIZAR TABLAS Y DATOS DESDE EL ERP HACIA LA BASE DE DATOS STAGING
 class SyncService:
     def __init__(self, repository: IMba3Repository):
         self.repository = repository
 
+    #FUNCION PRINCIPAL PARA SINCRONIZAR MOVIMIENTOS
     def sync_movimientos(self, db: Session, fecha_inicio: str, fecha_fin: str, env: Optional[str] = None) -> dict:
         logging.info(f"SyncService: Iniciando sincronización de movimientos desde {fecha_inicio} hasta {fecha_fin} (Entorno: {env})")
-        
+
         try:
             dt_inicio = datetime.datetime.strptime(fecha_inicio, "%Y-%m-%d")
             dt_fin = datetime.datetime.strptime(fecha_fin, "%Y-%m-%d")
@@ -28,7 +31,8 @@ class SyncService:
             logging.error("SyncService: No se pudo obtener el token inicial del ERP.")
             return {"status": "error", "message": "No se pudo conectar al ERP para obtener el token."}
 
-        columnas = "TRANS_DATE,PRODUCT_NAME,Codigo_producto_convertido,ORIGINAL_QTY,ORIGIN_MEMO,ORIGIN_REF,BASE_COMISION,Info_Seriales,Codigo_Sucursal,BaseImponibleReal_1,COD_SALESMAN,Codigo_Marca"
+        columnas = ("TRANS_DATE,PRODUCT_NAME,Codigo_producto_convertido,ORIGINAL_QTY,ORIGIN_MEMO,ORIGIN_REF,"
+                    "BASE_COMISION,Info_Seriales,Codigo_Sucursal,BaseImponibleReal_1,COD_SALESMAN,Codigo_Marca")
         
         dt_actual = dt_inicio
         dias_totales = (dt_fin - dt_inicio).days + 1
@@ -153,8 +157,12 @@ class SyncService:
             logging.error("SyncService: No se pudo obtener el token inicial para liquidaciones.")
             return {"status": "error", "message": "No se pudo conectar al ERP para obtener el token."}
 
-        cols_cabecera = "CORP,LIQUIDACION_FECHA,OBSERVACIONES,ANTES_TOTAL_1,ANTES_TOTAL_2,ANTES_TOTAL_3,DESPUES_TOTAL_1,DESPUES_TOTAL_2,DESPUES_TOTAL_3,LIQUIDACION_ESTADO,LIQUIDACION_ID_CORP"
-        cols_productos = "FACTURA_ID_CORP,IdRecepcionRelacionada,VALOR_TOTAL_CIF,VALOR_SUBTOTAL_CIF,VALOR_ANTES_1,VALOR_ANTES_2,VALOR_ANTES_3,VALOR_DESPUES_1,VALOR_DESPUES_2,VALOR_DESPUES_3,PARTIDA_ID_CORP,PRODUCTO_ID_CORP,LIQUIDACION_ID,CANTIDAD,PRECIO,TOTAL,VALOR_TOTAL_CIF_MANUAL,VALOR_TOTAL_CIF_UNIDAD,LIQUIDACION_ID_CORP"
+        cols_cabecera = ("CORP,LIQUIDACION_FECHA,OBSERVACIONES,ANTES_TOTAL_1,ANTES_TOTAL_2,ANTES_TOTAL_3,DESPUES_TOTAL_1,"
+                         "DESPUES_TOTAL_2,DESPUES_TOTAL_3,LIQUIDACION_ESTADO,LIQUIDACION_ID_CORP")
+
+        cols_productos = ("FACTURA_ID_CORP,IdRecepcionRelacionada,VALOR_TOTAL_CIF,VALOR_SUBTOTAL_CIF,VALOR_ANTES_1,"
+                          "VALOR_ANTES_2,VALOR_ANTES_3,VALOR_DESPUES_1,VALOR_DESPUES_2,VALOR_DESPUES_3,PARTIDA_ID_CORP,PRODUCTO_ID_CORP,"
+                          "LIQUIDACION_ID,CANTIDAD,PRECIO,TOTAL,VALOR_TOTAL_CIF_MANUAL,VALOR_TOTAL_CIF_UNIDAD,LIQUIDACION_ID_CORP")
 
         def parse_float(val):
             try:
@@ -347,9 +355,9 @@ class SyncService:
             logging.error("SyncService: No se pudo obtener el token inicial para ATS.")
             return {"status": "error", "message": "No se pudo conectar al ERP para obtener el token."}
 
-        cols_factura = "INVOICE_DATE,CORP,VENDOR_ID,MEMO,INVOICE_TOTAL,DOC_REFERENCE,TotalProductosConIVa,TotalServiciosConIVa,TotalProductosSinIVa,TotalServiciosSinIVa,VOID,DOC_ID_CORP,CONFIRMED"
-        cols_proveedor = "VENDOR_ID,VENDOR_NAME,RUC_or_FED_ID"
-        cols_fiscal = "MF_Nume1,MF_Alfa2,MF_Lista2,MF_Bool5,ID_Relacionado"
+        cols_factura = "INVOICE_DATE,CORP,VENDOR_ID,VENDOR_ID_CORP,MEMO,INVOICE_TOTAL,TotalProductosConIVa,TotalServiciosConIVa,TotalProductosSinIVa,TotalServiciosSinIVa,VOID,DOC_ID_CORP,DOC_REFERENCE,CONFIRMED"
+        cols_proveedor = "VENDOR_ID,CODIGO_PROVEEDOR_EMPRESA,VENDOR_NAME,RUC_or_FED_ID"
+        cols_fiscal = "MF_Nume1,MF_Alfa2,MF_Alfa3,MF_Lista2,MF_Bool5,Reservado1,Reservado2,Reservado3,ID_Relacionado"
 
         def parse_float(val):
             try:
@@ -394,9 +402,10 @@ class SyncService:
                     v_id_clean = v_id.replace('.0', '').strip().upper()
                     dict_provs[v_id_clean] = {
                         "vendor_name": clean_str(p.get("VENDOR_NAME")),
-                        "ruc_or_fed_id": clean_str(p.get("RUC_or_FED_ID"))
+                        "ruc_or_fed_id": clean_str(p.get("RUC_or_FED_ID")),
+                        "codigo_proveedor_empresa": clean_str(p.get("CODIGO_PROVEEDOR_EMPRESA"))
                     }
-            
+
             # Guardar proveedores locales de forma masiva (Bulk)
             try:
                 todos_locales = {p.vendor_id: p for p in db.query(AtsProveedorStaging).all()}
@@ -406,11 +415,13 @@ class SyncService:
                         prov_db = todos_locales[v_id]
                         prov_db.vendor_name = p_info["vendor_name"]
                         prov_db.ruc_or_fed_id = p_info["ruc_or_fed_id"]
+                        prov_db.codigo_proveedor_empresa = p_info["codigo_proveedor_empresa"]
                     else:
                         new_prov = AtsProveedorStaging(
                             vendor_id=v_id,
                             vendor_name=p_info["vendor_name"],
-                            ruc_or_fed_id=p_info["ruc_or_fed_id"]
+                            ruc_or_fed_id=p_info["ruc_or_fed_id"],
+                            codigo_proveedor_empresa=p_info["codigo_proveedor_empresa"]
                         )
                         nuevos_provs.append(new_prov)
                 
@@ -469,7 +480,8 @@ class SyncService:
 
         for index, lote in enumerate(lotes_ids):
             or_conds = " OR ".join([f"ID_Relacionado = '{doc}'" for doc in lote])
-            condicion_fiscal = f"({or_conds}) AND MF_Bool5 = 0"
+            # Sin filtro MF_Bool5: se trae todo, el front decide que mostrar.
+            condicion_fiscal = f"({or_conds})"
 
             logging.info(f"SyncService [ATS]: Solicitando lote fiscal {index+1}/{len(lotes_ids)} ({len(lote)} IDs)...")
             lote_datos = self.repository.ejecutar_consulta(
@@ -515,6 +527,8 @@ class SyncService:
             for f in datos_fact:
                 d_id = clean_str(f.get("DOC_ID_CORP")).replace('.0', '').strip().upper()
                 v_id = clean_str(f.get("VENDOR_ID")).replace('.0', '').strip().upper()
+                v_id_corp = clean_str(f.get("VENDOR_ID_CORP"))
+                v_id_corp = v_id_corp.replace('.0', '').strip().upper() if v_id_corp else None
 
                 fecha_raw = f.get("INVOICE_DATE")
                 if isinstance(fecha_raw, str):
@@ -527,6 +541,7 @@ class SyncService:
                     invoice_date=fecha_db,
                     corp=clean_str(f.get("CORP")),
                     vendor_id=v_id,
+                    vendor_id_corp=v_id_corp,
                     memo=clean_str(f.get("MEMO")),
                     invoice_total=parse_float(f.get("INVOICE_TOTAL")),
                     doc_reference=clean_str(f.get("DOC_REFERENCE")),
@@ -551,8 +566,12 @@ class SyncService:
                     id_relacionado=id_rel,
                     mf_nume1=parse_float(fi.get("MF_Nume1")),
                     mf_alfa2=clean_str(fi.get("MF_Alfa2")),
+                    mf_alfa3=clean_str(fi.get("MF_Alfa3")),
                     mf_lista2=clean_str(fi.get("MF_Lista2")),
-                    mf_bool5=parse_bool(fi.get("MF_Bool5"))
+                    mf_bool5=parse_bool(fi.get("MF_Bool5")),
+                    reservado1=parse_bool(fi.get("Reservado1")),
+                    reservado2=parse_bool(fi.get("Reservado2")),
+                    reservado3=parse_bool(fi.get("Reservado3"))
                 )
                 nueva_info_fiscal.append(fisc)
 
@@ -582,7 +601,10 @@ class SyncService:
             logging.error(f"SyncService: Formato de fechas inválido: {e}")
             return {"status": "error", "message": "Formato de fechas inválido (esperado YYYY-MM-DD)"}
 
-        token_actual = self.repository.obtener_token(env=env)
+        # force_refresh: el token en cache puede venir casi-expirado de otra operacion.
+        # El dia 1 del loop no se refresca (solo dia_contador>1), asi que si el inicial
+        # esta vencido, el primer dia daria 401 y quedaria vacio. Se arranca con uno fresco.
+        token_actual = self.repository.obtener_token(force_refresh=True, env=env)
         if not token_actual:
             logging.error("SyncService: No se pudo obtener el token inicial del ERP.")
             return {"status": "error", "message": "No se pudo conectar al ERP para obtener el token."}
@@ -590,10 +612,27 @@ class SyncService:
         cols_movs = (
             "DOC_ID_CORP,TRANS_DATE,PRODUCT_ID_CORP,PRODUCT_NAME,QUANTITY,ORIGINAL_QTY,"
             "UNIT_COST,DISCOUNT_AMOUNT,NET_LINE_TOTAL,UM,Anulada,IN_OUT,"
-            "\"Codigo grupo\",\"Codigo subgrupo\",Codigo_grupo,Codigo_subgrupo"
+            "\"Codigo grupo\",\"Codigo subgrupo\",Codigo_grupo,Codigo_subgrupo,"
+            "ORIGIN_MEMO,ORIGIN_REF,TRANS_COST,WAR_CODE,COD_CLIENTE"
         )
-        cols_facturas = "CODIGO_FACTURA,NUMERO_FACTURA,FECHA_FACTURA"
-        
+        # EMPRESA (NVC01/ENV01) y CODIGO_LOCAL (sucursal) para segmentar; ANULADA para excluir.
+        cols_facturas = "CODIGO_FACTURA,NUMERO_FACTURA,FECHA_FACTURA,EMPRESA,CODIGO_LOCAL,ANULADA"
+
+        # Bodegas: catalogo estatico, se trae una sola vez para todo el rango (no cambia por dia).
+        bodegas_dict = {}
+        try:
+            datos_bodegas = self.repository.ejecutar_consulta(
+                token=token_actual, select="WARE_CODE,WARE_NAME", table="INVT_Bodegas_Lista", env=env
+            )
+            for b in (datos_bodegas or []):
+                mapeo_b = {k.replace(" ", "").replace("_", "").upper(): k for k in b.keys()}
+                code = b.get(mapeo_b.get("WARECODE"))
+                name = b.get(mapeo_b.get("WARENAME"))
+                if code:
+                    bodegas_dict[str(code).strip()] = str(name).strip() if name else ""
+        except Exception as e:
+            logging.error(f"SyncService [Ventas]: No se pudo precargar catalogo de bodegas: {e}")
+
         dt_actual = dt_inicio
         dias_totales = (dt_fin - dt_inicio).days + 1
         dia_contador = 1
@@ -621,7 +660,17 @@ class SyncService:
         while dt_actual <= dt_fin:
             fecha_str = dt_actual.strftime('%Y-%m-%d')
             logging.info(f"SyncService [Ventas]: Procesando día {dia_contador}/{dias_totales} (Fecha: {fecha_str})")
-            
+
+            # El JWT del ERP expira a los 45 min. En meses pesados (200k+ filas) un solo
+            # dia puede tardar minutos, asi que se refresca el token al inicio de CADA dia:
+            # sin esto, al expirar el token el ERP responde 401, ejecutar_consulta lo
+            # devuelve como [] (dia sin datos) y el DELETE de abajo borra datos buenos
+            # sin re-insertar. Login es <1s, el costo por dia es despreciable.
+            if dia_contador > 1:
+                nuevo_token = self.repository.obtener_token(force_refresh=True, env=env)
+                if nuevo_token:
+                    token_actual = nuevo_token
+
             # 1. Consultar Kardex de Inventario
             condicion_where = f"TRANS_DATE = '{fecha_str}'"
             datos_movs = None
@@ -685,12 +734,39 @@ class SyncService:
                 db.query(VentasKardexStaging).filter(VentasKardexStaging.trans_date == dt_actual.date()).delete()
                 db.query(VentasFacturaStaging).filter(VentasFacturaStaging.invoice_date == dt_actual.date()).delete()
 
+                # Clientes: solo los codigos que aparecen hoy (catalogo completo es demasiado grande para traer entero).
+                clientes_dict = {}
+                if datos_movs:
+                    codigos_cliente_hoy = set()
+                    for item in datos_movs:
+                        mapeo_probe = {k.replace(" ", "").replace("_", "").upper(): k for k in item.keys()}
+                        col_cli_probe = mapeo_probe.get("CODCLIENTE")
+                        val = clean_str(item.get(col_cli_probe)) if col_cli_probe else None
+                        if val:
+                            codigos_cliente_hoy.add(val)
+                    if codigos_cliente_hoy:
+                        try:
+                            # Esta API (4D ORDA) no soporta "IN (...)"; solo comparaciones OR encadenadas.
+                            clausula_or = " OR ".join(f"CODIGO_CLIENTE = '{c}'" for c in codigos_cliente_hoy)
+                            datos_clientes = self.repository.ejecutar_consulta(
+                                token=token_actual, select="CODIGO_CLIENTE,NOMBRE_CLIENTE", table="CLNT_Ficha_Principal",
+                                where=clausula_or, env=env
+                            )
+                            for c in (datos_clientes or []):
+                                mapeo_c = {k.replace(" ", "").replace("_", "").upper(): k for k in c.keys()}
+                                code = c.get(mapeo_c.get("CODIGOCLIENTE"))
+                                name = c.get(mapeo_c.get("NOMBRECLIENTE"))
+                                if code:
+                                    clientes_dict[str(code).strip()] = str(name).strip() if name else ""
+                        except Exception as e:
+                            logging.error(f"SyncService [Ventas]: No se pudo resolver nombres de clientes para {fecha_str}: {e}")
+
                 # Guardar Kardex
                 nuevos_movs = []
                 if datos_movs:
                     for item in datos_movs:
                         mapeo_item = {k.replace(" ", "").replace("_", "").upper(): k for k in item.keys()}
-                        
+
                         col_doc = mapeo_item.get("DOCIDCORP")
                         col_prod_id = mapeo_item.get("PRODUCTIDCORP")
                         col_prod_name = mapeo_item.get("PRODUCTNAME")
@@ -704,6 +780,18 @@ class SyncService:
                         col_in_out = mapeo_item.get("INOUT")
                         col_grupo = mapeo_item.get("CODIGOGRUPO")
                         col_subgrupo = mapeo_item.get("CODIGOSUBGRUPO")
+                        col_memo = mapeo_item.get("ORIGINMEMO")
+                        col_ref = mapeo_item.get("ORIGINREF")
+                        col_trans_cost = mapeo_item.get("TRANSCOST")
+                        col_war = mapeo_item.get("WARCODE")
+                        col_cliente = mapeo_item.get("CODCLIENTE")
+
+                        # origin_ref normalizado a solo dígitos = llave de cruce con la factura
+                        ref_raw = clean_str(item.get(col_ref)) if col_ref else ""
+                        ref_num = "".join(ch for ch in (ref_raw or "") if ch.isdigit())
+
+                        war_code_val = clean_str(item.get(col_war)) if col_war else ""
+                        codigo_cliente_val = clean_str(item.get(col_cliente)) if col_cliente else ""
 
                         mov = VentasKardexStaging(
                             doc_id_corp=clean_str(item.get(col_doc)) if col_doc else "",
@@ -719,7 +807,14 @@ class SyncService:
                             anulada=parse_bool(item.get(col_anulada)) if col_anulada else False,
                             in_out=clean_str(item.get(col_in_out)) if col_in_out else "OUT",
                             codigo_grupo=clean_str(item.get(col_grupo)) if col_grupo else "GENERAL",
-                            codigo_subgrupo=clean_str(item.get(col_subgrupo)) if col_subgrupo else "GENERAL"
+                            codigo_subgrupo=clean_str(item.get(col_subgrupo)) if col_subgrupo else "GENERAL",
+                            origin_memo=clean_str(item.get(col_memo)) if col_memo else "",
+                            origin_ref=ref_num,
+                            trans_cost=parse_float(item.get(col_trans_cost)) if col_trans_cost else 0.0,
+                            war_code=war_code_val,
+                            bodega_nombre=bodegas_dict.get(war_code_val, ""),
+                            codigo_cliente=codigo_cliente_val,
+                            nombre_cliente=clientes_dict.get(codigo_cliente_val, "")
                         )
                         nuevos_movs.append(mov)
 
@@ -729,16 +824,32 @@ class SyncService:
 
                 # Guardar Facturas
                 nuevas_facturas = []
+                _fact_vistas = set()
                 if datos_facturas:
                     for item in datos_facturas:
                         mapeo_fact = {k.replace(" ", "").replace("_", "").upper(): k for k in item.keys()}
                         col_fid = mapeo_fact.get("CODIGOFACTURA")
                         col_fref = mapeo_fact.get("NUMEROFACTURA")
+                        col_emp = mapeo_fact.get("EMPRESA")
+                        col_local = mapeo_fact.get("CODIGOLOCAL")
+                        col_fanul = mapeo_fact.get("ANULADA")
+
+                        num_raw = clean_str(item.get(col_fref)) if col_fref else ""
+                        num_dig = "".join(ch for ch in (num_raw or "") if ch.isdigit())
+
+                        doc_id_val = clean_str(item.get(col_fid)) if col_fid else ""
+                        if not doc_id_val or doc_id_val in _fact_vistas:
+                            continue
+                        _fact_vistas.add(doc_id_val)
 
                         fact = VentasFacturaStaging(
-                            doc_id_corp=clean_str(item.get(col_fid)) if col_fid else "",
-                            doc_reference=clean_str(item.get(col_fref)) if col_fref else "",
-                            invoice_date=dt_actual.date()
+                            doc_id_corp=doc_id_val,
+                            doc_reference=num_raw,
+                            invoice_date=dt_actual.date(),
+                            numero_factura=num_dig,
+                            empresa=clean_str(item.get(col_emp)) if col_emp else "",
+                            codigo_local=clean_str(item.get(col_local)) if col_local else "",
+                            anulada=parse_bool(item.get(col_fanul)) if col_fanul else False
                         )
                         nuevas_facturas.append(fact)
 
