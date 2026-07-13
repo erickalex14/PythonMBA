@@ -355,9 +355,9 @@ class SyncService:
             logging.error("SyncService: No se pudo obtener el token inicial para ATS.")
             return {"status": "error", "message": "No se pudo conectar al ERP para obtener el token."}
 
-        cols_factura = "INVOICE_DATE,CORP,VENDOR_ID,MEMO,INVOICE_TOTAL,DOC_REFERENCE,TotalProductosConIVa,TotalServiciosConIVa,TotalProductosSinIVa,TotalServiciosSinIVa,VOID,DOC_ID_CORP,CONFIRMED"
-        cols_proveedor = "VENDOR_ID,VENDOR_NAME,RUC_or_FED_ID"
-        cols_fiscal = "MF_Nume1,MF_Alfa2,MF_Lista2,MF_Bool5,ID_Relacionado"
+        cols_factura = "INVOICE_DATE,CORP,VENDOR_ID,VENDOR_ID_CORP,MEMO,INVOICE_TOTAL,TotalProductosConIVa,TotalServiciosConIVa,TotalProductosSinIVa,TotalServiciosSinIVa,VOID,DOC_ID_CORP,DOC_REFERENCE,CONFIRMED"
+        cols_proveedor = "VENDOR_ID,CODIGO_PROVEEDOR_EMPRESA,VENDOR_NAME,RUC_or_FED_ID"
+        cols_fiscal = "MF_Nume1,MF_Alfa2,MF_Alfa3,MF_Lista2,MF_Bool5,Reservado1,Reservado2,Reservado3,ID_Relacionado"
 
         def parse_float(val):
             try:
@@ -402,9 +402,10 @@ class SyncService:
                     v_id_clean = v_id.replace('.0', '').strip().upper()
                     dict_provs[v_id_clean] = {
                         "vendor_name": clean_str(p.get("VENDOR_NAME")),
-                        "ruc_or_fed_id": clean_str(p.get("RUC_or_FED_ID"))
+                        "ruc_or_fed_id": clean_str(p.get("RUC_or_FED_ID")),
+                        "codigo_proveedor_empresa": clean_str(p.get("CODIGO_PROVEEDOR_EMPRESA"))
                     }
-            
+
             # Guardar proveedores locales de forma masiva (Bulk)
             try:
                 todos_locales = {p.vendor_id: p for p in db.query(AtsProveedorStaging).all()}
@@ -414,11 +415,13 @@ class SyncService:
                         prov_db = todos_locales[v_id]
                         prov_db.vendor_name = p_info["vendor_name"]
                         prov_db.ruc_or_fed_id = p_info["ruc_or_fed_id"]
+                        prov_db.codigo_proveedor_empresa = p_info["codigo_proveedor_empresa"]
                     else:
                         new_prov = AtsProveedorStaging(
                             vendor_id=v_id,
                             vendor_name=p_info["vendor_name"],
-                            ruc_or_fed_id=p_info["ruc_or_fed_id"]
+                            ruc_or_fed_id=p_info["ruc_or_fed_id"],
+                            codigo_proveedor_empresa=p_info["codigo_proveedor_empresa"]
                         )
                         nuevos_provs.append(new_prov)
                 
@@ -477,7 +480,8 @@ class SyncService:
 
         for index, lote in enumerate(lotes_ids):
             or_conds = " OR ".join([f"ID_Relacionado = '{doc}'" for doc in lote])
-            condicion_fiscal = f"({or_conds}) AND MF_Bool5 = 0"
+            # Sin filtro MF_Bool5: se trae todo, el front decide que mostrar.
+            condicion_fiscal = f"({or_conds})"
 
             logging.info(f"SyncService [ATS]: Solicitando lote fiscal {index+1}/{len(lotes_ids)} ({len(lote)} IDs)...")
             lote_datos = self.repository.ejecutar_consulta(
@@ -523,6 +527,8 @@ class SyncService:
             for f in datos_fact:
                 d_id = clean_str(f.get("DOC_ID_CORP")).replace('.0', '').strip().upper()
                 v_id = clean_str(f.get("VENDOR_ID")).replace('.0', '').strip().upper()
+                v_id_corp = clean_str(f.get("VENDOR_ID_CORP"))
+                v_id_corp = v_id_corp.replace('.0', '').strip().upper() if v_id_corp else None
 
                 fecha_raw = f.get("INVOICE_DATE")
                 if isinstance(fecha_raw, str):
@@ -535,6 +541,7 @@ class SyncService:
                     invoice_date=fecha_db,
                     corp=clean_str(f.get("CORP")),
                     vendor_id=v_id,
+                    vendor_id_corp=v_id_corp,
                     memo=clean_str(f.get("MEMO")),
                     invoice_total=parse_float(f.get("INVOICE_TOTAL")),
                     doc_reference=clean_str(f.get("DOC_REFERENCE")),
@@ -559,8 +566,12 @@ class SyncService:
                     id_relacionado=id_rel,
                     mf_nume1=parse_float(fi.get("MF_Nume1")),
                     mf_alfa2=clean_str(fi.get("MF_Alfa2")),
+                    mf_alfa3=clean_str(fi.get("MF_Alfa3")),
                     mf_lista2=clean_str(fi.get("MF_Lista2")),
-                    mf_bool5=parse_bool(fi.get("MF_Bool5"))
+                    mf_bool5=parse_bool(fi.get("MF_Bool5")),
+                    reservado1=parse_bool(fi.get("Reservado1")),
+                    reservado2=parse_bool(fi.get("Reservado2")),
+                    reservado3=parse_bool(fi.get("Reservado3"))
                 )
                 nueva_info_fiscal.append(fisc)
 
@@ -590,7 +601,10 @@ class SyncService:
             logging.error(f"SyncService: Formato de fechas inválido: {e}")
             return {"status": "error", "message": "Formato de fechas inválido (esperado YYYY-MM-DD)"}
 
-        token_actual = self.repository.obtener_token(env=env)
+        # force_refresh: el token en cache puede venir casi-expirado de otra operacion.
+        # El dia 1 del loop no se refresca (solo dia_contador>1), asi que si el inicial
+        # esta vencido, el primer dia daria 401 y quedaria vacio. Se arranca con uno fresco.
+        token_actual = self.repository.obtener_token(force_refresh=True, env=env)
         if not token_actual:
             logging.error("SyncService: No se pudo obtener el token inicial del ERP.")
             return {"status": "error", "message": "No se pudo conectar al ERP para obtener el token."}
@@ -647,15 +661,15 @@ class SyncService:
             fecha_str = dt_actual.strftime('%Y-%m-%d')
             logging.info(f"SyncService [Ventas]: Procesando día {dia_contador}/{dias_totales} (Fecha: {fecha_str})")
 
-            # El JWT del ERP expira a los 45 min. En rangos largos (meses) se refresca
-            # proactivamente cada 20 dias: sin esto, al expirar el token el ERP responde
-            # 401, ejecutar_consulta lo devuelve como [] (dia sin datos) y el DELETE de
-            # abajo borra datos buenos sin re-insertar.
-            if dia_contador > 1 and dia_contador % 20 == 0:
+            # El JWT del ERP expira a los 45 min. En meses pesados (200k+ filas) un solo
+            # dia puede tardar minutos, asi que se refresca el token al inicio de CADA dia:
+            # sin esto, al expirar el token el ERP responde 401, ejecutar_consulta lo
+            # devuelve como [] (dia sin datos) y el DELETE de abajo borra datos buenos
+            # sin re-insertar. Login es <1s, el costo por dia es despreciable.
+            if dia_contador > 1:
                 nuevo_token = self.repository.obtener_token(force_refresh=True, env=env)
                 if nuevo_token:
                     token_actual = nuevo_token
-                    logging.info(f"SyncService [Ventas]: Token refrescado proactivamente en dia {dia_contador}.")
 
             # 1. Consultar Kardex de Inventario
             condicion_where = f"TRANS_DATE = '{fecha_str}'"
