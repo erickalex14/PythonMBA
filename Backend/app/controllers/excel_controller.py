@@ -29,8 +29,8 @@ def download_movimientos(
     df = movimientos_service.obtener_movimientos(inicio, fin, db)
     if df.empty:
         raise HTTPException(status_code=404, detail="No hay movimientos registrados para exportar en este rango.")
-    
-    excel_file = excel_service.generar_reporte_excel(df, 'Movimientos')
+
+    excel_file = excel_service.generar_reporte_movimientos(df, inicio, fin)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"Reporte_Movimientos_MBA3_{timestamp}.xlsx"
     
@@ -55,8 +55,8 @@ def download_liquidaciones(
 
     if df.empty:
         raise HTTPException(status_code=404, detail="No hay liquidaciones registradas para exportar en este rango.")
-    
-    excel_file = excel_service.generar_reporte_excel(df, 'Consolidado')
+
+    excel_file = excel_service.generar_reporte_liquidaciones(df, inicio, fin)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"Reporte_Liquidaciones_Consolidado_{timestamp}.xlsx"
     
@@ -80,8 +80,8 @@ def download_ats(
     df = ats_service.obtener_ats(inicio, fin, db)
     if df.empty:
         raise HTTPException(status_code=404, detail="No hay facturas fiscales registradas para exportar en este rango.")
-    
-    excel_file = excel_service.generar_reporte_excel(df, 'Consolidado')
+
+    excel_file = excel_service.generar_reporte_ats(df, inicio, fin)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"Reporte_Facturacion_Fiscal_{timestamp}.xlsx"
     
@@ -141,11 +141,16 @@ def export_custom_data(
 
     df = pd.DataFrame(payload.data)
 
-    # Ventas usa el formato corporativo estilo MBA (encabezado, resumen, totales)
-    if (payload.report_type or "").lower() == "ventas":
-        excel_file = excel_service.generar_reporte_ventas(
-            df, payload.inicio or "", payload.fin or ""
-        )
+    # Todos los tipos conocidos usan el formato corporativo (encabezado, resumen, totales).
+    generadores = {
+        "ventas": excel_service.generar_reporte_ventas,
+        "movimientos": excel_service.generar_reporte_movimientos,
+        "liquidaciones": excel_service.generar_reporte_liquidaciones,
+        "ats": excel_service.generar_reporte_ats,
+    }
+    generador = generadores.get((payload.report_type or "").lower())
+    if generador:
+        excel_file = generador(df, payload.inicio or "", payload.fin or "")
     else:
         excel_file = excel_service.generar_reporte_excel(df, payload.sheet_name)
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")

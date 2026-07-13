@@ -44,6 +44,20 @@ async def lifespan(app: FastAPI):
             """))
             logging.info("Columnas de rentabilidad (bodega/cliente/costo) verificadas en ventas_kardex_staging.")
 
+            # ATS: columnas nuevas (JOIN vendor-empresa + campos fiscales) de forma idempotente.
+            connection.execute(text("ALTER TABLE ats_facturas_staging ADD COLUMN IF NOT EXISTS vendor_id_corp VARCHAR(60);"))
+            connection.execute(text("ALTER TABLE ats_proveedores_staging ADD COLUMN IF NOT EXISTS codigo_proveedor_empresa VARCHAR(60);"))
+            connection.execute(text("""
+                ALTER TABLE ats_fiscal_staging
+                    ADD COLUMN IF NOT EXISTS mf_alfa3 VARCHAR(100),
+                    ADD COLUMN IF NOT EXISTS reservado1 BOOLEAN DEFAULT false,
+                    ADD COLUMN IF NOT EXISTS reservado2 BOOLEAN DEFAULT false,
+                    ADD COLUMN IF NOT EXISTS reservado3 BOOLEAN DEFAULT false;
+            """))
+            connection.execute(text("CREATE INDEX IF NOT EXISTS ix_ats_facturas_staging_vendor_id_corp ON ats_facturas_staging (vendor_id_corp);"))
+            connection.execute(text("CREATE INDEX IF NOT EXISTS ix_ats_proveedores_staging_cod_prov_emp ON ats_proveedores_staging (codigo_proveedor_empresa);"))
+            logging.info("Columnas nuevas de ATS verificadas en staging.")
+
             sql_view_liq = """
             CREATE OR REPLACE VIEW view_liquidaciones_reporte AS
             SELECT
@@ -83,30 +97,43 @@ async def lifespan(app: FastAPI):
             connection.execute(text(sql_view_liq))
             logging.info("Vista relacional SQL 'view_liquidaciones_reporte' creada o actualizada.")
 
+            # DROP antes de CREATE: cambian columnas y llave de JOIN, CREATE OR REPLACE fallaria.
+            connection.execute(text("DROP VIEW IF EXISTS view_ats_reporte CASCADE;"))
             sql_view_ats = """
-            CREATE OR REPLACE VIEW view_ats_reporte AS
+            CREATE VIEW view_ats_reporte AS
             SELECT
-                f.invoice_date,
                 f.corp,
+                f.invoice_date,
                 f.vendor_id,
                 p.vendor_name,
                 p.ruc_or_fed_id,
+                f.doc_reference,
                 f.memo,
                 f.invoice_total,
-                f.doc_reference,
+                f.total_productos_con_iva,
+                f.total_servicios_con_iva,
+                f.total_productos_sin_iva,
+                f.total_servicios_sin_iva,
+                fi.mf_alfa3,
                 fi.mf_nume1,
                 fi.mf_alfa2,
                 fi.mf_lista2,
+                fi.reservado1,
+                fi.reservado2,
+                fi.reservado3,
+                p.codigo_proveedor_empresa,
+                f.vendor_id_corp,
+                f.doc_id_corp,
+                fi.id_relacionado,
+                -- Compat con front actual: sumas, es_anulado y flags para filtrar en cliente.
                 (f.total_productos_con_iva + f.total_servicios_con_iva) AS suma_con_iva,
                 (f.total_productos_sin_iva + f.total_servicios_sin_iva) AS suma_sin_iva,
                 CASE WHEN f.void = true THEN 1 ELSE 0 END AS es_anulado,
                 fi.mf_bool5,
-                f.doc_id_corp,
-                fi.id_relacionado,
                 f.confirmed,
                 f.void
             FROM ats_facturas_staging f
-            INNER JOIN ats_proveedores_staging p ON f.vendor_id = p.vendor_id
+            INNER JOIN ats_proveedores_staging p ON f.vendor_id_corp = p.codigo_proveedor_empresa
             INNER JOIN ats_fiscal_staging fi ON f.doc_id_corp = fi.id_relacionado;
             """
             connection.execute(text(sql_view_ats))
