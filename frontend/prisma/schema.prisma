@@ -118,6 +118,7 @@ model AtsFacturaStaging {
   invoice_date            DateTime @db.Date
   corp                    String   @db.VarChar(10)
   vendor_id               String   @db.VarChar(50)
+  vendor_id_corp          String?  @db.VarChar(60)
   memo                    String?  @db.Text
   invoice_total           Decimal  @db.Decimal(18, 4)
   doc_reference           String?  @db.VarChar(100)
@@ -134,11 +135,12 @@ model AtsFacturaStaging {
 }
 
 model AtsProveedorStaging {
-  vendor_id     String   @id @db.VarChar(50)
-  vendor_name   String   @db.VarChar(200)
-  ruc_or_fed_id String?  @db.VarChar(50)
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  vendor_id                String   @id @db.VarChar(50)
+  vendor_name              String   @db.VarChar(200)
+  ruc_or_fed_id            String?  @db.VarChar(50)
+  codigo_proveedor_empresa String?  @db.VarChar(60)
+  created_at               DateTime @default(now())
+  updated_at               DateTime @updatedAt
 
   @@map("ats_proveedores_staging")
 }
@@ -147,8 +149,12 @@ model AtsFiscalStaging {
   id_relacionado String   @id @db.VarChar(50)
   mf_nume1       Decimal  @db.Decimal(18, 4)
   mf_alfa2       String?  @db.VarChar(100)
+  mf_alfa3       String?  @db.VarChar(100)
   mf_lista2      String?  @db.VarChar(100)
   mf_bool5       Boolean  @default(false)
+  reservado1     Boolean  @default(false)
+  reservado2     Boolean  @default(false)
+  reservado3     Boolean  @default(false)
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
