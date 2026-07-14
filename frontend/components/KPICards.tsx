@@ -47,6 +47,14 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
       secondMetricLabel = "Total Unidades Vendidas";
       const totalUnits = filteredData.reduce((acc, row) => acc + (Number(row.cantidad) || Number(row.CANTIDAD) || 0), 0);
       secondMetricValue = totalUnits.toLocaleString("es-EC", { maximumFractionDigits: 0 });
+    } else if (activeTab === "estadisticas-ventas") {
+      mainMetricLabel = "Monto Total Vendido";
+      const totalVentas = filteredData.reduce((acc, row) => acc + (Number(row.total_ventas) || 0), 0);
+      mainMetricValue = totalVentas.toLocaleString("es-EC", { style: "currency", currency: "USD" });
+
+      secondMetricLabel = "Unidades Vendidas";
+      const totalUnidades = filteredData.reduce((acc, row) => acc + (Number(row.unidades_vendidas) || 0), 0);
+      secondMetricValue = totalUnidades.toLocaleString("es-EC", { maximumFractionDigits: 0 });
     }
 
     // Desglose por empresa/sucursal (solo Ventas)

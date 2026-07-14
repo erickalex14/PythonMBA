@@ -7,6 +7,7 @@ from app.services.ats_service import AtsService
 from app.services.excel_service import ExcelService
 from app.services.sync_service import SyncService
 from app.services.ventas_service import VentasService
+from app.services.estadisticas_service import EstadisticasVentasService
 from app.core.database import get_db
 
 def get_mba3_repository() -> IMba3Repository:
@@ -50,4 +51,10 @@ def get_ventas_service(repo: IMba3Repository = Depends(get_mba3_repository)) -> 
     Provee el Servicio de Ventas Espejo inyectando su dependencia del Repositorio.
     """
     return VentasService(repo)
+
+def get_estadisticas_service(repo: IMba3Repository = Depends(get_mba3_repository)) -> EstadisticasVentasService:
+    """
+    Provee el Servicio de Estadisticas de Ventas por producto.
+    """
+    return EstadisticasVentasService(repo)
 

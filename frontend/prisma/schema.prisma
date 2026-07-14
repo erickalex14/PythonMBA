@@ -184,6 +184,7 @@ model VentasKardexStaging {
   bodega_nombre   String?  @db.VarChar(100)
   codigo_cliente  String?  @db.VarChar(20)
   nombre_cliente  String?  @db.VarChar(150)
+  info_seriales   String?  @db.VarChar(2000)
   created_at      DateTime @default(now())
   updated_at      DateTime @updatedAt
 

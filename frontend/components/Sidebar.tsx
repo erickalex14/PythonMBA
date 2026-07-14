@@ -108,6 +108,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         )}
 
+        {(permissions.includes("VIEW_VENTAS") || isUserAdmin) && (
+          <button
+            className={`${styles.navItem} ${activeTab === "estadisticas-ventas" ? styles.active : ""}`}
+            onClick={() => selectTab("estadisticas-ventas")}
+          >
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><path d="M3 4h14v3H3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M4 7v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7" stroke="currentColor" strokeWidth="1.5"/><line x1="7" y1="10" x2="13" y2="10" stroke="currentColor" strokeWidth="1.3"/></svg>
+            <span className="flex-1">Ventas</span>
+          </button>
+        )}
+
         {permissions.includes("VIEW_LOGS") && (
           <button
             className={`${styles.navItem} ${activeTab === "logs" ? styles.active : ""}`}

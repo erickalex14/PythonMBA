@@ -10,6 +10,7 @@ import { Sidebar } from "../../components/Sidebar";
 import { KPICards } from "../../components/KPICards";
 import { ChartsSection } from "../../components/ChartsSection";
 import { RentabilidadCharts } from "../../components/RentabilidadCharts";
+import { EstadisticasVentasCharts } from "../../components/EstadisticasVentasCharts";
 import { ReportTable } from "../../components/ReportTable";
 import { SyncSection } from "../../components/SyncSection";
 import { DailySalesDashboard } from "../../components/DailySalesDashboard";
@@ -23,7 +24,7 @@ import { Modal } from "../../components/ui/Modal";
 import { REPORTS_CONFIG } from "../../lib/reports-config";
 import { useReportQuery } from "../../hooks/useReportQuery";
 
-type TabType = "movimientos" | "liquidaciones" | "ats" | "ventas" | "ventas-diarias" | "logs" | "admin" | "sync";
+type TabType = "movimientos" | "liquidaciones" | "ats" | "ventas" | "estadisticas-ventas" | "ventas-diarias" | "logs" | "admin" | "sync";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -209,11 +210,35 @@ export default function DashboardPage() {
     }
   };
 
+  // Reporte de Ventas (Estadisticas): una fila por producto agregada sobre TODO
+  // el rango - a diferencia de los demas reportes (linea x linea), no se puede
+  // pedir dia por dia y concatenar (duplicaria cada producto por dia).
+  const fetchEstadisticasVentas = async (start: string, end: string) => {
+    setLoading(true);
+    setError(null);
+    setData([]);
+    try {
+      const res = await fetch(`/api/data/estadisticas-ventas?inicio=${start}&fin=${end}`);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Error consultando el reporte de ventas.");
+      }
+      const json = await res.json();
+      setData(Array.isArray(json) ? json : []);
+    } catch (err: any) {
+      setError(err.message || "Error al obtener el reporte de ventas.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleQuery = () => {
     if (activeTab === "logs") {
       fetchLogs();
     } else if (activeTab === "admin") {
       fetchAdminData();
+    } else if (activeTab === "estadisticas-ventas") {
+      fetchEstadisticasVentas(startDate, endDate);
     } else {
       fetchReportData(activeTab, startDate, endDate);
     }
@@ -578,6 +603,8 @@ export default function DashboardPage() {
       return data.reduce((acc, row) => acc + (Number(row.CANTIDAD) || 0), 0);
     } else if (activeTab === "ventas") {
       return data.reduce((acc, row) => acc + (Number(row.cantidad) || Number(row.CANTIDAD) || 0), 0);
+    } else if (activeTab === "estadisticas-ventas") {
+      return data.reduce((acc, row) => acc + (Number(row.unidades_vendidas) || 0), 0);
     }
     return 0;
   }, [data, activeTab]);
@@ -591,6 +618,8 @@ export default function DashboardPage() {
       return data.reduce((acc, row) => acc + (Number(row.INVOICE_TOTAL) || 0), 0);
     } else if (activeTab === "ventas") {
       return data.reduce((acc, row) => acc + (Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0), 0);
+    } else if (activeTab === "estadisticas-ventas") {
+      return data.reduce((acc, row) => acc + (Number(row.total_ventas) || 0), 0);
     }
     return 0;
   }, [data, activeTab]);
@@ -632,6 +661,7 @@ export default function DashboardPage() {
             {activeTab === "liquidaciones" && "INFORME CERTIFICADO DE COSTOS Y LIQUIDACIONES DE IMPORTACIÓN"}
             {activeTab === "ats" && "INFORME FISCAL CONSOLIDADO DE COMPRAS (ATS)"}
             {activeTab === "ventas" && "INFORME CERTIFICADO DE RENTABILIDAD"}
+            {activeTab === "estadisticas-ventas" && "INFORME CERTIFICADO DE VENTAS POR PRODUCTO"}
             {activeTab === "logs" && "BITÁCORA DE AUDITORÍA Y CONTROL DE ACCESOS AL PORTAL BI"}
           </h1>
           <div className={styles.printMetaGrid}>
@@ -655,6 +685,7 @@ export default function DashboardPage() {
               {activeTab === "liquidaciones" && `El costo CIF acumulado de las importaciones analizadas totaliza $${totalAmount.toFixed(2)}, consolidando un total de ${totalQty.toLocaleString()} unidades físicas que han completado el proceso de recepción y liquidación.`}
               {activeTab === "ats" && `El consolidado fiscal del periodo reporta compras brutas por un valor total facturado de $${totalAmount.toFixed(2)}.`}
               {activeTab === "ventas" && `El análisis de rentabilidad reporta ventas netas por un valor total de $${totalAmount.toFixed(2)}, distribuidas en un volumen acumulado de ${totalQty.toLocaleString()} unidades físicas vendidas, con desglose de costo y utilidad por línea.`}
+              {activeTab === "estadisticas-ventas" && `El reporte de ventas por producto totaliza $${totalAmount.toFixed(2)} en ${totalQty.toLocaleString()} unidades vendidas en el periodo, con existencia actual y precios por producto.`}
             </p>
           </div>
         </div>
@@ -666,6 +697,7 @@ export default function DashboardPage() {
             {activeTab === "liquidaciones" && "Liquidaciones de Importaciones"}
             {activeTab === "ats" && "ATS - Facturas de Compras"}
             {activeTab === "ventas" && "Rentabilidad (Detalle)"}
+            {activeTab === "estadisticas-ventas" && "Ventas (Por Producto)"}
             {activeTab === "ventas-diarias" && "Dashboard"}
             {activeTab === "logs" && "Bitácora de Auditoría"}
             {activeTab === "admin" && "Panel de Administración"}
@@ -676,6 +708,7 @@ export default function DashboardPage() {
             {activeTab === "liquidaciones" && "Consolidado de costos CIF y detalle de productos liquidados"}
             {activeTab === "ats" && "Resumen fiscal de compras autorizadas y anulaciones"}
             {activeTab === "ventas" && "Costo, utilidad y margen por línea de venta — facturación de clientes"}
+            {activeTab === "estadisticas-ventas" && "Unidades vendidas, precios y existencia actual por producto"}
             {activeTab === "ventas-diarias" && "Resumen ejecutivo de ventas y comparativa con Movimientos, Liquidaciones y ATS"}
             {activeTab === "logs" && "Historial de descargas de reportes para auditoría de seguridad"}
             {activeTab === "admin" && "Gestión de seguridad, control de acceso de usuarios y configuración del entorno"}
@@ -993,7 +1026,10 @@ export default function DashboardPage() {
         {!loading && activeTab === "ventas" && (
           <RentabilidadCharts data={filteredData} styles={styles} />
         )}
-        {!loading && activeTab !== "ventas" && (
+        {!loading && activeTab === "estadisticas-ventas" && (
+          <EstadisticasVentasCharts data={filteredData} styles={styles} />
+        )}
+        {!loading && activeTab !== "ventas" && activeTab !== "estadisticas-ventas" && (
           <ChartsSection filteredData={filteredData} activeTab={activeTab} styles={styles} />
         )}
 
