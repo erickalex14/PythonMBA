@@ -33,6 +33,9 @@ class VentasKardexStaging(Base):
     # ORIGIN_REF = numero de factura, cruza con ventas_facturas_staging.numero_factura.
     origin_memo = Column(String(50), nullable=True, index=True)
     origin_ref = Column(String(50), nullable=True, index=True)
+    # Info_Seriales: si tiene valor, el producto es serializado (IMEI/serie) y ahi
+    # ORIGINAL_QTY del ERP es basura - la cantidad real es QUANTITY (ver cantidad en la vista).
+    info_seriales = Column(String(2000), nullable=True)
 
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=True)
