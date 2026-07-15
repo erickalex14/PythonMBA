@@ -4,6 +4,8 @@ from typing import Optional
 class EstadisticasVentasDTO(BaseModel):
     codigo: Optional[str] = Field(None, description="Código de producto")
     producto: Optional[str] = Field(None, description="Nombre/descripción del producto")
+    empresa: Optional[str] = Field(None, description="Código de empresa (NVC01/ENV01)")
+    empresa_nombre: Optional[str] = Field(None, description="Nombre de empresa (NOVICOMPU/ENV)")
     unidad: Optional[str] = Field(None, description="Unidad de medida")
     grupo: Optional[str] = Field(None, description="Grupo")
     subgrupo: Optional[str] = Field(None, description="Subgrupo")
