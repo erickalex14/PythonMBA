@@ -26,5 +26,13 @@ export default function DashboardTabPage() {
     router.push(`/panel/${tab}?${params.toString()}`);
   };
 
-  return <DailySalesDashboard styles={styles} onNavigate={handleDashboardNavigate} />;
+  return (
+    <>
+      <header className={styles.contentHeader}>
+        <h1>Dashboard</h1>
+        <p className={styles.subtext}>Resumen ejecutivo de ventas y comparativa con Movimientos, Liquidaciones y ATS</p>
+      </header>
+      <DailySalesDashboard styles={styles} onNavigate={handleDashboardNavigate} />
+    </>
+  );
 }
