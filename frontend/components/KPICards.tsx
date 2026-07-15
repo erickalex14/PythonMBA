@@ -32,12 +32,16 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
       const totalUnits = filteredData.reduce((acc, row) => acc + (Number(row.CANTIDAD) || 0), 0);
       secondMetricValue = totalUnits.toLocaleString("es-EC", { maximumFractionDigits: 0 });
     } else if (activeTab === "ats") {
+      // Una factura anulada no cuenta como facturado real - se excluye de
+      // los totales monetarios (igual que en el Dashboard), aunque sigue
+      // visible en la tabla de detalle con su badge de estado.
+      const activos = filteredData.filter((row) => Number(row.ES_ANULADO) !== 1);
       mainMetricLabel = "Monto Facturado Total (ATS)";
-      const totalInvoice = filteredData.reduce((acc, row) => acc + (Number(row.INVOICE_TOTAL) || 0), 0);
+      const totalInvoice = activos.reduce((acc, row) => acc + (Number(row.INVOICE_TOTAL) || 0), 0);
       mainMetricValue = totalInvoice.toLocaleString("es-EC", { style: "currency", currency: "USD" });
 
       secondMetricLabel = "Suma Bases con IVA";
-      const totalIva = filteredData.reduce((acc, row) => acc + (Number(row.SUMA_CON_IVA) || 0), 0);
+      const totalIva = activos.reduce((acc, row) => acc + (Number(row.SUMA_CON_IVA) || 0), 0);
       secondMetricValue = totalIva.toLocaleString("es-EC", { style: "currency", currency: "USD" });
     } else if (activeTab === "ventas") {
       mainMetricLabel = "Monto Total Ventas";
