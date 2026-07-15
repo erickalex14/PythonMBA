@@ -34,20 +34,26 @@ function fmtMoney2(n: number): string {
 export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
   if (data.length === 0) return null;
 
+  // Una factura anulada no cuenta como facturado real - todos los totales
+  // monetarios se calculan solo sobre facturas activas (igual que en el
+  // Dashboard). El unico lugar que SI necesita ver las anuladas es el
+  // propio gauge de "% Facturas Anuladas", que usa `data` sin filtrar.
+  const activos = useMemo(() => data.filter((row) => Number(row.ES_ANULADO) !== 1), [data]);
+
   const productosVsServicios = useMemo(() => {
     let productos = 0;
     let servicios = 0;
-    data.forEach((row) => {
+    activos.forEach((row) => {
       productos += num(row, "TotalProductosConIVa") + num(row, "TotalProductosSinIVa");
       servicios += num(row, "TotalServiciosConIVa") + num(row, "TotalServiciosSinIVa");
     });
     return { productos, servicios };
-  }, [data]);
+  }, [activos]);
 
   const conIvaVsSinIva = useMemo(() => {
     let conIva = 0;
     let sinIva = 0;
-    data.forEach((row) => {
+    activos.forEach((row) => {
       conIva += num(row, "SUMA_CON_IVA");
       sinIva += num(row, "SUMA_SIN_IVA");
     });
@@ -55,11 +61,11 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
       { label: "Con IVA", value: conIva },
       { label: "Sin IVA", value: sinIva },
     ];
-  }, [data]);
+  }, [activos]);
 
   const topProveedores = useMemo(() => {
     const map: Record<string, number> = {};
-    data.forEach((row) => {
+    activos.forEach((row) => {
       const proveedor = str(row, "VENDOR_NAME") || "Sin Proveedor";
       map[proveedor] = (map[proveedor] || 0) + num(row, "INVOICE_TOTAL");
     });
@@ -67,11 +73,11 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
       .map(([label, total]) => ({ label, total }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 10);
-  }, [data]);
+  }, [activos]);
 
   const porClasificacion = useMemo(() => {
     const map: Record<string, number> = {};
-    data.forEach((row) => {
+    activos.forEach((row) => {
       const clasif = str(row, "MF_Lista2");
       if (!clasif) return;
       map[clasif] = (map[clasif] || 0) + num(row, "INVOICE_TOTAL");
@@ -80,7 +86,7 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
       .map(([label, value]) => ({ label, value }))
       .sort((a, b) => b.value - a.value)
       .slice(0, 10);
-  }, [data]);
+  }, [activos]);
 
   const pctAnulado = useMemo(() => {
     const anulados = data.filter((row) => Number(row.ES_ANULADO) === 1).length;
@@ -90,7 +96,7 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
 
   const tendenciaDiaria = useMemo(() => {
     const map: Record<string, number> = {};
-    data.forEach((row) => {
+    activos.forEach((row) => {
       const f = str(row, "INVOICE_DATE");
       if (!f) return;
       map[f] = (map[f] || 0) + num(row, "INVOICE_TOTAL");
@@ -98,11 +104,11 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
     return Object.entries(map)
       .map(([x, y]) => ({ x, y }))
       .sort((a, b) => a.x.localeCompare(b.x));
-  }, [data]);
+  }, [activos]);
 
   const paretoProveedores = useMemo(() => {
     const map: Record<string, number> = {};
-    data.forEach((row) => {
+    activos.forEach((row) => {
       const proveedor = str(row, "VENDOR_NAME") || "Sin Proveedor";
       map[proveedor] = (map[proveedor] || 0) + num(row, "INVOICE_TOTAL");
     });
@@ -111,7 +117,7 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
       .filter((i) => i.value > 0)
       .sort((a, b) => b.value - a.value)
       .slice(0, 20);
-  }, [data]);
+  }, [activos]);
 
   const cardStyle: React.CSSProperties = { marginBottom: "1.5rem" };
 
