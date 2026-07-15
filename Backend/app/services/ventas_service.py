@@ -168,12 +168,10 @@ class VentasService:
                         col_cliente: 'CLIENTE_INT'
                     })
 
-                    # Productos con serial (IMEI/serie): ORIGINAL_QTY del ERP es basura ahi,
-                    # la cantidad real es QUANTITY (ver misma logica en la vista SQL de historico).
-                    _orig = pd.to_numeric(df_movs.get('ORIGQTY_INT'), errors='coerce').fillna(0.0) if 'ORIGQTY_INT' in df_movs.columns else 0.0
-                    _qty = pd.to_numeric(df_movs.get('QTY_INT'), errors='coerce').fillna(0.0) if 'QTY_INT' in df_movs.columns else 0.0
-                    _tiene_serial = df_movs['SERIALES_INT'].fillna('').astype(str).str.strip() != '' if 'SERIALES_INT' in df_movs.columns else False
-                    df_movs['CANTIDAD_INT'] = _qty.where(_tiene_serial, _orig.where(_orig > 0, _qty))
+                    # QUANTITY es la cantidad real (ver misma verificacion en la vista SQL de
+                    # historico: match exacto 1219/1219 contra el reporte nativo del ERP).
+                    # ORIGINAL_QTY no representa cantidad vendida, no usarlo.
+                    df_movs['CANTIDAD_INT'] = pd.to_numeric(df_movs.get('QTY_INT'), errors='coerce').fillna(0.0) if 'QTY_INT' in df_movs.columns else 0.0
 
                     df_facturas = pd.DataFrame(datos_facturas) if datos_facturas else pd.DataFrame()
                     if not df_facturas.empty:

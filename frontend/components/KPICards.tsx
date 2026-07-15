@@ -68,6 +68,12 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
       const env = filteredData.reduce((a, r) => a + (emp(r).includes("ENV") ? lineTotal(r) : 0), 0);
       const may = filteredData.reduce((a, r) => a + (["026", "027"].includes(suc(r)) ? lineTotal(r) : 0), 0);
       ventasSeg = { novicompu: fmt(novi), env: fmt(env), mayoristas: fmt(may) };
+    } else if (activeTab === "estadisticas-ventas") {
+      const fmt = (n: number) => n.toLocaleString("es-EC", { style: "currency", currency: "USD" });
+      const totalVenta = (row: any) => Number(row.total_ventas) || 0;
+      const novi = filteredData.reduce((a, r) => a + (String(r.empresa).trim() === "NVC01" ? totalVenta(r) : 0), 0);
+      const env = filteredData.reduce((a, r) => a + (String(r.empresa).trim() === "ENV01" ? totalVenta(r) : 0), 0);
+      ventasSeg = { novicompu: fmt(novi), env: fmt(env), mayoristas: "" };
     }
 
     return { totalRecords, mainMetricLabel, mainMetricValue, secondMetricLabel, secondMetricValue, ventasSeg };
@@ -148,16 +154,18 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
             <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>Empresa ENV01</div>
           </Card>
 
-          <Card variant="kpiCard" styles={styles}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <h3>Mayoristas</h3>
-              <div style={{ background: "var(--color-surface-tint-violet)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" strokeWidth="2.5"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+          {activeTab === "ventas" && (
+            <Card variant="kpiCard" styles={styles}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <h3>Mayoristas</h3>
+                <div style={{ background: "var(--color-surface-tint-violet)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-warning)" strokeWidth="2.5"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                </div>
               </div>
-            </div>
-            <p className={styles.kpiValue}>{kpis.ventasSeg.mayoristas}</p>
-            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>Novicompu suc. 026 + 027</div>
-          </Card>
+              <p className={styles.kpiValue}>{kpis.ventasSeg.mayoristas}</p>
+              <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>Novicompu suc. 026 + 027</div>
+            </Card>
+          )}
         </>
       )}
     </section>
