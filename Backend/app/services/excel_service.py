@@ -64,8 +64,27 @@ class ExcelService:
         resumen: list = None, anchos: dict = None
     ) -> io.BytesIO:
         """
-        Renderer compartido: encabezado corporativo, resumen de totales (verde),
-        tabla con cabecera azul, fila de TOTALES (gris) y anchos ajustados.
+        Renderer compartido de una sola hoja: crea su propio workbook y lo devuelve.
+        """
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            if "Sheet" in writer.book.sheetnames:
+                del writer.book["Sheet"]
+            self._escribir_hoja_corporativa(
+                writer.book, df, sheet_name, titulo, inicio, fin,
+                columnas, money_cols, qty_cols, bool_cols, resumen, anchos
+            )
+        output.seek(0)
+        return output
+
+    def _escribir_hoja_corporativa(
+        self, wb, df: pd.DataFrame, sheet_name: str, titulo: str, inicio: str, fin: str,
+        columnas: list, money_cols: set, qty_cols: set = None, bool_cols: set = None,
+        resumen: list = None, anchos: dict = None
+    ) -> None:
+        """
+        Escribe UNA hoja con formato corporativo (encabezado, resumen, tabla, totales)
+        dentro de un workbook ya existente - permite varias hojas en un mismo archivo.
         """
         qty_cols = qty_cols or set()
         bool_cols = bool_cols or set()
@@ -77,11 +96,8 @@ class ExcelService:
         def num(col):
             return pd.to_numeric(df[col], errors='coerce').fillna(0) if col in df.columns else pd.Series([0] * len(df))
 
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            ws = writer.book.create_sheet(sheet_name)
-            if "Sheet" in writer.book.sheetnames:
-                del writer.book["Sheet"]
+        if True:
+            ws = wb.create_sheet(sheet_name)
 
             azul = PatternFill(start_color="002060", end_color="002060", fill_type="solid")
             gris = PatternFill(start_color="D9E1F2", end_color="D9E1F2", fill_type="solid")
@@ -155,9 +171,6 @@ class ExcelService:
                 ws.column_dimensions[get_column_letter(j)].width = anchos.get(src, 14)
 
             ws.freeze_panes = ws.cell(row=data_start, column=1)
-
-        output.seek(0)
-        return output
 
     def generar_reporte_ventas(self, df: pd.DataFrame, inicio: str, fin: str) -> io.BytesIO:
         df = df.copy()
@@ -273,6 +286,54 @@ class ExcelService:
             df, "Consolidado", "Reporte Consolidado de Liquidaciones",
             inicio, fin, columnas, money_cols, qty_cols={"CANTIDAD"}, resumen=resumen, anchos=anchos
         )
+
+    def generar_reporte_estadisticas_ventas(self, df: pd.DataFrame, inicio: str, fin: str) -> io.BytesIO:
+        """
+        Replica el reporte nativo "Estadisticas de Inventarios" del ERP: hoja principal
+        (todos los productos) + 2 hojas de Top 10 (por unidades y por dólares vendidos).
+        """
+        columnas = [
+            ("codigo", "Código"), ("producto", "Descripción"), ("empresa_nombre", "Empresa"), ("unidad", "Unidad"),
+            ("grupo", "Grupo"), ("subgrupo", "Subgrupo"),
+            ("existencia", "Existencia"), ("asignado", "Asignado"), ("disponible", "Disponible"),
+            ("unidades_vendidas", "Unidades Vendidas"), ("total_ventas", "Total Ventas"),
+            ("precio_promedio", "Precio Promedio"), ("precio_maximo", "Precio Máximo"),
+            ("precio_minimo", "Precio Mínimo"), ("ultimo_precio", "Último Precio"),
+            ("ultima_fecha_venta", "Última Fecha Venta"), ("no_dias", "No. Días"),
+        ]
+        money_cols = {"total_ventas", "precio_promedio", "precio_maximo", "precio_minimo", "ultimo_precio"}
+        qty_cols = {"existencia", "asignado", "disponible", "unidades_vendidas", "no_dias"}
+        anchos = {"producto": 34, "codigo": 16}
+
+        def num(col):
+            return pd.to_numeric(df[col], errors='coerce').fillna(0) if col in df.columns else pd.Series([0] * len(df))
+        resumen = [
+            ("Total Productos", len(df)),
+            ("Unidades Vendidas", float(num("unidades_vendidas").sum())),
+            ("Total Ventas", float(num("total_ventas").sum())),
+        ]
+
+        top_cantidad = df.sort_values(by="unidades_vendidas", ascending=False).head(10) if "unidades_vendidas" in df.columns else df.head(0)
+        top_dolares = df.sort_values(by="total_ventas", ascending=False).head(10) if "total_ventas" in df.columns else df.head(0)
+
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            if "Sheet" in writer.book.sheetnames:
+                del writer.book["Sheet"]
+            self._escribir_hoja_corporativa(
+                writer.book, df, "Estadisticas de Inventarios", "Reporte de Ventas - Estadísticas por Producto",
+                inicio, fin, columnas, money_cols, qty_cols=qty_cols, resumen=resumen, anchos=anchos
+            )
+            self._escribir_hoja_corporativa(
+                writer.book, top_cantidad, "Mas Vendido en Cantidades", "Top 10 Productos por Unidades Vendidas",
+                inicio, fin, columnas, money_cols, qty_cols=qty_cols, anchos=anchos
+            )
+            self._escribir_hoja_corporativa(
+                writer.book, top_dolares, "Mas Vendido en Dolares", "Top 10 Productos por Total Vendido ($)",
+                inicio, fin, columnas, money_cols, qty_cols=qty_cols, anchos=anchos
+            )
+        output.seek(0)
+        return output
 
     def generar_reporte_ats(self, df: pd.DataFrame, inicio: str, fin: str) -> io.BytesIO:
         columnas = [

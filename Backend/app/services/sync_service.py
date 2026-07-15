@@ -511,10 +511,17 @@ class SyncService:
 
         # 4. Guardar atómicamente en PostgreSQL
         try:
-            # Eliminar facturas del rango de fechas anterior
-            db.query(AtsFacturaStaging).filter(
-                AtsFacturaStaging.invoice_date.between(dt_inicio.date(), dt_fin.date())
-            ).delete()
+            # Upsert por doc_id_corp (PK real) en vez de DELETE-por-rango-de-fecha + INSERT:
+            # una factura re-sincronizada puede llegar con INVOICE_DATE distinto al que ya
+            # tiene en staging (correccion en el ERP, o re-sync de un rango solapado), y el
+            # DELETE por fecha no la encuentra para borrarla -> el INSERT choca con la PK.
+            existentes = {}
+            if datos_fact:
+                doc_ids_incoming = [clean_str(f.get("DOC_ID_CORP")).replace('.0', '').strip().upper() for f in datos_fact]
+                existentes = {
+                    row.doc_id_corp: row
+                    for row in db.query(AtsFacturaStaging).filter(AtsFacturaStaging.doc_id_corp.in_(doc_ids_incoming)).all()
+                }
 
             # Eliminar info fiscal asociada a estas facturas específicas
             if lista_doc_ids:
@@ -522,7 +529,7 @@ class SyncService:
                     AtsFiscalStaging.id_relacionado.in_(lista_doc_ids)
                 ).delete()
 
-            # Insertar facturas
+            # Insertar/actualizar facturas
             nuevas_facturas = []
             for f in datos_fact:
                 d_id = clean_str(f.get("DOC_ID_CORP")).replace('.0', '').strip().upper()
@@ -536,8 +543,7 @@ class SyncService:
                 else:
                     fecha_db = dt_inicio.date()
 
-                fact = AtsFacturaStaging(
-                    doc_id_corp=d_id,
+                campos = dict(
                     invoice_date=fecha_db,
                     corp=clean_str(f.get("CORP")),
                     vendor_id=v_id,
@@ -552,7 +558,13 @@ class SyncService:
                     void=parse_bool(f.get("VOID")),
                     confirmed=parse_bool(f.get("CONFIRMED"))
                 )
-                nuevas_facturas.append(fact)
+
+                if d_id in existentes:
+                    fact_db = existentes[d_id]
+                    for campo, valor in campos.items():
+                        setattr(fact_db, campo, valor)
+                else:
+                    nuevas_facturas.append(AtsFacturaStaging(doc_id_corp=d_id, **campos))
 
             if nuevas_facturas:
                 db.bulk_save_objects(nuevas_facturas)
@@ -579,11 +591,12 @@ class SyncService:
                 db.bulk_save_objects(nueva_info_fiscal)
 
             db.commit()
-            logging.info(f"SyncService [ATS]: Sincronización finalizada correctamente. Facturas: {len(nuevas_facturas)}, Registros Fiscales: {len(nueva_info_fiscal)}")
+            total_facturas = len(datos_fact)
+            logging.info(f"SyncService [ATS]: Sincronización finalizada correctamente. Facturas: {total_facturas} ({len(nuevas_facturas)} nuevas), Registros Fiscales: {len(nueva_info_fiscal)}")
             return {
                 "status": "success",
-                "message": f"Sincronización completada. Facturas procesadas: {len(nuevas_facturas)}, Registros fiscales procesados: {len(nueva_info_fiscal)}",
-                "facturas_count": len(nuevas_facturas),
+                "message": f"Sincronización completada. Facturas procesadas: {total_facturas}, Registros fiscales procesados: {len(nueva_info_fiscal)}",
+                "facturas_count": total_facturas,
                 "fiscal_count": len(nueva_info_fiscal)
             }
         except Exception as e:
@@ -613,7 +626,7 @@ class SyncService:
             "DOC_ID_CORP,TRANS_DATE,PRODUCT_ID_CORP,PRODUCT_NAME,QUANTITY,ORIGINAL_QTY,"
             "UNIT_COST,DISCOUNT_AMOUNT,NET_LINE_TOTAL,UM,Anulada,IN_OUT,"
             "\"Codigo grupo\",\"Codigo subgrupo\",Codigo_grupo,Codigo_subgrupo,"
-            "ORIGIN_MEMO,ORIGIN_REF,TRANS_COST,WAR_CODE,COD_CLIENTE"
+            "ORIGIN_MEMO,ORIGIN_REF,TRANS_COST,WAR_CODE,COD_CLIENTE,Info_Seriales"
         )
         # EMPRESA (NVC01/ENV01) y CODIGO_LOCAL (sucursal) para segmentar; ANULADA para excluir.
         cols_facturas = "CODIGO_FACTURA,NUMERO_FACTURA,FECHA_FACTURA,EMPRESA,CODIGO_LOCAL,ANULADA"
@@ -785,6 +798,7 @@ class SyncService:
                         col_trans_cost = mapeo_item.get("TRANSCOST")
                         col_war = mapeo_item.get("WARCODE")
                         col_cliente = mapeo_item.get("CODCLIENTE")
+                        col_seriales = mapeo_item.get("INFOSERIALES")
 
                         # origin_ref normalizado a solo dígitos = llave de cruce con la factura
                         ref_raw = clean_str(item.get(col_ref)) if col_ref else ""
@@ -814,7 +828,8 @@ class SyncService:
                             war_code=war_code_val,
                             bodega_nombre=bodegas_dict.get(war_code_val, ""),
                             codigo_cliente=codigo_cliente_val,
-                            nombre_cliente=clientes_dict.get(codigo_cliente_val, "")
+                            nombre_cliente=clientes_dict.get(codigo_cliente_val, ""),
+                            info_seriales=(clean_str(item.get(col_seriales)) or "")[:2000] if col_seriales else ""
                         )
                         nuevos_movs.append(mov)
 
