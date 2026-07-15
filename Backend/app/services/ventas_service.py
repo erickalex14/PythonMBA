@@ -105,7 +105,7 @@ class VentasService:
                     "DOC_ID_CORP,TRANS_DATE,PRODUCT_ID_CORP,PRODUCT_NAME,QUANTITY,ORIGINAL_QTY,"
                     "UNIT_COST,DISCOUNT_AMOUNT,NET_LINE_TOTAL,UM,Anulada,IN_OUT,"
                     "\"Codigo grupo\",\"Codigo subgrupo\",Codigo_grupo,Codigo_subgrupo,"
-                    "TRANS_COST,WAR_CODE,COD_CLIENTE"
+                    "TRANS_COST,WAR_CODE,COD_CLIENTE,Info_Seriales"
                 )
                 cols_facturas = "CODIGO_FACTURA,NUMERO_FACTURA,FECHA_FACTURA"
                 
@@ -135,7 +135,9 @@ class VentasService:
                     col_movs_doc = mapeo_movs.get("DOCIDCORP")
                     col_codigo_prod = mapeo_movs.get("PRODUCTIDCORP")
                     col_nombre_prod = mapeo_movs.get("PRODUCTNAME")
-                    col_cant_real = mapeo_movs.get("ORIGINALQTY") if mapeo_movs.get("ORIGINALQTY") else mapeo_movs.get("QUANTITY")
+                    col_orig_qty = mapeo_movs.get("ORIGINALQTY")
+                    col_qty = mapeo_movs.get("QUANTITY")
+                    col_seriales = mapeo_movs.get("INFOSERIALES")
                     col_grupo = mapeo_movs.get("CODIGOGRUPO")
                     col_subgrupo = mapeo_movs.get("CODIGOSUBGRUPO")
                     col_precio = mapeo_movs.get("UNITCOST")
@@ -151,7 +153,9 @@ class VentasService:
                         col_movs_doc: 'DOC_ID_CORP_KARDEX',
                         col_codigo_prod: 'CODIGO_INT',
                         col_nombre_prod: 'PRODUCTO_INT',
-                        col_cant_real: 'CANTIDAD_INT',
+                        col_orig_qty: 'ORIGQTY_INT',
+                        col_qty: 'QTY_INT',
+                        col_seriales: 'SERIALES_INT',
                         col_grupo: 'GRUPO_INT',
                         col_subgrupo: 'SUBGRUPO_INT',
                         col_precio: 'PRECIO_INT',
@@ -163,6 +167,11 @@ class VentasService:
                         col_bodega: 'BODEGA_INT',
                         col_cliente: 'CLIENTE_INT'
                     })
+
+                    # QUANTITY es la cantidad real (ver misma verificacion en la vista SQL de
+                    # historico: match exacto 1219/1219 contra el reporte nativo del ERP).
+                    # ORIGINAL_QTY no representa cantidad vendida, no usarlo.
+                    df_movs['CANTIDAD_INT'] = pd.to_numeric(df_movs.get('QTY_INT'), errors='coerce').fillna(0.0) if 'QTY_INT' in df_movs.columns else 0.0
 
                     df_facturas = pd.DataFrame(datos_facturas) if datos_facturas else pd.DataFrame()
                     if not df_facturas.empty:

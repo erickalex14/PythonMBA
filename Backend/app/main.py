@@ -34,7 +34,8 @@ async def lifespan(app: FastAPI):
                     ADD COLUMN IF NOT EXISTS war_code VARCHAR(20),
                     ADD COLUMN IF NOT EXISTS bodega_nombre VARCHAR(100),
                     ADD COLUMN IF NOT EXISTS codigo_cliente VARCHAR(20),
-                    ADD COLUMN IF NOT EXISTS nombre_cliente VARCHAR(150);
+                    ADD COLUMN IF NOT EXISTS nombre_cliente VARCHAR(150),
+                    ADD COLUMN IF NOT EXISTS info_seriales VARCHAR(2000);
             """))
             connection.execute(text("""
                 CREATE INDEX IF NOT EXISTS ix_ventas_kardex_staging_war_code ON ventas_kardex_staging (war_code);
@@ -151,8 +152,8 @@ async def lifespan(app: FastAPI):
                 COALESCE(k.codigo_grupo, 'GENERAL') AS grupo,
                 COALESCE(k.codigo_subgrupo, 'GENERAL') AS subgrupo,
                 UPPER(TRIM(k.um)) AS unidad,
-                ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer AS cantidad,
-                ROUND((k.net_line_total + k.discount_amount) / NULLIF(ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer, 0), 4) AS precio_venta,
+                k.cantidad_real AS cantidad,
+                ROUND((k.net_line_total + k.discount_amount) / NULLIF(k.cantidad_real, 0), 4) AS precio_venta,
                 ROUND(k.net_line_total + k.discount_amount, 4) AS subtotal,
                 ROUND(k.discount_amount, 4) AS descuento_aplicado,
                 ROUND(k.net_line_total, 4) AS total_linea,
@@ -161,11 +162,11 @@ async def lifespan(app: FastAPI):
                 k.codigo_cliente AS codigo_cliente,
                 COALESCE(k.nombre_cliente, '') AS nombre_cliente,
                 ROUND(k.trans_cost, 4) AS costo_unitario,
-                ROUND(k.trans_cost * ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer, 4) AS costo_total,
-                ROUND(((k.net_line_total + k.discount_amount) / NULLIF(ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer, 0)) - k.trans_cost, 4) AS utilidad_unidad,
-                ROUND(k.net_line_total - (k.trans_cost * ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer), 4) AS utilidad_total,
-                ROUND((k.net_line_total - (k.trans_cost * ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer)) / NULLIF(k.net_line_total, 0) * 100, 2) AS pct_utilidad_neto,
-                ROUND((k.net_line_total - (k.trans_cost * ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer)) / NULLIF(k.trans_cost * ROUND(CASE WHEN k.original_qty > 0 THEN k.original_qty ELSE k.quantity END)::integer, 0) * 100, 2) AS pct_utilidad_costo,
+                ROUND(k.trans_cost * k.cantidad_real, 4) AS costo_total,
+                ROUND(((k.net_line_total + k.discount_amount) / NULLIF(k.cantidad_real, 0)) - k.trans_cost, 4) AS utilidad_unidad,
+                ROUND(k.net_line_total - (k.trans_cost * k.cantidad_real), 4) AS utilidad_total,
+                ROUND((k.net_line_total - (k.trans_cost * k.cantidad_real)) / NULLIF(k.net_line_total, 0) * 100, 2) AS pct_utilidad_neto,
+                ROUND((k.net_line_total - (k.trans_cost * k.cantidad_real)) / NULLIF(k.trans_cost * k.cantidad_real, 0) * 100, 2) AS pct_utilidad_costo,
                 f.empresa AS empresa,
                 CASE WHEN f.empresa = 'ENV01' THEN 'ENV'
                      WHEN f.empresa = 'NVC01' THEN 'NOVICOMPU'
@@ -175,13 +176,22 @@ async def lifespan(app: FastAPI):
                 k.doc_id_corp AS doc_id_corp_kardex,
                 f.doc_id_corp AS doc_id_corp_fact,
                 k.anulada
-            FROM ventas_kardex_staging k
+            FROM (
+                SELECT *,
+                    -- QUANTITY es la cantidad real vendida - verificado contra el reporte
+                    -- nativo "Estadisticas de Inventarios" del ERP con match exacto en 1219/1219
+                    -- productos. ORIGINAL_QTY es un campo del ERP que NO representa cantidad
+                    -- vendida (valores sin relacion, ej. 117 vs 7 seriales reales, o 12535 vs
+                    -- 143 chips reales) - no usar para nada de cantidad, precio o costo.
+                    ROUND(quantity)::integer AS cantidad_real
+                FROM ventas_kardex_staging
+            ) k
             INNER JOIN ventas_facturas_staging f
                 ON k.origin_ref = f.numero_factura
             WHERE k.origin_memo = 'CLIENTES'
               AND k.anulada = false
               AND f.anulada = false
-              AND (k.original_qty > 0 OR k.quantity > 0);
+              AND k.cantidad_real > 0;
             """
             connection.execute(text(sql_view_ventas))
             logging.info("Vista relacional SQL 'view_ventas_espejo_reporte' creada o actualizada.")
@@ -199,7 +209,8 @@ from app.controllers import (
     excel_controller,
     admin_controller,
     sync_controller,
-    ventas_controller
+    ventas_controller,
+    estadisticas_controller
 )
 
 root_path = os.getenv("ROOT_PATH", "")
@@ -260,4 +271,5 @@ app.include_router(excel_controller.router)
 app.include_router(admin_controller.router)
 app.include_router(sync_controller.router)
 app.include_router(ventas_controller.router)
+app.include_router(estadisticas_controller.router)
 

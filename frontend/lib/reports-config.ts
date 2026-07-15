@@ -137,5 +137,37 @@ export const REPORTS_CONFIG: Record<string, ReportConfig> = {
       secondMetricLabel: "Unidades Vendidas",
       secondMetricKey: "totalQty"
     }
+  },
+  "estadisticas-ventas": {
+    id: "estadisticas-ventas",
+    title: "Reporte de Ventas",
+    subtitle: "Estadísticas por producto: vendido, precios y existencia actual",
+    endpoint: "/api/data/estadisticas-ventas",
+    excelType: "estadisticas-ventas",
+    columns: [
+      { key: "codigo", label: "Código", type: "bold" },
+      { key: "producto", label: "Descripción", type: "text" },
+      { key: "empresa_nombre", label: "Empresa", type: "text" },
+      { key: "unidad", label: "Unidad", type: "text" },
+      { key: "grupo", label: "Grupo", type: "text" },
+      { key: "subgrupo", label: "Subgrupo", type: "text" },
+      { key: "existencia", label: "Existencia", type: "number" },
+      { key: "asignado", label: "Asignado", type: "number" },
+      { key: "disponible", label: "Disponible", type: "number" },
+      { key: "unidades_vendidas", label: "Unidades Vendidas", type: "number" },
+      { key: "total_ventas", label: "Total Ventas", type: "currency" },
+      { key: "precio_promedio", label: "Precio Promedio", type: "currency" },
+      { key: "precio_maximo", label: "Precio Máximo", type: "currency" },
+      { key: "precio_minimo", label: "Precio Mínimo", type: "currency" },
+      { key: "ultimo_precio", label: "Último Precio", type: "currency" },
+      { key: "ultima_fecha_venta", label: "Última Fecha Venta", type: "text" },
+      { key: "no_dias", label: "No. Días", type: "number" }
+    ],
+    kpis: {
+      mainMetricLabel: "Monto Total Vendido",
+      mainMetricKey: "totalVentas",
+      secondMetricLabel: "Unidades Vendidas",
+      secondMetricKey: "totalUnidades"
+    }
   }
 };
