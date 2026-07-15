@@ -484,6 +484,9 @@ export default function DashboardPage() {
         if (selectedBranch && String(row.grupo).trim() !== selectedBranch) return false;
         if (selectedEmpresa && String(row.empresa || "").trim() !== selectedEmpresa) return false;
         if (codigoSearch && !String(row.codigo || "").toLowerCase().includes(codigoSearch.trim().toLowerCase())) return false;
+      } else if (activeTab === "estadisticas-ventas") {
+        if (selectedEmpresa && String(row.empresa || "").trim() !== selectedEmpresa) return false;
+        if (selectedBranch && String(row.grupo).trim() !== selectedBranch) return false;
       }
 
       return true;
@@ -552,6 +555,9 @@ export default function DashboardPage() {
         if (row.producto) products.add(String(row.producto).trim());
         if (row.grupo) branches.add(String(row.grupo).trim());
         if (row.empresa) empresas.add(String(row.empresa).trim());
+      } else if (activeTab === "estadisticas-ventas") {
+        if (row.grupo) branches.add(String(row.grupo).trim());
+        if (row.empresa) empresas.add(String(row.empresa).trim());
       }
     });
 
@@ -588,6 +594,10 @@ export default function DashboardPage() {
       { label: "Buscar por Código de Producto", value: codigoSearch, onChange: setCodigoSearch, placeholder: "Ej: 1AENV8395-NVC01", options: [], type: "text" },
       { label: "Filtrar por Empresa", value: selectedEmpresa, onChange: setSelectedEmpresa, placeholder: "Todas las Empresas...", options: filterOptions.empresas },
       { label: "Filtrar por Producto", value: selectedProduct, onChange: setSelectedProduct, placeholder: "Todos los Productos...", options: filterOptions.products },
+      { label: "Filtrar por Grupo", value: selectedBranch, onChange: setSelectedBranch, placeholder: "Todos los Grupos...", options: filterOptions.branches },
+    ],
+    "estadisticas-ventas": [
+      { label: "Filtrar por Empresa", value: selectedEmpresa, onChange: setSelectedEmpresa, placeholder: "Todas las Empresas...", options: filterOptions.empresas },
       { label: "Filtrar por Grupo", value: selectedBranch, onChange: setSelectedBranch, placeholder: "Todos los Grupos...", options: filterOptions.branches },
     ],
   };

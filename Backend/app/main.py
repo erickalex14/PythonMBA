@@ -178,15 +178,12 @@ async def lifespan(app: FastAPI):
                 k.anulada
             FROM (
                 SELECT *,
-                    -- Productos con serial (IMEI/serie): ORIGINAL_QTY del ERP es basura ahi,
-                    -- la cantidad real es QUANTITY (confirmado contra el reporte oficial del
-                    -- ERP: siempre muestra 1 por linea serializada). Sin serial: ORIGINAL_QTY
-                    -- es la cantidad real y QUANTITY no sirve (casi siempre 1 sin importar cuanto se vendio).
-                    ROUND(CASE
-                        WHEN info_seriales IS NOT NULL AND info_seriales <> '' THEN quantity
-                        WHEN original_qty > 0 THEN original_qty
-                        ELSE quantity
-                    END)::integer AS cantidad_real
+                    -- QUANTITY es la cantidad real vendida - verificado contra el reporte
+                    -- nativo "Estadisticas de Inventarios" del ERP con match exacto en 1219/1219
+                    -- productos. ORIGINAL_QTY es un campo del ERP que NO representa cantidad
+                    -- vendida (valores sin relacion, ej. 117 vs 7 seriales reales, o 12535 vs
+                    -- 143 chips reales) - no usar para nada de cantidad, precio o costo.
+                    ROUND(quantity)::integer AS cantidad_real
                 FROM ventas_kardex_staging
             ) k
             INNER JOIN ventas_facturas_staging f

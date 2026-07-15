@@ -293,7 +293,7 @@ class ExcelService:
         (todos los productos) + 2 hojas de Top 10 (por unidades y por dólares vendidos).
         """
         columnas = [
-            ("codigo", "Código"), ("producto", "Descripción"), ("unidad", "Unidad"),
+            ("codigo", "Código"), ("producto", "Descripción"), ("empresa_nombre", "Empresa"), ("unidad", "Unidad"),
             ("grupo", "Grupo"), ("subgrupo", "Subgrupo"),
             ("existencia", "Existencia"), ("asignado", "Asignado"), ("disponible", "Disponible"),
             ("unidades_vendidas", "Unidades Vendidas"), ("total_ventas", "Total Ventas"),
