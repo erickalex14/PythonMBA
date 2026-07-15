@@ -27,14 +27,20 @@ export function RankedBarChart({
   items,
   color,
   formatter,
+  minHeight = 200,
 }: {
   items: { label: string; total: number }[];
   color: string;
   formatter: (n: number) => string;
+  // Piso del viewBox en unidades SVG - baja este valor cuando el listado
+  // tiene muy pocos items (ej. 2 empresas) para no dejar un tramo vacio
+  // dentro del propio SVG (el vacio queda "adentro" del viewBox, no es
+  // espacio de layout externo, asi que envolver en flex/centrar no alcanza).
+  minHeight?: number;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
   const max = Math.max(...items.map((it) => it.total), 1);
-  const chartHeight = Math.max(200, items.length * 22 + 20);
+  const chartHeight = Math.max(minHeight, items.length * 22 + 20);
 
   return (
     <div style={{ position: "relative", width: "100%" }}>

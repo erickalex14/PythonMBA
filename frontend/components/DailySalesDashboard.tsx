@@ -669,10 +669,14 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
         >
           <Card variant="chartCard" styles={styles}>
             <h3>Ventas por Empresa ({RANGE_DAYS} días)</h3>
+            {/* Solo 2-3 empresas en juego: minHeight bajo para que el
+                propio SVG no reserve un piso de 200 unidades vacias
+                debajo de un par de barras cortas. */}
             <RankedBarChart
               items={empresaSplit}
               color="var(--color-chart-accent)"
               formatter={fmtCurrency}
+              minHeight={100}
             />
           </Card>
         </ClickableCard>
