@@ -42,25 +42,24 @@ export default function AdminPage() {
   const fetchAdminData = async () => {
     setLoadingAdminData(true);
     try {
-      const usersRes = await fetch("/api/admin/users");
+      const [usersRes, rolesRes, configRes] = await Promise.all([
+        fetch("/api/admin/users"),
+        fetch("/api/admin/roles"),
+        fetch("/api/admin/config"),
+      ]);
+
       if (usersRes.ok) {
         const json = await usersRes.json();
         setAdminUsers(json.users);
       }
-
-      const rolesRes = await fetch("/api/admin/roles");
       if (rolesRes.ok) {
+        // /api/admin/roles ya devuelve { roles, permissions } en una sola
+        // llamada - no existe (ni existió nunca) un endpoint separado
+        // /api/admin/permissions.
         const json = await rolesRes.json();
         setAdminRoles(json.roles);
-      }
-
-      const permsRes = await fetch("/api/admin/permissions");
-      if (permsRes.ok) {
-        const json = await permsRes.json();
         setAdminPermissions(json.permissions);
       }
-
-      const configRes = await fetch("/api/admin/config");
       if (configRes.ok) {
         const json = await configRes.json();
         if (json && json.env) setErpConfig(json);
