@@ -17,11 +17,15 @@ export default function DashboardTabPage() {
     tab: "ventas" | "movimientos" | "liquidaciones" | "ats",
     start: string,
     end: string,
-    empresa: string = ""
+    empresa: string = "",
+    producto: string = ""
   ) => {
     const params = new URLSearchParams({ start, end });
     if (tab === "ventas" && empresa) {
       params.set("empresa", empresa);
+    }
+    if (tab === "ventas" && producto) {
+      params.set("producto", producto);
     }
     router.push(`/panel/${tab}?${params.toString()}`);
   };
