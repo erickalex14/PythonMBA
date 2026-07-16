@@ -15,6 +15,7 @@ from app.models.liquidacion import LiquidacionPrincipalStaging, LiquidacionProdu
 from app.models.ats import AtsFacturaStaging, AtsProveedorStaging, AtsFiscalStaging
 from app.models.ventas import VentasKardexStaging, VentasFacturaStaging
 from sqlalchemy import text
+from app.core.scheduler import start_scheduler, stop_scheduler
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -198,7 +199,10 @@ async def lifespan(app: FastAPI):
             
     except Exception as e:
         logging.error(f"Error al inicializar la base de datos PostgreSQL: {e}")
+
+    start_scheduler()
     yield
+    stop_scheduler()
     logging.info("Apagando aplicación...")
 
 from app.controllers import (
