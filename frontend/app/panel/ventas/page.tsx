@@ -17,7 +17,7 @@ export default function VentasPage() {
   const panel = usePanelReportPage("ventas");
   const { loading, queryProgress, estTimeRemaining, currentQueryingDate, data, error, fetchReportData } = useReportQuery();
 
-  const [selectedProduct, setSelectedProduct] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState(panel.initialProductoFromUrl);
   const [selectedBranch, setSelectedBranch] = useState("");
   const [selectedEmpresa, setSelectedEmpresa] = useState(panel.initialEmpresaFromUrl);
   const [codigoSearch, setCodigoSearch] = useState("");

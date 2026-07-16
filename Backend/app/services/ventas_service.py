@@ -281,3 +281,102 @@ class VentasService:
 
         df_final = df_final.sort_values(by=['# de factura', 'CODIGO'], ascending=[True, True])
         return df_final
+
+    def obtener_resumen_dashboard(self, fecha_ancla: str, db: Optional[Session] = None) -> dict:
+        """
+        Resumen agregado para las cards del dashboard (hoy/ayer/semana/mes/año,
+        calendario, ancladas a `fecha_ancla` = el "hoy real" que ya calcula el
+        front por atraso de sync). Suma en SQL contra la vista de staging, sin
+        traer las líneas crudas al front - evita mover un año completo de filas
+        solo para calcular totales.
+        """
+        ancla = datetime.datetime.strptime(fecha_ancla, "%Y-%m-%d").date()
+        ayer = ancla - datetime.timedelta(days=1)
+        inicio_semana = ancla - datetime.timedelta(days=ancla.weekday())
+        inicio_mes = ancla.replace(day=1)
+        inicio_anio = ancla.replace(month=1, day=1)
+
+        close_db_manually = False
+        if db is None:
+            db = SessionLocal()
+            close_db_manually = True
+
+        try:
+            query_sql = """
+                SELECT
+                    SUM(CASE WHEN fecha = :hoy THEN total_linea ELSE 0 END) AS monto_hoy,
+                    SUM(CASE WHEN fecha = :hoy THEN cantidad ELSE 0 END) AS cantidad_hoy,
+                    SUM(CASE WHEN fecha = :ayer THEN total_linea ELSE 0 END) AS monto_ayer,
+                    SUM(CASE WHEN fecha = :ayer THEN cantidad ELSE 0 END) AS cantidad_ayer,
+                    SUM(CASE WHEN fecha BETWEEN :inicio_semana AND :hoy THEN total_linea ELSE 0 END) AS monto_semana,
+                    SUM(CASE WHEN fecha BETWEEN :inicio_semana AND :hoy THEN cantidad ELSE 0 END) AS cantidad_semana,
+                    SUM(CASE WHEN fecha BETWEEN :inicio_mes AND :hoy THEN total_linea ELSE 0 END) AS monto_mes,
+                    SUM(CASE WHEN fecha BETWEEN :inicio_mes AND :hoy THEN cantidad ELSE 0 END) AS cantidad_mes,
+                    SUM(CASE WHEN fecha BETWEEN :inicio_anio AND :hoy THEN total_linea ELSE 0 END) AS monto_anio,
+                    SUM(CASE WHEN fecha BETWEEN :inicio_anio AND :hoy THEN cantidad ELSE 0 END) AS cantidad_anio
+                FROM view_ventas_espejo_reporte
+                WHERE fecha BETWEEN :inicio_anio AND :hoy
+            """
+            params = {
+                "hoy": ancla.isoformat(),
+                "ayer": ayer.isoformat(),
+                "inicio_semana": inicio_semana.isoformat(),
+                "inicio_mes": inicio_mes.isoformat(),
+                "inicio_anio": inicio_anio.isoformat(),
+            }
+            with db.get_bind().connect() as conn:
+                row = conn.execute(text(query_sql), params).mappings().first()
+
+            def rango(monto_key: str, cantidad_key: str, inicio: datetime.date, fin: datetime.date) -> dict:
+                return {
+                    "monto": float(row[monto_key] or 0) if row else 0.0,
+                    "cantidad": int(row[cantidad_key] or 0) if row else 0,
+                    "rango": {"inicio": inicio.isoformat(), "fin": fin.isoformat()},
+                }
+
+            resumen = {
+                "hoy": rango("monto_hoy", "cantidad_hoy", ancla, ancla),
+                "ayer": rango("monto_ayer", "cantidad_ayer", ayer, ayer),
+                "semana": rango("monto_semana", "cantidad_semana", inicio_semana, ancla),
+                "mes": rango("monto_mes", "cantidad_mes", inicio_mes, ancla),
+                "anio": rango("monto_anio", "cantidad_anio", inicio_anio, ancla),
+            }
+
+            # Producto más vendido del mes en curso (cantidad y monto, cada uno con su propio ganador).
+            query_top = """
+                SELECT producto, SUM(cantidad) AS total_cantidad, SUM(total_linea) AS total_monto
+                FROM view_ventas_espejo_reporte
+                WHERE fecha BETWEEN :inicio_mes AND :hoy
+                GROUP BY producto
+            """
+            with db.get_bind().connect() as conn:
+                top_rows = conn.execute(
+                    text(query_top),
+                    {"inicio_mes": inicio_mes.isoformat(), "hoy": ancla.isoformat()},
+                ).mappings().all()
+
+            top_cantidad = None
+            top_monto = None
+            if top_rows:
+                df_top = pd.DataFrame([dict(r) for r in top_rows])
+                df_top["total_cantidad"] = pd.to_numeric(df_top["total_cantidad"], errors="coerce").fillna(0)
+                df_top["total_monto"] = pd.to_numeric(df_top["total_monto"], errors="coerce").fillna(0)
+                fila_cantidad = df_top.loc[df_top["total_cantidad"].idxmax()]
+                fila_monto = df_top.loc[df_top["total_monto"].idxmax()]
+                top_cantidad = {
+                    "producto": fila_cantidad["producto"],
+                    "cantidad": int(fila_cantidad["total_cantidad"]),
+                    "monto": float(fila_cantidad["total_monto"]),
+                }
+                top_monto = {
+                    "producto": fila_monto["producto"],
+                    "cantidad": int(fila_monto["total_cantidad"]),
+                    "monto": float(fila_monto["total_monto"]),
+                }
+
+            resumen["top_producto_cantidad"] = top_cantidad
+            resumen["top_producto_monto"] = top_monto
+            return resumen
+        finally:
+            if close_db_manually:
+                db.close()
