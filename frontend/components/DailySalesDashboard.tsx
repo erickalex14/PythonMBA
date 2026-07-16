@@ -12,7 +12,8 @@ interface DailySalesDashboardProps {
     tab: "ventas" | "movimientos" | "liquidaciones" | "ats",
     startDate: string,
     endDate: string,
-    empresa?: string
+    empresa?: string,
+    producto?: string
   ) => void;
 }
 
@@ -91,6 +92,7 @@ let dashboardCache: {
   movData: any[];
   liqData: any[];
   atsData: any[];
+  resumen?: any;
   fetchedAt: number;
 } | null = null;
 
@@ -187,6 +189,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
   const [movData, setMovData] = useState<any[]>(isDashboardCacheFresh() ? dashboardCache!.movData : []);
   const [liqData, setLiqData] = useState<any[]>(isDashboardCacheFresh() ? dashboardCache!.liqData : []);
   const [atsData, setAtsData] = useState<any[]>(isDashboardCacheFresh() ? dashboardCache!.atsData : []);
+  const [resumen, setResumen] = useState<any>(isDashboardCacheFresh() ? dashboardCache!.resumen : null);
   const [error, setError] = useState<string | null>(null);
   const [selectedEmpresa, setSelectedEmpresa] = useState("");
   const [hoveredDay, setHoveredDay] = useState<number | null>(null);
@@ -216,6 +219,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
         setMovData(movRows);
         setLiqData(liqRows);
         setAtsData(atsRows);
+        setResumen(null);
       })
       .catch((err: any) => {
         if (!cancelled) setError(err.message || "Error al obtener la información desde el ERP.");
@@ -267,6 +271,28 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
     const validDates = entries.filter(([, v]) => v >= threshold).map(([d]) => d).sort();
     return validDates.length > 0 ? validDates[validDates.length - 1] : entries.map(([d]) => d).sort().slice(-1)[0];
   }, [fullDailyTotals]);
+
+  // Resumen agregado (semana/mes/año calendario + producto más vendido del
+  // mes) se pide recién cuando ya se conoce el "hoy real" (latestVentasDate)
+  // - antes de eso apuntaría al día del reloj, que puede no tener datos por
+  // atraso de sync. Se suma en SQL contra la vista de staging (ver
+  // Backend/ventas_service.obtener_resumen_dashboard) - no trae líneas
+  // crudas de todo un año al navegador solo para sacar totales.
+  useEffect(() => {
+    if (!firstLoadDone || !latestVentasDate || resumen) return;
+    let cancelled = false;
+    fetch(`/api/data/ventas-resumen?fecha_ancla=${latestVentasDate}`)
+      .then((res) => res.json())
+      .then((json) => {
+        if (cancelled) return;
+        if (dashboardCache) dashboardCache.resumen = json;
+        setResumen(json);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [firstLoadDone, latestVentasDate, resumen]);
 
   const recentData = useMemo(() => {
     const windowStart = daysBefore(latestVentasDate, RANGE_DAYS - 1);
@@ -519,6 +545,94 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
           </Card>
         </ClickableCard>
       </section>
+
+      {resumen && (
+        <>
+          <h2 style={{ fontSize: "1.05rem", fontWeight: 700, margin: "2rem 0 1rem", color: "var(--color-text-primary)" }}>
+            Ventas por Período (Calendario)
+          </h2>
+          <section className={styles.chartsGrid}>
+            <ClickableCard
+              styles={styles}
+              onClick={() => onNavigate?.("ventas", resumen.semana.rango.inicio, resumen.semana.rango.fin, selectedEmpresa)}
+            >
+              <Card variant="kpiCard" styles={styles}>
+                <h3>Ventas Semana Actual</h3>
+                <p className={styles.kpiValue}>{fmtCurrency(resumen.semana.monto)}</p>
+                <span style={{ fontSize: "0.75rem", color: "var(--color-text-faint)" }}>{fmtNumber(resumen.semana.cantidad)} unid.</span>
+              </Card>
+            </ClickableCard>
+
+            <ClickableCard
+              styles={styles}
+              onClick={() => onNavigate?.("ventas", resumen.mes.rango.inicio, resumen.mes.rango.fin, selectedEmpresa)}
+            >
+              <Card variant="kpiCard" styles={styles}>
+                <h3>Ventas Mes Actual</h3>
+                <p className={styles.kpiValue}>{fmtCurrency(resumen.mes.monto)}</p>
+                <span style={{ fontSize: "0.75rem", color: "var(--color-text-faint)" }}>{fmtNumber(resumen.mes.cantidad)} unid.</span>
+              </Card>
+            </ClickableCard>
+
+            <ClickableCard
+              styles={styles}
+              onClick={() => onNavigate?.("ventas", resumen.anio.rango.inicio, resumen.anio.rango.fin, selectedEmpresa)}
+            >
+              <Card variant="kpiCard" styles={styles}>
+                <h3>Ventas Año Actual</h3>
+                <p className={styles.kpiValue}>{fmtCurrency(resumen.anio.monto)}</p>
+                <span style={{ fontSize: "0.75rem", color: "var(--color-text-faint)" }}>{fmtNumber(resumen.anio.cantidad)} unid.</span>
+              </Card>
+            </ClickableCard>
+          </section>
+
+          {(resumen.top_producto_cantidad || resumen.top_producto_monto) && (
+            <section className={styles.chartsGrid}>
+              {resumen.top_producto_cantidad && (
+                <ClickableCard
+                  styles={styles}
+                  onClick={() => onNavigate?.(
+                    "ventas",
+                    resumen.mes.rango.inicio,
+                    resumen.mes.rango.fin,
+                    selectedEmpresa,
+                    resumen.top_producto_cantidad.producto
+                  )}
+                >
+                  <Card variant="kpiCard" styles={styles}>
+                    <h3>Producto Más Vendido (Cantidad, Mes)</h3>
+                    <p className={styles.kpiValue} style={{ fontSize: "1rem" }}>{resumen.top_producto_cantidad.producto}</p>
+                    <span style={{ fontSize: "0.75rem", color: "var(--color-text-faint)" }}>
+                      {fmtNumber(resumen.top_producto_cantidad.cantidad)} unid. · {fmtCurrency(resumen.top_producto_cantidad.monto)}
+                    </span>
+                  </Card>
+                </ClickableCard>
+              )}
+
+              {resumen.top_producto_monto && (
+                <ClickableCard
+                  styles={styles}
+                  onClick={() => onNavigate?.(
+                    "ventas",
+                    resumen.mes.rango.inicio,
+                    resumen.mes.rango.fin,
+                    selectedEmpresa,
+                    resumen.top_producto_monto.producto
+                  )}
+                >
+                  <Card variant="kpiCard" styles={styles}>
+                    <h3>Producto Más Vendido (Dinero, Mes)</h3>
+                    <p className={styles.kpiValue} style={{ fontSize: "1rem" }}>{resumen.top_producto_monto.producto}</p>
+                    <span style={{ fontSize: "0.75rem", color: "var(--color-text-faint)" }}>
+                      {fmtCurrency(resumen.top_producto_monto.monto)} · {fmtNumber(resumen.top_producto_monto.cantidad)} unid.
+                    </span>
+                  </Card>
+                </ClickableCard>
+              )}
+            </section>
+          )}
+        </>
+      )}
 
       <section className={styles.chartsGrid}>
         <ClickableCard

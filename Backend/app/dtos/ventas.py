@@ -30,3 +30,30 @@ class VentasDTO(BaseModel):
     class Config:
         from_attributes = True
         populate_by_name = True
+
+
+class RangoFechasDTO(BaseModel):
+    inicio: str
+    fin: str
+
+
+class RangoResumenDTO(BaseModel):
+    monto: float = 0.0
+    cantidad: int = 0
+    rango: RangoFechasDTO
+
+
+class ProductoTopDTO(BaseModel):
+    producto: Optional[str] = None
+    cantidad: int = 0
+    monto: float = 0.0
+
+
+class ResumenVentasDTO(BaseModel):
+    hoy: RangoResumenDTO
+    ayer: RangoResumenDTO
+    semana: RangoResumenDTO
+    mes: RangoResumenDTO
+    anio: RangoResumenDTO
+    top_producto_cantidad: Optional[ProductoTopDTO] = None
+    top_producto_monto: Optional[ProductoTopDTO] = None

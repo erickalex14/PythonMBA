@@ -13,6 +13,7 @@ export function usePanelReportPage(reportId: string) {
   const initialStartFromUrl = searchParams.get("start");
   const initialEndFromUrl = searchParams.get("end");
   const initialEmpresaFromUrl = searchParams.get("empresa") || "";
+  const initialProductoFromUrl = searchParams.get("producto") || "";
 
   const [startDate, setStartDate] = useState(initialStartFromUrl || "2026-06-01");
   const [endDate, setEndDate] = useState(initialEndFromUrl || "2026-06-30");
@@ -72,6 +73,6 @@ export function usePanelReportPage(reportId: string) {
     downloading, downloadingPdf,
     handleDownloadExcel, handlePrintPdf,
     reportConfig,
-    initialStartFromUrl, initialEndFromUrl, initialEmpresaFromUrl,
+    initialStartFromUrl, initialEndFromUrl, initialEmpresaFromUrl, initialProductoFromUrl,
   };
 }

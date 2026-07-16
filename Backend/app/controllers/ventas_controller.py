@@ -4,9 +4,22 @@ from sqlalchemy.orm import Session
 from app.core.security import verify_api_key
 from app.dependencies import get_ventas_service, get_db
 from app.services.ventas_service import VentasService
-from app.dtos.ventas import VentasDTO
+from app.dtos.ventas import VentasDTO, ResumenVentasDTO
 
 router = APIRouter(prefix="/api/v1/ventas", tags=["Ventas / Reporte Espejo"])
+
+@router.get("/resumen", response_model=ResumenVentasDTO, dependencies=[Depends(verify_api_key)])
+def read_resumen_ventas(
+    fecha_ancla: str = Query(..., pattern="^\\d{4}-\\d{2}-\\d{2}$", description="Fecha 'hoy real' (la que ya calcula el front por atraso de sync)"),
+    db: Session = Depends(get_db),
+    service: VentasService = Depends(get_ventas_service)
+):
+    """
+    Resumen agregado (hoy/ayer/semana/mes/año calendario + producto más
+    vendido del mes) para las cards del dashboard ejecutivo. Suma en SQL,
+    no expone líneas individuales.
+    """
+    return service.obtener_resumen_dashboard(fecha_ancla, db)
 
 @router.get("", response_model=List[VentasDTO], dependencies=[Depends(verify_api_key)])
 def read_ventas(
