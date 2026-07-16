@@ -6,3 +6,5 @@ openpyxl
 python-multipart
 sqlalchemy
 psycopg2-binary
+apscheduler
+tzdata
