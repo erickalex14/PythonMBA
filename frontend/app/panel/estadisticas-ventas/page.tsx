@@ -128,36 +128,41 @@ export default function EstadisticasVentasPage() {
         <p className={styles.subtext}>Unidades vendidas, precios y existencia actual por producto</p>
       </header>
 
-      <section className={styles.filtersSection}>
-        <div className={styles.filtersRow}>
-          <div className={styles.filterGroup}>
-            <label>Fecha de Inicio</label>
-            <input type="date" value={panel.startDate} onChange={(e) => panel.setStartDate(e.target.value)} disabled={loading} />
+      <section className={styles.filterPanel}>
+        <div className={styles.filterPanelTopRow}>
+          <div className={styles.filtersRow}>
+            <div className={styles.filterGroup}>
+              <label>Fecha de Inicio</label>
+              <input type="date" value={panel.startDate} onChange={(e) => panel.setStartDate(e.target.value)} disabled={loading} />
+            </div>
+            <div className={styles.filterGroup}>
+              <label>Fecha de Fin</label>
+              <input type="date" value={panel.endDate} onChange={(e) => panel.setEndDate(e.target.value)} disabled={loading} />
+            </div>
+            <Button onClick={handleQuery} className={styles.queryBtn} loading={loading} loadingText="Consultando...">
+              Consultar Datos
+            </Button>
           </div>
-          <div className={styles.filterGroup}>
-            <label>Fecha de Fin</label>
-            <input type="date" value={panel.endDate} onChange={(e) => panel.setEndDate(e.target.value)} disabled={loading} />
+          <div className={styles.searchFilter}>
+            <div className={styles.filterGroup}>
+              <label>Búsqueda Global</label>
+              <input
+                type="text"
+                placeholder="Buscar en todos los campos..."
+                value={panel.searchQuery}
+                onChange={(e) => panel.setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
-          <Button onClick={handleQuery} className={styles.queryBtn} loading={loading} loadingText="Consultando...">
-            Consultar Datos
-          </Button>
         </div>
-        <div className={styles.searchFilter}>
-          <div className={styles.filterGroup}>
-            <label>Búsqueda Global</label>
-            <input
-              type="text"
-              placeholder="Buscar en todos los campos..."
-              value={panel.searchQuery}
-              onChange={(e) => panel.setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
-      </section>
 
-      {data.length > 0 && !loading && (
-        <FilterBar fields={filterFields} styles={styles} />
-      )}
+        {data.length > 0 && !loading && (
+          <>
+            <div className={styles.filterPanelDivider} />
+            <FilterBar fields={filterFields} styles={styles} />
+          </>
+        )}
+      </section>
 
       {!loading && <KPICards filteredData={filteredData} activeTab="estadisticas-ventas" styles={styles} />}
       {!loading && <EstadisticasVentasCharts data={filteredData} styles={styles} />}

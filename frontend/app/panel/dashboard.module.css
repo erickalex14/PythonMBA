@@ -299,18 +299,38 @@
   margin: 0;
 }
 
-/* Sección de Filtros de Consulta */
-.filtersSection {
+/* Panel de Filtros unificado: fecha/búsqueda (dispara consulta al ERP) y
+   filtros locales (instantáneos, sin recargar) viven en la misma tarjeta
+   en vez de dos cajas sueltas apiladas - la línea divisoria interna es lo
+   único que distingue una sección de la otra. */
+.filterPanel {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: 1.25rem;
   margin-bottom: 1.5rem;
   box-shadow: var(--shadow-card);
+}
+
+.filterPanelTopRow {
   display: flex;
   flex-wrap: wrap;
   gap: 1.5rem;
   align-items: flex-end;
+}
+
+.filterPanelDivider {
+  border-top: 1px solid var(--color-border);
+  margin: 1.1rem 0 1rem;
+}
+
+.filterPanelSubLabel {
+  margin: 0 0 0.85rem 0;
+  color: var(--color-text-faint);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .dateFilters {
@@ -402,7 +422,7 @@
 }
 
 @media (max-width: 640px) {
-  .filtersSection,
+  .filterPanelTopRow,
   .dateFilters,
   .subFiltersRow,
   .filtersRow {
@@ -1284,7 +1304,7 @@
     width: 100% !important;
   }
 
-  .filtersSection,
+  .filterPanel,
   .localFiltersCard,
   .actionsBar,
   .paginationRow,
@@ -1595,15 +1615,6 @@
   flex-wrap: wrap;
   gap: 1.25rem;
   align-items: flex-end;
-}
-
-.subFiltersSection {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 1.25rem;
-  margin-bottom: 1.5rem;
-  box-shadow: var(--shadow-card);
 }
 
 .subFiltersRow {
