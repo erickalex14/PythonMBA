@@ -189,6 +189,21 @@ export default function EstadisticasVentasPage() {
           )}
         </div>
 
+        {panel.downloading && (
+          <section className={styles.progressCard} style={{ marginBottom: "1rem" }}>
+            <div className={styles.progressHeader}>
+              <span>Generando archivo Excel...</span>
+              <span className={styles.progressPercentage}>{panel.downloadProgressPct}%</span>
+            </div>
+            <div className={styles.progressBarBg}>
+              <div className={styles.progressBarFill} style={{ width: `${panel.downloadProgressPct}%` }}></div>
+            </div>
+            <div className={styles.progressMeta}>
+              <p>Tiempo transcurrido: <strong>{panel.downloadElapsedSeconds}s</strong></p>
+            </div>
+          </section>
+        )}
+
         {error && <div className={styles.errorAlert}>{error}</div>}
 
         {loading && (

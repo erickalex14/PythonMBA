@@ -22,12 +22,26 @@ export function usePanelReportPage(reportId: string) {
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [downloading, setDownloading] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [downloadElapsedMs, setDownloadElapsedMs] = useState(0);
 
   const reportConfig = REPORTS_CONFIG[reportId];
+
+  // El backend genera el .xlsx completo en una sola respuesta (sin
+  // checkpoints reales de avance) - para rangos grandes (ej. 2 meses de
+  // Movimientos) puede tardar bastante y antes no habia ninguna señal de
+  // que seguia trabajando. downloadProgressPct es un avance simulado
+  // (se acerca a 95% y se detiene ahi, nunca miente diciendo "listo" antes
+  // de tiempo) solo para que la barra se sienta viva mientras se espera.
+  const downloadProgressPct = downloading
+    ? Math.min(95, Math.round(100 * (1 - Math.exp(-downloadElapsedMs / 8000))))
+    : 0;
 
   const handleDownloadExcel = async (filteredData: any[]) => {
     if (filteredData.length === 0 || !reportConfig) return;
     setDownloading(true);
+    setDownloadElapsedMs(0);
+    const startedAt = Date.now();
+    const ticker = setInterval(() => setDownloadElapsedMs(Date.now() - startedAt), 200);
     try {
       const res = await fetch("/api/data/excel", {
         method: "POST",
@@ -56,6 +70,7 @@ export function usePanelReportPage(reportId: string) {
     } catch (err: any) {
       alert(`Error al generar Excel: ${err.message}`);
     } finally {
+      clearInterval(ticker);
       setDownloading(false);
     }
   };
@@ -71,6 +86,8 @@ export function usePanelReportPage(reportId: string) {
     currentPage, setCurrentPage,
     itemsPerPage, setItemsPerPage,
     downloading, downloadingPdf,
+    downloadElapsedSeconds: Math.round(downloadElapsedMs / 1000),
+    downloadProgressPct,
     handleDownloadExcel, handlePrintPdf,
     reportConfig,
     initialStartFromUrl, initialEndFromUrl, initialEmpresaFromUrl, initialProductoFromUrl,
