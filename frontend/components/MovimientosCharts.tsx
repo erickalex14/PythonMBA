@@ -122,7 +122,7 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
   return (
     <section>
       <TierHeading title="Resumen Ejecutivo" first />
-      <div className={styles.chartsGridTwo} style={cardStyle}>
+      <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop}`} style={cardStyle}>
         <ExpandableChartCard title="Distribución por Tipo de Movimiento" styles={styles} render={(expanded) => (
           <DonutChart items={porTipo} formatter={fmtNumber} size={expanded ? 170 : 100} compact={!expanded} />
         )} />
@@ -144,7 +144,7 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
       </div>
 
       <TierHeading title="Detalle Operativo" />
-      <div className={styles.chartsGridTwo} style={cardStyle}>
+      <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop}`} style={cardStyle}>
         <ExpandableChartCard title="Top 10 Sucursales con Más Movimientos" styles={styles} render={(expanded) => (
           <RankedBarChart items={topSucursales} color="var(--color-chart-accent)" formatter={fmtNumber} minHeight={expanded ? 260 : 100} maxVisibleItems={expanded ? undefined : 5} />
         )} />
@@ -154,7 +154,7 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
       </div>
 
       <TierHeading title="Tendencia y Calidad" />
-      <div className={styles.chartsGridTwo} style={{ ...cardStyle, marginBottom: 0 }}>
+      <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop}`} style={{ ...cardStyle, marginBottom: 0 }}>
         <ExpandableChartCard title="Tendencia Diaria de Transacciones" styles={styles} render={(expanded) => (
           <TrendLine points={tendenciaDiaria} formatter={fmtNumber} color="var(--color-brand-primary)" height={expanded ? 300 : 130} />
         )} />
