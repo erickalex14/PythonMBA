@@ -123,20 +123,19 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
     <section>
       <TierHeading title="Resumen Ejecutivo" first />
       <div className={styles.chartsGridTwo} style={cardStyle}>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Distribución por Tipo de Movimiento</h3>
-          <DonutChart items={porTipo} formatter={fmtNumber} />
-        </Card>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Entradas (Proveedores) vs Salidas (Clientes)</h3>
+        <ExpandableChartCard title="Distribución por Tipo de Movimiento" styles={styles} render={(expanded) => (
+          <DonutChart items={porTipo} formatter={fmtNumber} size={expanded ? 170 : 100} compact={!expanded} />
+        )} />
+        <ExpandableChartCard title="Entradas (Proveedores) vs Salidas (Clientes)" styles={styles} render={(expanded) => (
           <TwoBarComparison
             labelA="Entradas (Proveedores)"
             valueA={entradasVsSalidas.entradas}
             labelB="Salidas (Clientes)"
             valueB={entradasVsSalidas.salidas}
             formatter={fmtNumber}
+            compact={!expanded}
           />
-        </Card>
+        )} />
       </div>
       <div style={cardStyle}>
         <ExpandableChartCard title="Top 10 Marcas por Cantidad de Movimientos" styles={styles} render={(expanded) => (
@@ -147,7 +146,7 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
       <TierHeading title="Detalle Operativo" />
       <div className={styles.chartsGridTwo} style={cardStyle}>
         <ExpandableChartCard title="Top 10 Sucursales con Más Movimientos" styles={styles} render={(expanded) => (
-          <RankedBarChart items={topSucursales} color="var(--color-chart-accent)" formatter={fmtNumber} minHeight={expanded ? 260 : 100} />
+          <RankedBarChart items={topSucursales} color="var(--color-chart-accent)" formatter={fmtNumber} minHeight={expanded ? 260 : 100} maxVisibleItems={expanded ? undefined : 5} />
         )} />
         <ExpandableChartCard title="Concentración de Movimientos por Vendedor (80/20)" styles={styles} render={(expanded) => (
           <ParetoChart items={paretoVendedores} formatter={fmtNumber} height={expanded ? 420 : 170} />

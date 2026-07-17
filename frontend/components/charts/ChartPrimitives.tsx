@@ -30,6 +30,7 @@ export function RankedBarChart({
   color,
   formatter,
   minHeight = 200,
+  maxVisibleItems,
 }: {
   items: { label: string; total: number }[];
   color: string;
@@ -39,15 +40,23 @@ export function RankedBarChart({
   // dentro del propio SVG (el vacio queda "adentro" del viewBox, no es
   // espacio de layout externo, asi que envolver en flex/centrar no alcanza).
   minHeight?: number;
+  // El alto real escala con la cantidad de items (22px c/u), asi que
+  // minHeight solo pone un piso, nunca un techo - una lista de 10 items
+  // sigue siendo alta aunque minHeight sea chico (vista "compacta" real).
+  // maxVisibleItems corta la lista mostrada para sí limitar el alto en la
+  // vista compacta; el resto queda disponible al expandir (sin este prop).
+  maxVisibleItems?: number;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
+  const visibleItems = maxVisibleItems ? items.slice(0, maxVisibleItems) : items;
+  const hiddenCount = items.length - visibleItems.length;
   const max = Math.max(...items.map((it) => it.total), 1);
-  const chartHeight = Math.max(minHeight, items.length * 22 + 20);
+  const chartHeight = Math.max(minHeight, visibleItems.length * 22 + 20);
 
   return (
     <div style={{ position: "relative", width: "100%" }}>
       <svg viewBox={`0 0 500 ${chartHeight}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
-        {items.map((p, index) => {
+        {visibleItems.map((p, index) => {
           const y = index * 22 + 15;
           const barWidth = (p.total / max) * 310;
           const isHovered = hovered === index;
@@ -77,7 +86,12 @@ export function RankedBarChart({
           </text>
         )}
       </svg>
-      {hovered !== null && items[hovered] && (
+      {hiddenCount > 0 && (
+        <div style={{ fontSize: "0.7rem", color: "var(--color-text-faint)", marginTop: "0.35rem", textAlign: "center" }}>
+          +{hiddenCount} más — click para ver todos
+        </div>
+      )}
+      {hovered !== null && visibleItems[hovered] && (
         <ChartTooltip
           style={{
             left: "5%",
@@ -85,7 +99,7 @@ export function RankedBarChart({
             transform: "translateY(-100%)",
           }}
         >
-          {items[hovered].label}
+          {visibleItems[hovered].label}
         </ChartTooltip>
       )}
     </div>
@@ -129,16 +143,18 @@ export function TwoBarComparison({
   labelB,
   valueB,
   formatter,
+  compact = false,
 }: {
   labelA: string;
   valueA: number;
   labelB: string;
   valueB: number;
   formatter: (n: number) => string;
+  compact?: boolean;
 }) {
   const max = Math.max(valueA, valueB, 1);
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem", marginTop: "0.5rem" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: compact ? "0.6rem" : "0.9rem", marginTop: compact ? "0.25rem" : "0.5rem" }}>
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", color: "var(--color-text-muted)", marginBottom: 4 }}>
           <span>{labelA}</span>
@@ -286,9 +302,13 @@ const CATEGORY_PALETTE = [
 export function DonutChart({
   items,
   formatter,
+  size = 170,
+  compact = false,
 }: {
   items: { label: string; value: number }[];
   formatter: (n: number) => string;
+  size?: number;
+  compact?: boolean;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
   const total = items.reduce((a, i) => a + i.value, 0) || 1;
@@ -309,9 +329,9 @@ export function DonutChart({
   }
 
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "2rem", flexWrap: "wrap", padding: "0.5rem 0" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: compact ? "1rem" : "2rem", flexWrap: "wrap", padding: compact ? "0.25rem 0" : "0.5rem 0" }}>
       <div style={{ position: "relative", flexShrink: 0 }}>
-        <svg width="170" height="170" viewBox="0 0 140 140">
+        <svg width={size} height={size} viewBox="0 0 140 140">
           <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--color-surface-subtle)" strokeWidth={STROKE} />
           {arcs.map((a, i) => (
             <circle
@@ -345,7 +365,7 @@ export function DonutChart({
           ) : null}
         </div>
       </div>
-      <div style={{ width: 220, flexShrink: 0, display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+      <div style={{ width: compact ? 150 : 220, flexShrink: 0, display: "flex", flexDirection: "column", gap: compact ? "0.35rem" : "0.6rem" }}>
         {arcs.map((a, i) => (
           <div
             key={i}
@@ -354,10 +374,10 @@ export function DonutChart({
             onMouseLeave={() => setHovered(null)}
           >
             <span style={{ width: 10, height: 10, borderRadius: 3, background: a.color, flexShrink: 0 }} />
-            <span style={{ fontSize: "0.76rem", color: "var(--color-text-tertiary)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: compact ? "0.7rem" : "0.76rem", color: "var(--color-text-tertiary)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {a.label}
             </span>
-            <span style={{ fontSize: "0.76rem", fontWeight: 700, color: "var(--color-text-primary)", flexShrink: 0 }}>{formatter(a.value)}</span>
+            <span style={{ fontSize: compact ? "0.7rem" : "0.76rem", fontWeight: 700, color: "var(--color-text-primary)", flexShrink: 0 }}>{formatter(a.value)}</span>
           </div>
         ))}
       </div>

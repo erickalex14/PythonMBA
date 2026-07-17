@@ -1,5 +1,4 @@
 import React, { useMemo } from "react";
-import { Card } from "./ui/Card";
 import { EMPRESA_LABELS } from "../lib/empresa";
 import {
   RankedBarChart,
@@ -133,20 +132,19 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
     <section>
       <TierHeading title="Resumen Ejecutivo" first />
       <div className={styles.chartsGridTwo} style={cardStyle}>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Distribución de CIF por Empresa</h3>
-          <DonutChart items={porEmpresa} formatter={fmtMoney} />
-        </Card>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Subtotal CIF vs Total CIF</h3>
+        <ExpandableChartCard title="Distribución de CIF por Empresa" styles={styles} render={(expanded) => (
+          <DonutChart items={porEmpresa} formatter={fmtMoney} size={expanded ? 170 : 100} compact={!expanded} />
+        )} />
+        <ExpandableChartCard title="Subtotal CIF vs Total CIF" styles={styles} render={(expanded) => (
           <TwoBarComparison
             labelA="Subtotal CIF"
             valueA={subtotalVsTotal.subtotal}
             labelB="Total CIF (con cargos)"
             valueB={subtotalVsTotal.total}
             formatter={fmtMoney2}
+            compact={!expanded}
           />
-        </Card>
+        )} />
       </div>
       <div style={cardStyle}>
         <ExpandableChartCard title="Top 10 Partidas Arancelarias por Monto CIF" styles={styles} render={(expanded) => (
@@ -157,7 +155,7 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
       <TierHeading title="Detalle de Productos" />
       <div className={styles.chartsGridTwo} style={cardStyle}>
         <ExpandableChartCard title="Top 10 Productos por Monto CIF" styles={styles} render={(expanded) => (
-          <RankedBarChart items={topProductosCif} color="var(--color-chart-accent)" formatter={fmtMoney} minHeight={expanded ? 260 : 100} />
+          <RankedBarChart items={topProductosCif} color="var(--color-chart-accent)" formatter={fmtMoney} minHeight={expanded ? 260 : 100} maxVisibleItems={expanded ? undefined : 5} />
         )} />
         <ExpandableChartCard title="Cantidad Importada vs Monto CIF por Producto" styles={styles} render={(expanded) => (
           <ScatterXY

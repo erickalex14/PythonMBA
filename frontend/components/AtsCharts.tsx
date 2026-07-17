@@ -126,24 +126,23 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
     <section>
       <TierHeading title="Resumen Ejecutivo" first />
       <div className={styles.chartsGridTwo} style={cardStyle}>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Productos vs Servicios Facturados</h3>
+        <ExpandableChartCard title="Productos vs Servicios Facturados" styles={styles} render={(expanded) => (
           <TwoBarComparison
             labelA="Productos"
             valueA={productosVsServicios.productos}
             labelB="Servicios"
             valueB={productosVsServicios.servicios}
             formatter={fmtMoney2}
+            compact={!expanded}
           />
-        </Card>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Bases Con IVA vs Sin IVA</h3>
-          <DonutChart items={conIvaVsSinIva} formatter={fmtMoney} />
-        </Card>
+        )} />
+        <ExpandableChartCard title="Bases Con IVA vs Sin IVA" styles={styles} render={(expanded) => (
+          <DonutChart items={conIvaVsSinIva} formatter={fmtMoney} size={expanded ? 170 : 100} compact={!expanded} />
+        )} />
       </div>
       <div style={cardStyle}>
         <ExpandableChartCard title="Top 10 Proveedores por Monto Facturado" styles={styles} render={(expanded) => (
-          <RankedBarChart items={topProveedores} color="var(--color-chart-accent)" formatter={fmtMoney} minHeight={expanded ? 260 : 100} />
+          <RankedBarChart items={topProveedores} color="var(--color-chart-accent)" formatter={fmtMoney} minHeight={expanded ? 260 : 100} maxVisibleItems={expanded ? undefined : 5} />
         )} />
       </div>
 
