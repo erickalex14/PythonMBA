@@ -7,11 +7,13 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     // Default es 10MB: la exportacion de Excel manda el dataset filtrado completo
-    // como JSON en el POST a /api/data/excel, y un rango de varios meses lo supera.
-    // ponytail: 100mb cubre rangos normales (dia/semana/mes); si en el futuro se
-    // exportan rangos de varios meses de golpe, cambiar el export a mandar
-    // inicio/fin y que el backend regenere en vez de mandar las filas ya traidas.
-    proxyClientMaxBodySize: "100mb",
+    // como JSON en el POST a /api/data/excel. Medido real: 1 mes de Movimientos
+    // (con seriales) ya son ~65MB - 300mb cubre varios meses de margen. Debe
+    // coincidir con client_max_body_size en deploy.py (nginx tiene su propio
+    // limite independiente, delante de esta app). Si a futuro se necesita mas,
+    // cambiar el export a mandar inicio/fin y que el backend regenere en vez
+    // de mandar las filas ya traidas desde el navegador.
+    proxyClientMaxBodySize: "300mb",
   },
 };
 
