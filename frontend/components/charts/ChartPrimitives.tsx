@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Card } from "../ui/Card";
+import { Modal } from "../ui/Modal";
 
 export function ChartTooltip({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
@@ -188,9 +190,11 @@ export function StatGauge({
 export function ParetoChart({
   items,
   formatter,
+  height = 260,
 }: {
   items: { key: string; label: string; value: number }[];
   formatter: (n: number) => string;
+  height?: number;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
   const total = items.reduce((a, i) => a + i.value, 0) || 1;
@@ -200,7 +204,7 @@ export function ParetoChart({
     return { ...it, cumPct: (acc / total) * 100 };
   });
   const maxVal = Math.max(...withCum.map((i) => i.value), 1);
-  const W = 500, H = 260, pad = 30;
+  const W = 500, H = height, pad = 30;
   const barAreaW = W - pad * 2;
   const barW = withCum.length ? Math.min(barAreaW / withCum.length - 4, 26) : 0;
   const toXCenter = (i: number) => pad + (i + 0.5) * (barAreaW / (withCum.length || 1));
@@ -209,7 +213,7 @@ export function ParetoChart({
 
   return (
     <div style={{ position: "relative", width: "100%", maxWidth: 620, margin: "0 auto" }}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 260, overflow: "visible" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height, overflow: "visible" }}>
         {[0, 25, 50, 75, 100].map((p) => (
           <line key={p} x1={pad} y1={toY(p)} x2={W - pad} y2={toY(p)} stroke="var(--color-surface-subtle)" strokeWidth="1" />
         ))}
@@ -453,18 +457,20 @@ function sliceTreemap(
 export function Treemap({
   items,
   formatter,
+  height = 280,
 }: {
   items: { label: string; value: number }[];
   formatter: (n: number) => string;
+  height?: number;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
-  const W = 500, H = 280;
+  const W = 500, H = height;
   const sorted = [...items].filter((i) => i.value > 0).sort((a, b) => b.value - a.value).map((i, idx) => ({ ...i, key: `${i.label}-${idx}` }));
   const rects = sliceTreemap(sorted, 0, 0, W, H, true);
 
   if (rects.length === 0) {
     return (
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 280 }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height }}>
         <text x={W / 2} y={H / 2} textAnchor="middle" fill="var(--color-text-faint)" fontSize="11">Sin datos en el período</text>
       </svg>
     );
@@ -472,7 +478,7 @@ export function Treemap({
 
   return (
     <div style={{ position: "relative", width: "100%" }}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 280, overflow: "visible" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height, overflow: "visible" }}>
         {rects.map((r, i) => {
           const isHovered = hovered === r.item.key;
           const color = CATEGORY_PALETTE[i % CATEGORY_PALETTE.length];
@@ -523,6 +529,7 @@ export function ScatterXY({
   xFormatter,
   yFormatter,
   color,
+  height = 300,
 }: {
   points: { key: string; label: string; x: number; y: number; size?: number }[];
   xLabel: string;
@@ -530,13 +537,14 @@ export function ScatterXY({
   xFormatter: (n: number) => string;
   yFormatter: (n: number) => string;
   color: string;
+  height?: number;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
-  const W = 500, H = 300, pad = 40;
+  const W = 500, H = height, pad = 40;
 
   if (points.length === 0) {
     return (
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 300 }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height }}>
         <text x={W / 2} y={H / 2} textAnchor="middle" fill="var(--color-text-faint)" fontSize="11">Sin datos en el período</text>
       </svg>
     );
@@ -551,7 +559,7 @@ export function ScatterXY({
 
   return (
     <div style={{ position: "relative", width: "100%", maxWidth: 620, margin: "0 auto" }}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 300, overflow: "visible" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height, overflow: "visible" }}>
         <line x1={pad} y1={pad} x2={pad} y2={H - pad} stroke="var(--color-border-strong)" strokeWidth="1" />
         <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="var(--color-border-strong)" strokeWidth="1" />
         <text x={W / 2} y={H - 6} textAnchor="middle" fontSize="9" fill="var(--color-text-muted)">{xLabel}</text>
@@ -587,13 +595,15 @@ export function TrendLine({
   points,
   formatter,
   color,
+  height = 200,
 }: {
   points: { x: string; y: number }[];
   formatter: (n: number) => string;
   color: string;
+  height?: number;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
-  const W = 500, H = 200, pad = 20;
+  const W = 500, H = height, pad = 20;
   const maxY = Math.max(...points.map((p) => p.y), 1);
   const minY = Math.min(...points.map((p) => p.y), 0);
   const span = maxY - minY || 1;
@@ -633,5 +643,54 @@ export function TrendLine({
         </ChartTooltip>
       )}
     </div>
+  );
+}
+
+// Tarjeta de gráfico con vista compacta por defecto (para que entren más
+// gráficos por pantalla) y click para expandir en un modal más grande.
+// Usa render-prop en vez de children fijos porque el propio gráfico
+// necesita saber si está expandido o no (para pedir un alto mayor vía su
+// prop `height`/`minHeight`) - el wrapper no puede decidir eso por afuera
+// sin duplicar el árbol de componentes.
+export function ExpandableChartCard({
+  title,
+  styles,
+  render,
+  modalWidth = "min(920px, 92vw)",
+}: {
+  title: string;
+  styles: Record<string, string>;
+  render: (expanded: boolean) => React.ReactNode;
+  modalWidth?: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <>
+      <Card
+        variant="chartCard"
+        styles={styles}
+        className={styles.expandableChartCard}
+        onClick={() => setExpanded(true)}
+      >
+        <div className={styles.expandableChartCardHeader}>
+          <h3>{title}</h3>
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none" className={styles.expandIcon}>
+            <path d="M8 3H3v5M12 17h5v-5M17 3l-6 6M3 17l6-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        {render(false)}
+      </Card>
+
+      <Modal
+        isOpen={expanded}
+        onClose={() => setExpanded(false)}
+        title={title}
+        styles={styles}
+        contentStyle={{ width: modalWidth, maxWidth: "95vw" }}
+      >
+        {render(true)}
+      </Modal>
+    </>
   );
 }

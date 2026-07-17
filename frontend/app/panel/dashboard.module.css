@@ -623,6 +623,38 @@
   opacity: 1;
 }
 
+/* Tarjeta de gráfico compacta que se expande en un modal al hacer click -
+   distinta de .clickableCard (esa navega a un reporte, esta abre un modal
+   con el mismo gráfico más grande) */
+.expandableChartCard {
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.expandableChartCard:hover {
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  border-color: var(--color-border-strong);
+}
+
+.expandableChartCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.expandIcon {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--color-text-faint);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.expandableChartCard:hover .expandIcon {
+  opacity: 1;
+}
+
 .chartCard h3 {
   font-size: 0.85rem;
   font-weight: 700;

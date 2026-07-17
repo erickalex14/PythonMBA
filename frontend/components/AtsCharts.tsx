@@ -9,6 +9,7 @@ import {
   TrendLine,
   DonutChart,
   Treemap,
+  ExpandableChartCard,
 } from "./charts/ChartPrimitives";
 
 interface AtsChartsProps {
@@ -140,18 +141,18 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
           <DonutChart items={conIvaVsSinIva} formatter={fmtMoney} />
         </Card>
       </div>
-      <Card variant="chartCard" styles={styles} style={cardStyle}>
-        <h3>Top 10 Proveedores por Monto Facturado</h3>
-        <RankedBarChart items={topProveedores} color="var(--color-chart-accent)" formatter={fmtMoney} />
-      </Card>
+      <div style={cardStyle}>
+        <ExpandableChartCard title="Top 10 Proveedores por Monto Facturado" styles={styles} render={(expanded) => (
+          <RankedBarChart items={topProveedores} color="var(--color-chart-accent)" formatter={fmtMoney} minHeight={expanded ? 260 : 100} />
+        )} />
+      </div>
 
       <TierHeading title="Detalle y Clasificación" />
       <div className={styles.chartsGridTwo} style={cardStyle}>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Distribución por Clasificación SRI</h3>
-          <Treemap items={porClasificacion} formatter={fmtMoney} />
-        </Card>
-        <Card variant="chartCard" styles={styles} style={{ minHeight: 280 }}>
+        <ExpandableChartCard title="Distribución por Clasificación SRI" styles={styles} render={(expanded) => (
+          <Treemap items={porClasificacion} formatter={fmtMoney} height={expanded ? 460 : 170} />
+        )} />
+        <Card variant="chartCard" styles={styles} style={{ minHeight: 200 }}>
           <h3>% Facturas Anuladas</h3>
           <RadialGauge pct={pctAnulado} label={`${anuladosCount.toLocaleString("es-EC")} anuladas de ${data.length.toLocaleString("es-EC")} facturas`} goodDirection="low" />
         </Card>
@@ -159,14 +160,12 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
 
       <TierHeading title="Tendencia y Concentración" />
       <div className={styles.chartsGridTwo} style={{ ...cardStyle, marginBottom: 0 }}>
-        <Card variant="chartCard" styles={styles} style={{ minHeight: 300 }}>
-          <h3>Tendencia Diaria de Facturación</h3>
-          <TrendLine points={tendenciaDiaria} formatter={fmtMoney2} color="var(--color-brand-primary)" />
-        </Card>
-        <Card variant="chartCard" styles={styles} style={{ minHeight: 300 }}>
-          <h3>Concentración de Facturación por Proveedor (80/20)</h3>
-          <ParetoChart items={paretoProveedores} formatter={fmtMoney2} />
-        </Card>
+        <ExpandableChartCard title="Tendencia Diaria de Facturación" styles={styles} render={(expanded) => (
+          <TrendLine points={tendenciaDiaria} formatter={fmtMoney2} color="var(--color-brand-primary)" height={expanded ? 300 : 130} />
+        )} />
+        <ExpandableChartCard title="Concentración de Facturación por Proveedor (80/20)" styles={styles} render={(expanded) => (
+          <ParetoChart items={paretoProveedores} formatter={fmtMoney2} height={expanded ? 420 : 170} />
+        )} />
       </div>
     </section>
   );
