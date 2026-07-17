@@ -16,7 +16,7 @@ const authMiddleware = withAuth({
 // entorno tiene cachés intermedios (proxy corporativo/CDN) que guardan HTML
 // por URL. Por eso: no-store en TODOS los documentos. Los assets estáticos
 // (_next/static) quedan fuera del matcher y conservan su caché inmutable.
-export default async function middleware(req: NextRequestWithAuth, event: NextFetchEvent) {
+export default async function proxy(req: NextRequestWithAuth, event: NextFetchEvent) {
   const { pathname } = req.nextUrl;
 
   let res: Response;
