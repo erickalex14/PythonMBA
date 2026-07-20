@@ -268,12 +268,10 @@ class VentasService:
                         df_realtime['UTILIDAD TOTAL'] = utilidad_total.round(4)
                         # pd.NA en un Series float64 lo sube a dtype object (rompe .round()) -
                         # float('nan') mantiene el dtype numerico y se comporta igual para esto.
-                        # NaN no es JSON valido (Starlette lo rechaza al serializar la respuesta) -
-                        # se convierte a None (null) despues de calcular, no antes.
-                        pct_neto = (utilidad_total / df_filtrado['TOTAL_INT'].replace(0, float('nan')) * 100).round(2)
-                        pct_costo = (utilidad_total / costo_total.replace(0, float('nan')) * 100).round(2)
-                        df_realtime['% UTILIDAD/NETO'] = pct_neto.where(pct_neto.notna(), None)
-                        df_realtime['% UTILIDAD/COSTO'] = pct_costo.where(pct_costo.notna(), None)
+                        # El NaN resultante se sanea a None mas abajo, junto con el resto del
+                        # dataframe final (el historico via SQL NULLIF tambien puede traer NaN).
+                        df_realtime['% UTILIDAD/NETO'] = (utilidad_total / df_filtrado['TOTAL_INT'].replace(0, float('nan')) * 100).round(2)
+                        df_realtime['% UTILIDAD/COSTO'] = (utilidad_total / costo_total.replace(0, float('nan')) * 100).round(2)
 
         # 3. CONSOLIDACIÓN FINAL
         if df_historico.empty and df_realtime.empty:
@@ -286,6 +284,13 @@ class VentasService:
             df_final = pd.concat([df_historico, df_realtime], ignore_index=True)
 
         df_final = df_final.sort_values(by=['# de factura', 'CODIGO'], ascending=[True, True])
+
+        # NaN/Infinity no son JSON valido (Starlette los rechaza al serializar la
+        # respuesta) - pueden venir del calculo en tiempo real (division por cero)
+        # o del historico via SQL NULLIF (SQL NULL se carga como NaN en pandas).
+        # Se sanean a None (null) aqui, en un solo lugar, para todo el dataframe.
+        df_final = df_final.replace([float('inf'), float('-inf')], None)
+        df_final = df_final.where(df_final.notna(), None)
         return df_final
 
     def obtener_resumen_dashboard(self, fecha_ancla: str, db: Optional[Session] = None) -> dict:
