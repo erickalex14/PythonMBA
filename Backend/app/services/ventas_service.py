@@ -268,8 +268,12 @@ class VentasService:
                         df_realtime['UTILIDAD TOTAL'] = utilidad_total.round(4)
                         # pd.NA en un Series float64 lo sube a dtype object (rompe .round()) -
                         # float('nan') mantiene el dtype numerico y se comporta igual para esto.
-                        df_realtime['% UTILIDAD/NETO'] = (utilidad_total / df_filtrado['TOTAL_INT'].replace(0, float('nan')) * 100).round(2)
-                        df_realtime['% UTILIDAD/COSTO'] = (utilidad_total / costo_total.replace(0, float('nan')) * 100).round(2)
+                        # NaN no es JSON valido (Starlette lo rechaza al serializar la respuesta) -
+                        # se convierte a None (null) despues de calcular, no antes.
+                        pct_neto = (utilidad_total / df_filtrado['TOTAL_INT'].replace(0, float('nan')) * 100).round(2)
+                        pct_costo = (utilidad_total / costo_total.replace(0, float('nan')) * 100).round(2)
+                        df_realtime['% UTILIDAD/NETO'] = pct_neto.where(pct_neto.notna(), None)
+                        df_realtime['% UTILIDAD/COSTO'] = pct_costo.where(pct_costo.notna(), None)
 
         # 3. CONSOLIDACIÓN FINAL
         if df_historico.empty and df_realtime.empty:
