@@ -1,5 +1,6 @@
 import io
 import os
+import sys
 import logging
 import datetime
 import requests
@@ -10,6 +11,9 @@ from flask_cors import CORS
 from openpyxl.styles import Font, PatternFill, Alignment
 from openpyxl.utils import get_column_letter
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from app.config import settings
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -19,13 +23,13 @@ logging.basicConfig(
 app = Flask(__name__, static_folder='static', static_url_path='')
 CORS(app)
 
-# Constants for ERP Connection
-BASE_URL = "http://181.198.104.181:8020"
+# Constants for ERP Connection (credenciales via Backend/.env, ver app/config.py)
+BASE_URL = settings.MBA3_BASE_URL_PROD
 URL_LOGIN = f"{BASE_URL}/ws2_mba3_serv_/login_servicio"
 URL_CONSULTA = f"{BASE_URL}/ws2_mba3_serv_Consultas_Externas_/"
 
-CODIGO_SERVICIO = "SERIALES"
-PASSWORD_SERVICIO = "***REDACTED***"
+CODIGO_SERVICIO = settings.MBA3_CODIGO_SERVICIO_PROD
+PASSWORD_SERVICIO = settings.MBA3_PASSWORD_SERVICIO_PROD
 
 # ----------------- HELPER FUNCTIONS -----------------
 

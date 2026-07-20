@@ -7,7 +7,18 @@
   "variable": [
     {
       "key": "base_url",
-      "value": "http://181.168.104.181:8020",
+      "value": "",
+      "type": "string",
+      "description": "URL del servicio MBA3 (ej. http://IP_INTERNA:8020)"
+    },
+    {
+      "key": "codigo_servicio",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "password_servicio",
+      "value": "",
       "type": "string"
     },
     {
@@ -49,7 +60,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"codigo\": \"SERIALES\",\n  \"pwd\": \"***REDACTED***\"\n}"
+          "raw": "{\n  \"codigo\": \"{{codigo_servicio}}\",\n  \"pwd\": \"{{password_servicio}}\"\n}"
         },
         "url": {
           "raw": "{{base_url}}/ws2_mba3_serv_/login_servicio",
