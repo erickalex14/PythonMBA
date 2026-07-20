@@ -266,8 +266,10 @@ class VentasService:
                         df_realtime['COSTO TOTAL'] = costo_total.round(4)
                         df_realtime['UTILIDAD UNIDAD'] = (df_filtrado['PRECIO_INT'] - df_filtrado['COSTO_INT']).round(4)
                         df_realtime['UTILIDAD TOTAL'] = utilidad_total.round(4)
-                        df_realtime['% UTILIDAD/NETO'] = (utilidad_total / df_filtrado['TOTAL_INT'].replace(0, pd.NA) * 100).round(2)
-                        df_realtime['% UTILIDAD/COSTO'] = (utilidad_total / costo_total.replace(0, pd.NA) * 100).round(2)
+                        # pd.NA en un Series float64 lo sube a dtype object (rompe .round()) -
+                        # float('nan') mantiene el dtype numerico y se comporta igual para esto.
+                        df_realtime['% UTILIDAD/NETO'] = (utilidad_total / df_filtrado['TOTAL_INT'].replace(0, float('nan')) * 100).round(2)
+                        df_realtime['% UTILIDAD/COSTO'] = (utilidad_total / costo_total.replace(0, float('nan')) * 100).round(2)
 
         # 3. CONSOLIDACIÓN FINAL
         if df_historico.empty and df_realtime.empty:

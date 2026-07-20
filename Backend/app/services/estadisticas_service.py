@@ -37,7 +37,9 @@ class EstadisticasVentasService:
         for col in ["unidades_vendidas", "total_ventas", "precio_maximo", "precio_minimo", "ultimo_precio"]:
             df[col] = df[col].fillna(0)
         df["ultima_fecha_venta"] = df["ultima_fecha_venta"].fillna("")
-        df["precio_promedio"] = (df["total_ventas"] / df["unidades_vendidas"].replace(0, pd.NA)).fillna(0).round(4)
+        # pd.NA en un Series float64 lo sube a dtype object (rompe .round()) -
+        # float('nan') mantiene el dtype numerico y se comporta igual para esto.
+        df["precio_promedio"] = (df["total_ventas"] / df["unidades_vendidas"].replace(0, float('nan'))).fillna(0).round(4)
 
         hoy = pd.Timestamp(datetime.date.today())
         fecha_dt = pd.to_datetime(df["ultima_fecha_venta"], errors="coerce")
