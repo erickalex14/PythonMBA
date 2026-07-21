@@ -288,9 +288,12 @@ class VentasService:
         # NaN/Infinity no son JSON valido (Starlette los rechaza al serializar la
         # respuesta) - pueden venir del calculo en tiempo real (division por cero)
         # o del historico via SQL NULLIF (SQL NULL se carga como NaN en pandas).
-        # Se sanean a None (null) aqui, en un solo lugar, para todo el dataframe.
-        df_final = df_final.replace([float('inf'), float('-inf')], None)
-        df_final = df_final.where(df_final.notna(), None)
+        # OJO: Series.where(cond, None) sobre una columna float64 NO guarda None -
+        # pandas la vuelve a convertir a NaN silenciosamente (no hace upcast solo).
+        # Por eso primero se castea todo a object (ahi None si se mantiene tal cual).
+        df_final = df_final.replace([float('inf'), float('-inf')], float('nan'))
+        mask_validos = df_final.notna()
+        df_final = df_final.astype(object).where(mask_validos, None)
         return df_final
 
     def obtener_resumen_dashboard(self, fecha_ancla: str, db: Optional[Session] = None) -> dict:
