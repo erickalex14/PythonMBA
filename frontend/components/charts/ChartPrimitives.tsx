@@ -1,4 +1,27 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
+
+// Mide el ancho real en px del contenedor via ResizeObserver - se usa para
+// que el viewBox del SVG coincida exactamente con el ancho renderizado (en
+// vez de un ancho fijo tipo "500 unidades") y asi evitar el letterboxing de
+// preserveAspectRatio="meet" (barras vacias a los costados cuando la tarjeta
+// es mas ancha que el viewBox fijo).
+function useMeasuredWidth(fallback: number) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(fallback);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width;
+      if (w && w > 0) setWidth(Math.round(w));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, width] as const;
+}
+import { Card } from "../ui/Card";
+import { Modal } from "../ui/Modal";
 
 export function ChartTooltip({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) {
   return (
@@ -28,6 +51,7 @@ export function RankedBarChart({
   color,
   formatter,
   minHeight = 200,
+  maxVisibleItems,
 }: {
   items: { label: string; total: number }[];
   color: string;
@@ -37,15 +61,23 @@ export function RankedBarChart({
   // dentro del propio SVG (el vacio queda "adentro" del viewBox, no es
   // espacio de layout externo, asi que envolver en flex/centrar no alcanza).
   minHeight?: number;
+  // El alto real escala con la cantidad de items (22px c/u), asi que
+  // minHeight solo pone un piso, nunca un techo - una lista de 10 items
+  // sigue siendo alta aunque minHeight sea chico (vista "compacta" real).
+  // maxVisibleItems corta la lista mostrada para sí limitar el alto en la
+  // vista compacta; el resto queda disponible al expandir (sin este prop).
+  maxVisibleItems?: number;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
+  const visibleItems = maxVisibleItems ? items.slice(0, maxVisibleItems) : items;
+  const hiddenCount = items.length - visibleItems.length;
   const max = Math.max(...items.map((it) => it.total), 1);
-  const chartHeight = Math.max(minHeight, items.length * 22 + 20);
+  const chartHeight = Math.max(minHeight, visibleItems.length * 22 + 20);
 
   return (
     <div style={{ position: "relative", width: "100%" }}>
       <svg viewBox={`0 0 500 ${chartHeight}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
-        {items.map((p, index) => {
+        {visibleItems.map((p, index) => {
           const y = index * 22 + 15;
           const barWidth = (p.total / max) * 310;
           const isHovered = hovered === index;
@@ -75,7 +107,12 @@ export function RankedBarChart({
           </text>
         )}
       </svg>
-      {hovered !== null && items[hovered] && (
+      {hiddenCount > 0 && (
+        <div style={{ fontSize: "0.7rem", color: "var(--color-text-faint)", marginTop: "0.35rem", textAlign: "center" }}>
+          +{hiddenCount} más — click para ver todos
+        </div>
+      )}
+      {hovered !== null && visibleItems[hovered] && (
         <ChartTooltip
           style={{
             left: "5%",
@@ -83,7 +120,7 @@ export function RankedBarChart({
             transform: "translateY(-100%)",
           }}
         >
-          {items[hovered].label}
+          {visibleItems[hovered].label}
         </ChartTooltip>
       )}
     </div>
@@ -127,16 +164,18 @@ export function TwoBarComparison({
   labelB,
   valueB,
   formatter,
+  compact = false,
 }: {
   labelA: string;
   valueA: number;
   labelB: string;
   valueB: number;
   formatter: (n: number) => string;
+  compact?: boolean;
 }) {
   const max = Math.max(valueA, valueB, 1);
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem", marginTop: "0.5rem" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: compact ? "0.6rem" : "0.9rem", marginTop: compact ? "0.25rem" : "0.5rem" }}>
       <div>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", color: "var(--color-text-muted)", marginBottom: 4 }}>
           <span>{labelA}</span>
@@ -188,9 +227,11 @@ export function StatGauge({
 export function ParetoChart({
   items,
   formatter,
+  height = 260,
 }: {
   items: { key: string; label: string; value: number }[];
   formatter: (n: number) => string;
+  height?: number;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
   const total = items.reduce((a, i) => a + i.value, 0) || 1;
@@ -200,7 +241,7 @@ export function ParetoChart({
     return { ...it, cumPct: (acc / total) * 100 };
   });
   const maxVal = Math.max(...withCum.map((i) => i.value), 1);
-  const W = 500, H = 260, pad = 30;
+  const W = 500, H = height, pad = 30;
   const barAreaW = W - pad * 2;
   const barW = withCum.length ? Math.min(barAreaW / withCum.length - 4, 26) : 0;
   const toXCenter = (i: number) => pad + (i + 0.5) * (barAreaW / (withCum.length || 1));
@@ -208,8 +249,13 @@ export function ParetoChart({
   const cutIdx = withCum.findIndex((it) => it.cumPct >= 80);
 
   return (
-    <div style={{ position: "relative", width: "100%", maxWidth: 620, margin: "0 auto" }}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 260, overflow: "visible" }}>
+    <div style={{ position: "relative", width: "100%" }}>
+      {/* height:"auto" (no valor fijo en px) - igual que RankedBarChart/
+          TrendLine, para que el alto real escale con el ancho real de la
+          columna. Un alto fijo en px aca desalinea el par cuando la
+          ventana es mas angosta (RankedBarChart se achica, este se queda
+          igual), generando un hueco vacio dependiente del viewport. */}
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
         {[0, 25, 50, 75, 100].map((p) => (
           <line key={p} x1={pad} y1={toY(p)} x2={W - pad} y2={toY(p)} stroke="var(--color-surface-subtle)" strokeWidth="1" />
         ))}
@@ -282,9 +328,13 @@ const CATEGORY_PALETTE = [
 export function DonutChart({
   items,
   formatter,
+  size = 170,
+  compact = false,
 }: {
   items: { label: string; value: number }[];
   formatter: (n: number) => string;
+  size?: number;
+  compact?: boolean;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
   const total = items.reduce((a, i) => a + i.value, 0) || 1;
@@ -305,9 +355,9 @@ export function DonutChart({
   }
 
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "2rem", flexWrap: "wrap", padding: "0.5rem 0" }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: compact ? "1rem" : "2rem", flexWrap: "wrap", padding: compact ? "0.25rem 0" : "0.5rem 0" }}>
       <div style={{ position: "relative", flexShrink: 0 }}>
-        <svg width="170" height="170" viewBox="0 0 140 140">
+        <svg width={size} height={size} viewBox="0 0 140 140">
           <circle cx={CX} cy={CY} r={R} fill="none" stroke="var(--color-surface-subtle)" strokeWidth={STROKE} />
           {arcs.map((a, i) => (
             <circle
@@ -318,8 +368,14 @@ export function DonutChart({
               fill="none"
               stroke={a.color}
               strokeWidth={STROKE}
-              strokeDasharray={`${a.dash} ${circumference - a.dash}`}
-              strokeDashoffset={-a.offset}
+              // Un solo arco al 100% no debe llevar dasharray: "circumference 0"
+              // deja una costura visible por el redondeo de punto flotante de
+              // la circunferencia (irracional, 2*pi*R) - un circulo solido sin
+              // dasharray se ve completo sin ese artefacto.
+              {...(arcs.length > 1 ? {
+                strokeDasharray: `${a.dash} ${circumference - a.dash}`,
+                strokeDashoffset: -a.offset,
+              } : {})}
               strokeOpacity={hovered === null || hovered === i ? 1 : 0.35}
               transform={`rotate(-90 ${CX} ${CY})`}
               style={{ cursor: "pointer", transition: "stroke-opacity 0.15s ease" }}
@@ -341,7 +397,7 @@ export function DonutChart({
           ) : null}
         </div>
       </div>
-      <div style={{ width: 220, flexShrink: 0, display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+      <div style={{ width: compact ? 150 : 220, flexShrink: 0, display: "flex", flexDirection: "column", gap: compact ? "0.35rem" : "0.6rem" }}>
         {arcs.map((a, i) => (
           <div
             key={i}
@@ -350,10 +406,10 @@ export function DonutChart({
             onMouseLeave={() => setHovered(null)}
           >
             <span style={{ width: 10, height: 10, borderRadius: 3, background: a.color, flexShrink: 0 }} />
-            <span style={{ fontSize: "0.76rem", color: "var(--color-text-tertiary)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            <span style={{ fontSize: compact ? "0.7rem" : "0.76rem", color: "var(--color-text-tertiary)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {a.label}
             </span>
-            <span style={{ fontSize: "0.76rem", fontWeight: 700, color: "var(--color-text-primary)", flexShrink: 0 }}>{formatter(a.value)}</span>
+            <span style={{ fontSize: compact ? "0.7rem" : "0.76rem", fontWeight: 700, color: "var(--color-text-primary)", flexShrink: 0 }}>{formatter(a.value)}</span>
           </div>
         ))}
       </div>
@@ -453,26 +509,31 @@ function sliceTreemap(
 export function Treemap({
   items,
   formatter,
+  height = 280,
 }: {
   items: { label: string; value: number }[];
   formatter: (n: number) => string;
+  height?: number;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
-  const W = 500, H = 280;
+  const [containerRef, W] = useMeasuredWidth(500);
+  const H = height;
   const sorted = [...items].filter((i) => i.value > 0).sort((a, b) => b.value - a.value).map((i, idx) => ({ ...i, key: `${i.label}-${idx}` }));
   const rects = sliceTreemap(sorted, 0, 0, W, H, true);
 
   if (rects.length === 0) {
     return (
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 280 }}>
-        <text x={W / 2} y={H / 2} textAnchor="middle" fill="var(--color-text-faint)" fontSize="11">Sin datos en el período</text>
-      </svg>
+      <div ref={containerRef} style={{ width: "100%" }}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height }}>
+          <text x={W / 2} y={H / 2} textAnchor="middle" fill="var(--color-text-faint)" fontSize="11">Sin datos en el período</text>
+        </svg>
+      </div>
     );
   }
 
   return (
-    <div style={{ position: "relative", width: "100%" }}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 280, overflow: "visible" }}>
+    <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height, overflow: "visible" }}>
         {rects.map((r, i) => {
           const isHovered = hovered === r.item.key;
           const color = CATEGORY_PALETTE[i % CATEGORY_PALETTE.length];
@@ -523,6 +584,7 @@ export function ScatterXY({
   xFormatter,
   yFormatter,
   color,
+  height = 300,
 }: {
   points: { key: string; label: string; x: number; y: number; size?: number }[];
   xLabel: string;
@@ -530,28 +592,43 @@ export function ScatterXY({
   xFormatter: (n: number) => string;
   yFormatter: (n: number) => string;
   color: string;
+  height?: number;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
-  const W = 500, H = 300, pad = 40;
+  const W = 500, H = height, pad = 40;
 
   if (points.length === 0) {
     return (
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 300 }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height }}>
         <text x={W / 2} y={H / 2} textAnchor="middle" fill="var(--color-text-faint)" fontSize="11">Sin datos en el período</text>
       </svg>
     );
   }
 
-  const maxX = Math.max(...points.map((p) => p.x), 1);
-  const maxY = Math.max(...points.map((p) => p.y), 1);
+  // Ejes acotados al rango real de los datos (no siempre desde 0) - un
+  // scatter compara posicion/agrupamiento, no longitud de barra, asi que
+  // acotar al rango real no engaña (a diferencia de truncar un eje de
+  // barras) y evita que el grafico quede vacio cuando los datos estan
+  // concentrados lejos del origen. Sin labels numericos en los ejes (solo
+  // xLabel/yLabel descriptivos), no hay riesgo de mala lectura de valores.
+  const rawMinX = Math.min(...points.map((p) => p.x));
+  const rawMaxX = Math.max(...points.map((p) => p.x));
+  const rawMinY = Math.min(...points.map((p) => p.y));
+  const rawMaxY = Math.max(...points.map((p) => p.y));
+  const spanX = rawMaxX - rawMinX || rawMaxX || 1;
+  const spanY = rawMaxY - rawMinY || rawMaxY || 1;
+  const minX = Math.max(0, rawMinX - spanX * 0.08);
+  const maxX = rawMaxX + spanX * 0.08;
+  const minY = Math.max(0, rawMinY - spanY * 0.08);
+  const maxY = rawMaxY + spanY * 0.08;
   const maxSize = Math.max(...points.map((p) => p.size ?? 1), 1);
-  const toX = (v: number) => pad + (v / maxX) * (W - pad * 2);
-  const toY = (v: number) => H - pad - (v / maxY) * (H - pad * 2);
+  const toX = (v: number) => pad + ((v - minX) / (maxX - minX)) * (W - pad * 2);
+  const toY = (v: number) => H - pad - ((v - minY) / (maxY - minY)) * (H - pad * 2);
   const toR = (v: number) => 3 + Math.sqrt((v ?? 1) / maxSize) * 12;
 
   return (
     <div style={{ position: "relative", width: "100%", maxWidth: 620, margin: "0 auto" }}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 300, overflow: "visible" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height, overflow: "visible" }}>
         <line x1={pad} y1={pad} x2={pad} y2={H - pad} stroke="var(--color-border-strong)" strokeWidth="1" />
         <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="var(--color-border-strong)" strokeWidth="1" />
         <text x={W / 2} y={H - 6} textAnchor="middle" fontSize="9" fill="var(--color-text-muted)">{xLabel}</text>
@@ -587,13 +664,15 @@ export function TrendLine({
   points,
   formatter,
   color,
+  height = 200,
 }: {
   points: { x: string; y: number }[];
   formatter: (n: number) => string;
   color: string;
+  height?: number;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
-  const W = 500, H = 200, pad = 20;
+  const W = 500, H = height, pad = 20;
   const maxY = Math.max(...points.map((p) => p.y), 1);
   const minY = Math.min(...points.map((p) => p.y), 0);
   const span = maxY - minY || 1;
@@ -633,5 +712,54 @@ export function TrendLine({
         </ChartTooltip>
       )}
     </div>
+  );
+}
+
+// Tarjeta de gráfico con vista compacta por defecto (para que entren más
+// gráficos por pantalla) y click para expandir en un modal más grande.
+// Usa render-prop en vez de children fijos porque el propio gráfico
+// necesita saber si está expandido o no (para pedir un alto mayor vía su
+// prop `height`/`minHeight`) - el wrapper no puede decidir eso por afuera
+// sin duplicar el árbol de componentes.
+export function ExpandableChartCard({
+  title,
+  styles,
+  render,
+  modalWidth = "min(920px, 92vw)",
+}: {
+  title: string;
+  styles: Record<string, string>;
+  render: (expanded: boolean) => React.ReactNode;
+  modalWidth?: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <>
+      <Card
+        variant="chartCard"
+        styles={styles}
+        className={styles.expandableChartCard}
+        onClick={() => setExpanded(true)}
+      >
+        <div className={styles.expandableChartCardHeader}>
+          <h3>{title}</h3>
+          <svg width="15" height="15" viewBox="0 0 20 20" fill="none" className={styles.expandIcon}>
+            <path d="M8 3H3v5M12 17h5v-5M17 3l-6 6M3 17l6-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+        {render(false)}
+      </Card>
+
+      <Modal
+        isOpen={expanded}
+        onClose={() => setExpanded(false)}
+        title={title}
+        styles={styles}
+        contentStyle={{ width: modalWidth, maxWidth: "95vw" }}
+      >
+        {render(true)}
+      </Modal>
+    </>
   );
 }

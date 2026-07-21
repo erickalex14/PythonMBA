@@ -116,25 +116,30 @@ export default function VentasPage() {
         <p className={styles.subtext}>Costo, utilidad y margen por línea de venta — facturación de clientes</p>
       </header>
 
-      <section className={styles.filtersSection}>
-        <div className={styles.filtersRow}>
-          <div className={styles.filterGroup}>
-            <label>Fecha de Inicio</label>
-            <input type="date" value={panel.startDate} onChange={(e) => panel.setStartDate(e.target.value)} disabled={loading} />
+      <section className={styles.filterPanel}>
+        <div className={styles.filterPanelTopRow}>
+          <div className={styles.filtersRow}>
+            <div className={styles.filterGroup}>
+              <label>Fecha de Inicio</label>
+              <input type="date" value={panel.startDate} onChange={(e) => panel.setStartDate(e.target.value)} disabled={loading} />
+            </div>
+            <div className={styles.filterGroup}>
+              <label>Fecha de Fin</label>
+              <input type="date" value={panel.endDate} onChange={(e) => panel.setEndDate(e.target.value)} disabled={loading} />
+            </div>
+            <Button onClick={handleQuery} className={styles.queryBtn} loading={loading} loadingText="Consultando...">
+              Consultar Datos
+            </Button>
           </div>
-          <div className={styles.filterGroup}>
-            <label>Fecha de Fin</label>
-            <input type="date" value={panel.endDate} onChange={(e) => panel.setEndDate(e.target.value)} disabled={loading} />
-          </div>
-          <Button onClick={handleQuery} className={styles.queryBtn} loading={loading} loadingText="Consultando...">
-            Consultar Datos
-          </Button>
         </div>
-      </section>
 
-      {data.length > 0 && !loading && (
-        <FilterBar fields={filterFields} styles={styles} />
-      )}
+        {data.length > 0 && !loading && (
+          <>
+            <div className={styles.filterPanelDivider} />
+            <FilterBar fields={filterFields} styles={styles} />
+          </>
+        )}
+      </section>
 
       {loading && (
         <section className={styles.progressCard}>

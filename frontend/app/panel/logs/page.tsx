@@ -63,21 +63,23 @@ export default function LogsPage() {
         <p className={styles.subtext}>Historial de descargas de reportes para auditoría de seguridad</p>
       </header>
 
-      <section className={styles.filtersSection}>
-        <div className={styles.filtersRow}>
-          <Button onClick={fetchLogs} className={styles.queryBtn} loading={loading} loadingText="Consultando...">
-            Consultar Datos
-          </Button>
-        </div>
-        <div className={styles.searchFilter}>
-          <div className={styles.filterGroup}>
-            <label>Búsqueda Global</label>
-            <input
-              type="text"
-              placeholder="Buscar en todos los campos..."
-              value={panel.searchQuery}
-              onChange={(e) => panel.setSearchQuery(e.target.value)}
-            />
+      <section className={styles.filterPanel}>
+        <div className={styles.filterPanelTopRow}>
+          <div className={styles.filtersRow}>
+            <Button onClick={fetchLogs} className={styles.queryBtn} loading={loading} loadingText="Consultando...">
+              Consultar Datos
+            </Button>
+          </div>
+          <div className={styles.searchFilter}>
+            <div className={styles.filterGroup}>
+              <label>Búsqueda Global</label>
+              <input
+                type="text"
+                placeholder="Buscar en todos los campos..."
+                value={panel.searchQuery}
+                onChange={(e) => panel.setSearchQuery(e.target.value)}
+              />
+            </div>
           </div>
         </div>
       </section>

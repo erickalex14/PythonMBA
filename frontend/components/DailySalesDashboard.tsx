@@ -487,18 +487,20 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
 
   return (
     <div>
-      <FilterBar
-        fields={[
-          {
-            label: "Filtrar por Empresa",
-            value: selectedEmpresa,
-            onChange: setSelectedEmpresa,
-            placeholder: "Todas las Empresas...",
-            options: empresaOptions,
-          },
-        ]}
-        styles={styles}
-      />
+      <section className={styles.filterPanel}>
+        <FilterBar
+          fields={[
+            {
+              label: "Filtrar por Empresa",
+              value: selectedEmpresa,
+              onChange: setSelectedEmpresa,
+              placeholder: "Todas las Empresas...",
+              options: empresaOptions,
+            },
+          ]}
+          styles={styles}
+        />
+      </section>
 
       <p style={{ fontSize: "0.8rem", color: "var(--color-text-faint)", margin: "0 0 0.75rem" }}>
         Datos de ventas sincronizados al <strong>{latestVentasDate}</strong> (último día con registros)

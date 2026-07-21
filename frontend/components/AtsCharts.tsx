@@ -9,6 +9,7 @@ import {
   TrendLine,
   DonutChart,
   Treemap,
+  ExpandableChartCard,
 } from "./charts/ChartPrimitives";
 
 interface AtsChartsProps {
@@ -124,49 +125,46 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
   return (
     <section>
       <TierHeading title="Resumen Ejecutivo" first />
-      <div className={styles.chartsGridTwo} style={cardStyle}>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Productos vs Servicios Facturados</h3>
+      <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop} ${styles.chartsGridDonutRow}`} style={cardStyle}>
+        <ExpandableChartCard title="Bases Con IVA vs Sin IVA" styles={styles} render={(expanded) => (
+          <DonutChart items={conIvaVsSinIva} formatter={fmtMoney} size={expanded ? 170 : 100} compact={!expanded} />
+        )} />
+        <ExpandableChartCard title="Productos vs Servicios Facturados" styles={styles} render={(expanded) => (
           <TwoBarComparison
             labelA="Productos"
             valueA={productosVsServicios.productos}
             labelB="Servicios"
             valueB={productosVsServicios.servicios}
             formatter={fmtMoney2}
+            compact={!expanded}
           />
-        </Card>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Bases Con IVA vs Sin IVA</h3>
-          <DonutChart items={conIvaVsSinIva} formatter={fmtMoney} />
-        </Card>
+        )} />
       </div>
-      <Card variant="chartCard" styles={styles} style={cardStyle}>
-        <h3>Top 10 Proveedores por Monto Facturado</h3>
-        <RankedBarChart items={topProveedores} color="var(--color-chart-accent)" formatter={fmtMoney} />
-      </Card>
+      <div style={cardStyle}>
+        <ExpandableChartCard title="Top 10 Proveedores por Monto Facturado" styles={styles} render={(expanded) => (
+          <RankedBarChart items={topProveedores} color="var(--color-chart-accent)" formatter={fmtMoney} minHeight={expanded ? 260 : 100} maxVisibleItems={expanded ? undefined : 5} />
+        )} />
+      </div>
 
       <TierHeading title="Detalle y Clasificación" />
-      <div className={styles.chartsGridTwo} style={cardStyle}>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Distribución por Clasificación SRI</h3>
-          <Treemap items={porClasificacion} formatter={fmtMoney} />
-        </Card>
-        <Card variant="chartCard" styles={styles} style={{ minHeight: 280 }}>
+      <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop}`} style={cardStyle}>
+        <ExpandableChartCard title="Distribución por Clasificación SRI" styles={styles} render={(expanded) => (
+          <Treemap items={porClasificacion} formatter={fmtMoney} height={expanded ? 460 : 170} />
+        )} />
+        <Card variant="chartCard" styles={styles} style={{ minHeight: 200 }}>
           <h3>% Facturas Anuladas</h3>
           <RadialGauge pct={pctAnulado} label={`${anuladosCount.toLocaleString("es-EC")} anuladas de ${data.length.toLocaleString("es-EC")} facturas`} goodDirection="low" />
         </Card>
       </div>
 
       <TierHeading title="Tendencia y Concentración" />
-      <div className={styles.chartsGridTwo} style={{ ...cardStyle, marginBottom: 0 }}>
-        <Card variant="chartCard" styles={styles} style={{ minHeight: 300 }}>
-          <h3>Tendencia Diaria de Facturación</h3>
-          <TrendLine points={tendenciaDiaria} formatter={fmtMoney2} color="var(--color-brand-primary)" />
-        </Card>
-        <Card variant="chartCard" styles={styles} style={{ minHeight: 300 }}>
-          <h3>Concentración de Facturación por Proveedor (80/20)</h3>
-          <ParetoChart items={paretoProveedores} formatter={fmtMoney2} />
-        </Card>
+      <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop}`} style={{ ...cardStyle, marginBottom: 0 }}>
+        <ExpandableChartCard title="Tendencia Diaria de Facturación" styles={styles} render={(expanded) => (
+          <TrendLine points={tendenciaDiaria} formatter={fmtMoney2} color="var(--color-brand-primary)" height={expanded ? 300 : 130} />
+        )} />
+        <ExpandableChartCard title="Concentración de Facturación por Proveedor (80/20)" styles={styles} render={(expanded) => (
+          <ParetoChart items={paretoProveedores} formatter={fmtMoney2} height={expanded ? 420 : 130} />
+        )} />
       </div>
     </section>
   );

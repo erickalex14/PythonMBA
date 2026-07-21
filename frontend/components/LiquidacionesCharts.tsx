@@ -1,5 +1,4 @@
 import React, { useMemo } from "react";
-import { Card } from "./ui/Card";
 import { EMPRESA_LABELS } from "../lib/empresa";
 import {
   RankedBarChart,
@@ -10,6 +9,7 @@ import {
   DonutChart,
   Treemap,
   ScatterXY,
+  ExpandableChartCard,
 } from "./charts/ChartPrimitives";
 
 interface LiquidacionesChartsProps {
@@ -131,35 +131,31 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
   return (
     <section>
       <TierHeading title="Resumen Ejecutivo" first />
-      <div className={styles.chartsGridTwo} style={cardStyle}>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Distribución de CIF por Empresa</h3>
-          <DonutChart items={porEmpresa} formatter={fmtMoney} />
-        </Card>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Subtotal CIF vs Total CIF</h3>
+      <div className={styles.chartsGridThree} style={cardStyle}>
+        <ExpandableChartCard title="Distribución de CIF por Empresa" styles={styles} render={(expanded) => (
+          <DonutChart items={porEmpresa} formatter={fmtMoney} size={expanded ? 170 : 100} compact={!expanded} />
+        )} />
+        <ExpandableChartCard title="Subtotal CIF vs Total CIF" styles={styles} render={(expanded) => (
           <TwoBarComparison
             labelA="Subtotal CIF"
             valueA={subtotalVsTotal.subtotal}
             labelB="Total CIF (con cargos)"
             valueB={subtotalVsTotal.total}
             formatter={fmtMoney2}
+            compact={!expanded}
           />
-        </Card>
+        )} />
+        <ExpandableChartCard title="Top 10 Partidas Arancelarias por Monto CIF" styles={styles} render={(expanded) => (
+          <Treemap items={topPartidas} formatter={fmtMoney} height={expanded ? 460 : 170} />
+        )} />
       </div>
-      <Card variant="chartCard" styles={styles} style={cardStyle}>
-        <h3>Top 10 Partidas Arancelarias por Monto CIF</h3>
-        <Treemap items={topPartidas} formatter={fmtMoney} />
-      </Card>
 
       <TierHeading title="Detalle de Productos" />
       <div className={styles.chartsGridTwo} style={cardStyle}>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Top 10 Productos por Monto CIF</h3>
-          <RankedBarChart items={topProductosCif} color="var(--color-chart-accent)" formatter={fmtMoney} />
-        </Card>
-        <Card variant="chartCard" styles={styles} style={{ minHeight: 320 }}>
-          <h3>Cantidad Importada vs Monto CIF por Producto</h3>
+        <ExpandableChartCard title="Top 10 Productos por Monto CIF" styles={styles} render={(expanded) => (
+          <RankedBarChart items={topProductosCif} color="var(--color-chart-accent)" formatter={fmtMoney} minHeight={expanded ? 260 : 100} maxVisibleItems={expanded ? undefined : 5} />
+        )} />
+        <ExpandableChartCard title="Cantidad Importada vs Monto CIF por Producto" styles={styles} render={(expanded) => (
           <ScatterXY
             points={scatterProductos}
             xLabel="Cantidad Importada →"
@@ -167,20 +163,19 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
             xFormatter={fmtNumber}
             yFormatter={fmtMoney2}
             color="var(--color-chart-accent)"
+            height={expanded ? 460 : 190}
           />
-        </Card>
+        )} />
       </div>
 
       <TierHeading title="Tendencia y Concentración" />
       <div className={styles.chartsGridTwo} style={{ ...cardStyle, marginBottom: 0 }}>
-        <Card variant="chartCard" styles={styles} style={{ minHeight: 300 }}>
-          <h3>Tendencia Diaria de Monto CIF</h3>
-          <TrendLine points={tendenciaDiaria} formatter={fmtMoney2} color="var(--color-brand-primary)" />
-        </Card>
-        <Card variant="chartCard" styles={styles} style={{ minHeight: 300 }}>
-          <h3>Concentración de CIF por Producto (80/20)</h3>
-          <ParetoChart items={paretoProductos} formatter={fmtMoney2} />
-        </Card>
+        <ExpandableChartCard title="Tendencia Diaria de Monto CIF" styles={styles} render={(expanded) => (
+          <TrendLine points={tendenciaDiaria} formatter={fmtMoney2} color="var(--color-brand-primary)" height={expanded ? 300 : 130} />
+        )} />
+        <ExpandableChartCard title="Concentración de CIF por Producto (80/20)" styles={styles} render={(expanded) => (
+          <ParetoChart items={paretoProductos} formatter={fmtMoney2} height={expanded ? 420 : 130} />
+        )} />
       </div>
     </section>
   );

@@ -299,18 +299,38 @@
   margin: 0;
 }
 
-/* Sección de Filtros de Consulta */
-.filtersSection {
+/* Panel de Filtros unificado: fecha/búsqueda (dispara consulta al ERP) y
+   filtros locales (instantáneos, sin recargar) viven en la misma tarjeta
+   en vez de dos cajas sueltas apiladas - la línea divisoria interna es lo
+   único que distingue una sección de la otra. */
+.filterPanel {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: 1.25rem;
   margin-bottom: 1.5rem;
   box-shadow: var(--shadow-card);
+}
+
+.filterPanelTopRow {
   display: flex;
   flex-wrap: wrap;
   gap: 1.5rem;
   align-items: flex-end;
+}
+
+.filterPanelDivider {
+  border-top: 1px solid var(--color-border);
+  margin: 1.1rem 0 1rem;
+}
+
+.filterPanelSubLabel {
+  margin: 0 0 0.85rem 0;
+  color: var(--color-text-faint);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .dateFilters {
@@ -402,7 +422,7 @@
 }
 
 @media (max-width: 640px) {
-  .filtersSection,
+  .filterPanelTopRow,
   .dateFilters,
   .subFiltersRow,
   .filtersRow {
@@ -559,6 +579,48 @@
   margin-bottom: 1.5rem;
 }
 
+/* Variante que no estira las tarjetas al alto de la fila - para pares donde
+   una tarjeta expandible queda mucho mas chica que su vecina (ej. Donut vs
+   TwoBarComparison) y forzar el mismo alto deja hueco vacio real debajo del
+   contenido mas corto en vez de reflejar el tamaño compacto real. */
+.chartsGridTwoTop {
+  align-items: start;
+}
+
+/* Para el par Donut + TwoBarComparison: ninguno de los dos necesita mas de
+   ~550px de contenido real (circulo+leyenda / barras+valores), asi que
+   forzar 50/50 (o dejar 1fr en la segunda columna) deja tarjetas con mucho
+   espacio en blanco. Se acotan ambas columnas a su contenido real - si sobra
+   ancho de fila, queda como fondo de pagina, no como relleno vacio dentro
+   de una tarjeta. */
+.chartsGridDonutRow {
+  grid-template-columns: minmax(280px, 375px) minmax(300px, 560px);
+  justify-content: start;
+}
+
+/* Resumen Ejecutivo con 3 tarjetas compactas (donut + comparacion + treemap):
+   las 3 caben comodas en una sola fila, asi que separarlas en 2 filas deja
+   el treemap solo con media pagina de fondo vacio al lado. Columnas y alto
+   parejos entre las 3 - no una mas ancha/alta que las otras. */
+.chartsGridThree {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+  .chartsGridThree {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1200px) {
+  .chartsGridDonutRow {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 1200px) {
   .chartsGrid,
   .chartsGridTwo {
@@ -600,6 +662,39 @@
 }
 
 .clickableCard:hover .clickableCardOverlay {
+  opacity: 1;
+}
+
+/* Tarjeta de gráfico compacta que se expande en un modal al hacer click -
+   distinta de .clickableCard (esa navega a un reporte, esta abre un modal
+   con el mismo gráfico más grande) */
+.expandableChartCard {
+  cursor: pointer;
+  height: auto;
+  transition: box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.expandableChartCard:hover {
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  border-color: var(--color-border-strong);
+}
+
+.expandableChartCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.expandIcon {
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+  color: var(--color-text-faint);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.expandableChartCard:hover .expandIcon {
   opacity: 1;
 }
 
@@ -1284,7 +1379,7 @@
     width: 100% !important;
   }
 
-  .filtersSection,
+  .filterPanel,
   .localFiltersCard,
   .actionsBar,
   .paginationRow,
@@ -1543,6 +1638,7 @@
 
 /* Secciones de reporte y acciones */
 .reportSection {
+  margin-top: 2rem;
   margin-bottom: 1.5rem;
 }
 
@@ -1595,15 +1691,6 @@
   flex-wrap: wrap;
   gap: 1.25rem;
   align-items: flex-end;
-}
-
-.subFiltersSection {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: 1.25rem;
-  margin-bottom: 1.5rem;
-  box-shadow: var(--shadow-card);
 }
 
 .subFiltersRow {

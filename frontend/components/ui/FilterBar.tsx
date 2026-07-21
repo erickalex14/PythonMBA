@@ -12,13 +12,19 @@ export interface FilterFieldConfig {
 interface FilterBarProps {
   fields: FilterFieldConfig[];
   styles: Record<string, string>;
+  // El caller decide el contenedor (panel unificado con fecha/búsqueda, o
+  // uno propio como el del Dashboard) - este componente solo es la fila de
+  // campos, no una tarjeta independiente.
+  label?: string;
 }
 
-export const FilterBar: React.FC<FilterBarProps> = ({ fields, styles }) => (
-  <section className={styles.subFiltersSection}>
-    <h4 style={{ margin: "0 0 0.85rem 0", color: "#005daa", fontSize: "0.80rem", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-      Filtros de Segmentación Local (Sin recargar base de datos)
-    </h4>
+export const FilterBar: React.FC<FilterBarProps> = ({
+  fields,
+  styles,
+  label = "Filtros de Segmentación Local (Sin recargar base de datos)",
+}) => (
+  <div>
+    <h4 className={styles.filterPanelSubLabel}>{label}</h4>
     <div className={styles.subFiltersRow}>
       {fields.map((field) => (
         <div key={field.label} className={styles.filterGroup}>
@@ -46,5 +52,5 @@ export const FilterBar: React.FC<FilterBarProps> = ({ fields, styles }) => (
         </div>
       ))}
     </div>
-  </section>
+  </div>
 );
