@@ -151,7 +151,7 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
       </div>
 
       <TierHeading title="Detalle de Productos" />
-      <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop}`} style={cardStyle}>
+      <div className={styles.chartsGridTwo} style={cardStyle}>
         <ExpandableChartCard title="Top 10 Productos por Monto CIF" styles={styles} render={(expanded) => (
           <RankedBarChart items={topProductosCif} color="var(--color-chart-accent)" formatter={fmtMoney} minHeight={expanded ? 260 : 100} maxVisibleItems={expanded ? undefined : 5} />
         )} />
@@ -169,7 +169,7 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
       </div>
 
       <TierHeading title="Tendencia y Concentración" />
-      <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop}`} style={{ ...cardStyle, marginBottom: 0 }}>
+      <div className={styles.chartsGridTwo} style={{ ...cardStyle, marginBottom: 0 }}>
         <ExpandableChartCard title="Tendencia Diaria de Monto CIF" styles={styles} render={(expanded) => (
           <TrendLine points={tendenciaDiaria} formatter={fmtMoney2} color="var(--color-brand-primary)" height={expanded ? 300 : 130} />
         )} />
