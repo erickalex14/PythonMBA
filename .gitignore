@@ -97,3 +97,14 @@ desktop.ini
 *.xlsx
 *.xls
 *.csv
+*.rpt
+
+# ------------------------------------------------------------------------------
+# 9. SCRIPTS DE DEPLOY Y DOCS INTERNOS (no van al repo publico/portafolio)
+# ------------------------------------------------------------------------------
+deploy.py
+deploy_config.py
+Estructura_BD_MBA3.md
+MBA3_Consulta_Externa_Guia.pdf
+scalability_maintainability_report.md
+walkthrough.md
