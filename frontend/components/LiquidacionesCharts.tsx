@@ -131,7 +131,7 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
   return (
     <section>
       <TierHeading title="Resumen Ejecutivo" first />
-      <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop}`} style={cardStyle}>
+      <div className={styles.chartsGridThree} style={cardStyle}>
         <ExpandableChartCard title="Distribución de CIF por Empresa" styles={styles} render={(expanded) => (
           <DonutChart items={porEmpresa} formatter={fmtMoney} size={expanded ? 170 : 100} compact={!expanded} />
         )} />
@@ -145,8 +145,6 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
             compact={!expanded}
           />
         )} />
-      </div>
-      <div style={cardStyle}>
         <ExpandableChartCard title="Top 10 Partidas Arancelarias por Monto CIF" styles={styles} render={(expanded) => (
           <Treemap items={topPartidas} formatter={fmtMoney} height={expanded ? 460 : 170} />
         )} />
@@ -176,7 +174,7 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
           <TrendLine points={tendenciaDiaria} formatter={fmtMoney2} color="var(--color-brand-primary)" height={expanded ? 300 : 130} />
         )} />
         <ExpandableChartCard title="Concentración de CIF por Producto (80/20)" styles={styles} render={(expanded) => (
-          <ParetoChart items={paretoProductos} formatter={fmtMoney2} height={expanded ? 420 : 170} />
+          <ParetoChart items={paretoProductos} formatter={fmtMoney2} height={expanded ? 420 : 130} />
         )} />
       </div>
     </section>

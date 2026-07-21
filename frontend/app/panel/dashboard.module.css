@@ -587,6 +587,40 @@
   align-items: start;
 }
 
+/* Para el par Donut + TwoBarComparison: ninguno de los dos necesita mas de
+   ~550px de contenido real (circulo+leyenda / barras+valores), asi que
+   forzar 50/50 (o dejar 1fr en la segunda columna) deja tarjetas con mucho
+   espacio en blanco. Se acotan ambas columnas a su contenido real - si sobra
+   ancho de fila, queda como fondo de pagina, no como relleno vacio dentro
+   de una tarjeta. */
+.chartsGridDonutRow {
+  grid-template-columns: minmax(280px, 375px) minmax(300px, 560px);
+  justify-content: start;
+}
+
+/* Resumen Ejecutivo con 3 tarjetas compactas (donut + comparacion + treemap):
+   las 3 caben comodas en una sola fila, asi que separarlas en 2 filas deja
+   el treemap solo con media pagina de fondo vacio al lado. Columnas y alto
+   parejos entre las 3 - no una mas ancha/alta que las otras. */
+.chartsGridThree {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+  .chartsGridThree {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1200px) {
+  .chartsGridDonutRow {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 1200px) {
   .chartsGrid,
   .chartsGridTwo {

@@ -122,7 +122,7 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
   return (
     <section>
       <TierHeading title="Resumen Ejecutivo" first />
-      <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop}`} style={cardStyle}>
+      <div className={styles.chartsGridThree} style={cardStyle}>
         <ExpandableChartCard title="Distribución por Tipo de Movimiento" styles={styles} render={(expanded) => (
           <DonutChart items={porTipo} formatter={fmtNumber} size={expanded ? 170 : 100} compact={!expanded} />
         )} />
@@ -136,8 +136,6 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
             compact={!expanded}
           />
         )} />
-      </div>
-      <div style={cardStyle}>
         <ExpandableChartCard title="Top 10 Marcas por Cantidad de Movimientos" styles={styles} render={(expanded) => (
           <Treemap items={topMarcas} formatter={fmtNumber} height={expanded ? 460 : 170} />
         )} />
@@ -149,7 +147,7 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
           <RankedBarChart items={topSucursales} color="var(--color-chart-accent)" formatter={fmtNumber} minHeight={expanded ? 260 : 100} maxVisibleItems={expanded ? undefined : 5} />
         )} />
         <ExpandableChartCard title="Concentración de Movimientos por Vendedor (80/20)" styles={styles} render={(expanded) => (
-          <ParetoChart items={paretoVendedores} formatter={fmtNumber} height={expanded ? 420 : 170} />
+          <ParetoChart items={paretoVendedores} formatter={fmtNumber} height={expanded ? 420 : 130} />
         )} />
       </div>
 

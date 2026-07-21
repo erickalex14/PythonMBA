@@ -125,7 +125,10 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
   return (
     <section>
       <TierHeading title="Resumen Ejecutivo" first />
-      <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop}`} style={cardStyle}>
+      <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop} ${styles.chartsGridDonutRow}`} style={cardStyle}>
+        <ExpandableChartCard title="Bases Con IVA vs Sin IVA" styles={styles} render={(expanded) => (
+          <DonutChart items={conIvaVsSinIva} formatter={fmtMoney} size={expanded ? 170 : 100} compact={!expanded} />
+        )} />
         <ExpandableChartCard title="Productos vs Servicios Facturados" styles={styles} render={(expanded) => (
           <TwoBarComparison
             labelA="Productos"
@@ -135,9 +138,6 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
             formatter={fmtMoney2}
             compact={!expanded}
           />
-        )} />
-        <ExpandableChartCard title="Bases Con IVA vs Sin IVA" styles={styles} render={(expanded) => (
-          <DonutChart items={conIvaVsSinIva} formatter={fmtMoney} size={expanded ? 170 : 100} compact={!expanded} />
         )} />
       </div>
       <div style={cardStyle}>
@@ -163,7 +163,7 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
           <TrendLine points={tendenciaDiaria} formatter={fmtMoney2} color="var(--color-brand-primary)" height={expanded ? 300 : 130} />
         )} />
         <ExpandableChartCard title="Concentración de Facturación por Proveedor (80/20)" styles={styles} render={(expanded) => (
-          <ParetoChart items={paretoProveedores} formatter={fmtMoney2} height={expanded ? 420 : 170} />
+          <ParetoChart items={paretoProveedores} formatter={fmtMoney2} height={expanded ? 420 : 130} />
         )} />
       </div>
     </section>

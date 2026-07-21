@@ -1,4 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
+
+// Mide el ancho real en px del contenedor via ResizeObserver - se usa para
+// que el viewBox del SVG coincida exactamente con el ancho renderizado (en
+// vez de un ancho fijo tipo "500 unidades") y asi evitar el letterboxing de
+// preserveAspectRatio="meet" (barras vacias a los costados cuando la tarjeta
+// es mas ancha que el viewBox fijo).
+function useMeasuredWidth(fallback: number) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [width, setWidth] = useState(fallback);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect.width;
+      if (w && w > 0) setWidth(Math.round(w));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  return [ref, width] as const;
+}
 import { Card } from "../ui/Card";
 import { Modal } from "../ui/Modal";
 
@@ -228,8 +249,13 @@ export function ParetoChart({
   const cutIdx = withCum.findIndex((it) => it.cumPct >= 80);
 
   return (
-    <div style={{ position: "relative", width: "100%", maxWidth: 620, margin: "0 auto" }}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height, overflow: "visible" }}>
+    <div style={{ position: "relative", width: "100%" }}>
+      {/* height:"auto" (no valor fijo en px) - igual que RankedBarChart/
+          TrendLine, para que el alto real escale con el ancho real de la
+          columna. Un alto fijo en px aca desalinea el par cuando la
+          ventana es mas angosta (RankedBarChart se achica, este se queda
+          igual), generando un hueco vacio dependiente del viewport. */}
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
         {[0, 25, 50, 75, 100].map((p) => (
           <line key={p} x1={pad} y1={toY(p)} x2={W - pad} y2={toY(p)} stroke="var(--color-surface-subtle)" strokeWidth="1" />
         ))}
@@ -342,8 +368,14 @@ export function DonutChart({
               fill="none"
               stroke={a.color}
               strokeWidth={STROKE}
-              strokeDasharray={`${a.dash} ${circumference - a.dash}`}
-              strokeDashoffset={-a.offset}
+              // Un solo arco al 100% no debe llevar dasharray: "circumference 0"
+              // deja una costura visible por el redondeo de punto flotante de
+              // la circunferencia (irracional, 2*pi*R) - un circulo solido sin
+              // dasharray se ve completo sin ese artefacto.
+              {...(arcs.length > 1 ? {
+                strokeDasharray: `${a.dash} ${circumference - a.dash}`,
+                strokeDashoffset: -a.offset,
+              } : {})}
               strokeOpacity={hovered === null || hovered === i ? 1 : 0.35}
               transform={`rotate(-90 ${CX} ${CY})`}
               style={{ cursor: "pointer", transition: "stroke-opacity 0.15s ease" }}
@@ -484,20 +516,23 @@ export function Treemap({
   height?: number;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
-  const W = 500, H = height;
+  const [containerRef, W] = useMeasuredWidth(500);
+  const H = height;
   const sorted = [...items].filter((i) => i.value > 0).sort((a, b) => b.value - a.value).map((i, idx) => ({ ...i, key: `${i.label}-${idx}` }));
   const rects = sliceTreemap(sorted, 0, 0, W, H, true);
 
   if (rects.length === 0) {
     return (
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height }}>
-        <text x={W / 2} y={H / 2} textAnchor="middle" fill="var(--color-text-faint)" fontSize="11">Sin datos en el período</text>
-      </svg>
+      <div ref={containerRef} style={{ width: "100%" }}>
+        <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height }}>
+          <text x={W / 2} y={H / 2} textAnchor="middle" fill="var(--color-text-faint)" fontSize="11">Sin datos en el período</text>
+        </svg>
+      </div>
     );
   }
 
   return (
-    <div style={{ position: "relative", width: "100%" }}>
+    <div ref={containerRef} style={{ position: "relative", width: "100%" }}>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height, overflow: "visible" }}>
         {rects.map((r, i) => {
           const isHovered = hovered === r.item.key;
@@ -570,11 +605,25 @@ export function ScatterXY({
     );
   }
 
-  const maxX = Math.max(...points.map((p) => p.x), 1);
-  const maxY = Math.max(...points.map((p) => p.y), 1);
+  // Ejes acotados al rango real de los datos (no siempre desde 0) - un
+  // scatter compara posicion/agrupamiento, no longitud de barra, asi que
+  // acotar al rango real no engaña (a diferencia de truncar un eje de
+  // barras) y evita que el grafico quede vacio cuando los datos estan
+  // concentrados lejos del origen. Sin labels numericos en los ejes (solo
+  // xLabel/yLabel descriptivos), no hay riesgo de mala lectura de valores.
+  const rawMinX = Math.min(...points.map((p) => p.x));
+  const rawMaxX = Math.max(...points.map((p) => p.x));
+  const rawMinY = Math.min(...points.map((p) => p.y));
+  const rawMaxY = Math.max(...points.map((p) => p.y));
+  const spanX = rawMaxX - rawMinX || rawMaxX || 1;
+  const spanY = rawMaxY - rawMinY || rawMaxY || 1;
+  const minX = Math.max(0, rawMinX - spanX * 0.08);
+  const maxX = rawMaxX + spanX * 0.08;
+  const minY = Math.max(0, rawMinY - spanY * 0.08);
+  const maxY = rawMaxY + spanY * 0.08;
   const maxSize = Math.max(...points.map((p) => p.size ?? 1), 1);
-  const toX = (v: number) => pad + (v / maxX) * (W - pad * 2);
-  const toY = (v: number) => H - pad - (v / maxY) * (H - pad * 2);
+  const toX = (v: number) => pad + ((v - minX) / (maxX - minX)) * (W - pad * 2);
+  const toY = (v: number) => H - pad - ((v - minY) / (maxY - minY)) * (H - pad * 2);
   const toR = (v: number) => 3 + Math.sqrt((v ?? 1) / maxSize) * 12;
 
   return (
