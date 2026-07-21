@@ -9,6 +9,7 @@ import {
   DonutChart,
   Treemap,
   ParetoChart,
+  ExpandableChartCard,
 } from "./charts/ChartPrimitives";
 
 interface MovimientosChartsProps {
@@ -121,46 +122,41 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
   return (
     <section>
       <TierHeading title="Resumen Ejecutivo" first />
-      <div className={styles.chartsGridTwo} style={cardStyle}>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Distribución por Tipo de Movimiento</h3>
-          <DonutChart items={porTipo} formatter={fmtNumber} />
-        </Card>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Entradas (Proveedores) vs Salidas (Clientes)</h3>
+      <div className={styles.chartsGridThree} style={cardStyle}>
+        <ExpandableChartCard title="Distribución por Tipo de Movimiento" styles={styles} render={(expanded) => (
+          <DonutChart items={porTipo} formatter={fmtNumber} size={expanded ? 170 : 100} compact={!expanded} />
+        )} />
+        <ExpandableChartCard title="Entradas (Proveedores) vs Salidas (Clientes)" styles={styles} render={(expanded) => (
           <TwoBarComparison
             labelA="Entradas (Proveedores)"
             valueA={entradasVsSalidas.entradas}
             labelB="Salidas (Clientes)"
             valueB={entradasVsSalidas.salidas}
             formatter={fmtNumber}
+            compact={!expanded}
           />
-        </Card>
+        )} />
+        <ExpandableChartCard title="Top 10 Marcas por Cantidad de Movimientos" styles={styles} render={(expanded) => (
+          <Treemap items={topMarcas} formatter={fmtNumber} height={expanded ? 460 : 170} />
+        )} />
       </div>
-      <Card variant="chartCard" styles={styles} style={cardStyle}>
-        <h3>Top 10 Marcas por Cantidad de Movimientos</h3>
-        <Treemap items={topMarcas} formatter={fmtNumber} />
-      </Card>
 
       <TierHeading title="Detalle Operativo" />
-      <div className={styles.chartsGridTwo} style={cardStyle}>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Top 10 Sucursales con Más Movimientos</h3>
-          <RankedBarChart items={topSucursales} color="var(--color-chart-accent)" formatter={fmtNumber} />
-        </Card>
-        <Card variant="chartCard" styles={styles} style={{ minHeight: 300 }}>
-          <h3>Concentración de Movimientos por Vendedor (80/20)</h3>
-          <ParetoChart items={paretoVendedores} formatter={fmtNumber} />
-        </Card>
+      <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop}`} style={cardStyle}>
+        <ExpandableChartCard title="Top 10 Sucursales con Más Movimientos" styles={styles} render={(expanded) => (
+          <RankedBarChart items={topSucursales} color="var(--color-chart-accent)" formatter={fmtNumber} minHeight={expanded ? 260 : 100} maxVisibleItems={expanded ? undefined : 5} />
+        )} />
+        <ExpandableChartCard title="Concentración de Movimientos por Vendedor (80/20)" styles={styles} render={(expanded) => (
+          <ParetoChart items={paretoVendedores} formatter={fmtNumber} height={expanded ? 420 : 130} />
+        )} />
       </div>
 
       <TierHeading title="Tendencia y Calidad" />
-      <div className={styles.chartsGridTwo} style={{ ...cardStyle, marginBottom: 0 }}>
-        <Card variant="chartCard" styles={styles} style={{ minHeight: 280 }}>
-          <h3>Tendencia Diaria de Transacciones</h3>
-          <TrendLine points={tendenciaDiaria} formatter={fmtNumber} color="var(--color-brand-primary)" />
-        </Card>
-        <Card variant="chartCard" styles={styles} style={{ minHeight: 280 }}>
+      <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop}`} style={{ ...cardStyle, marginBottom: 0 }}>
+        <ExpandableChartCard title="Tendencia Diaria de Transacciones" styles={styles} render={(expanded) => (
+          <TrendLine points={tendenciaDiaria} formatter={fmtNumber} color="var(--color-brand-primary)" height={expanded ? 300 : 130} />
+        )} />
+        <Card variant="chartCard" styles={styles} style={{ minHeight: 200 }}>
           <h3>% Devoluciones sobre el Total</h3>
           <RadialGauge pct={pctDevoluciones} label={`${fmtNumber(porTipo.find((t) => t.label === "Devolución")?.value || 0)} devoluciones de ${fmtNumber(data.length)} movimientos`} goodDirection="low" />
         </Card>
