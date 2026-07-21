@@ -103,7 +103,7 @@ class VentasService:
             if token:
                 cols_movs = (
                     "DOC_ID_CORP,TRANS_DATE,PRODUCT_ID_CORP,PRODUCT_NAME,QUANTITY,ORIGINAL_QTY,"
-                    "UNIT_COST,DISCOUNT_AMOUNT,NET_LINE_TOTAL,UM,Anulada,IN_OUT,"
+                    "UNIT_COST,DISCOUNT_AMOUNT,NET_LINE_TOTAL,UM,Anulada,IN_OUT,ORIGIN_MEMO,"
                     "\"Codigo grupo\",\"Codigo subgrupo\",Codigo_grupo,Codigo_subgrupo,"
                     "TRANS_COST,WAR_CODE,COD_CLIENTE,Info_Seriales"
                 )
@@ -148,6 +148,7 @@ class VentasService:
                     col_costo = mapeo_movs.get("TRANSCOST")
                     col_bodega = mapeo_movs.get("WARCODE")
                     col_cliente = mapeo_movs.get("CODCLIENTE")
+                    col_origin_memo = mapeo_movs.get("ORIGINMEMO")
 
                     df_movs = df_movs.rename(columns={
                         col_movs_doc: 'DOC_ID_CORP_KARDEX',
@@ -165,7 +166,8 @@ class VentasService:
                         col_anulada: 'ANULADA_INT',
                         col_costo: 'COSTO_INT',
                         col_bodega: 'BODEGA_INT',
-                        col_cliente: 'CLIENTE_INT'
+                        col_cliente: 'CLIENTE_INT',
+                        col_origin_memo: 'ORIGIN_MEMO_INT'
                     })
 
                     # QUANTITY es la cantidad real (ver misma verificacion en la vista SQL de
@@ -226,10 +228,20 @@ class VentasService:
 
                     df_consolidado['IS_ANULADA'] = df_consolidado['ANULADA_INT'].apply(evaluar_anulada) if 'ANULADA_INT' in df_consolidado.columns else False
 
+                    # ORIGIN_MEMO = tipo de movimiento. Sin este filtro se contaban tambien
+                    # transferencias entre bodegas y otros movimientos de inventario como si
+                    # fueran ventas (mismo criterio que la vista SQL del historico, que ya
+                    # filtra k.origin_memo = 'CLIENTES').
+                    df_consolidado['ORIGIN_MEMO_INT'] = (
+                        df_consolidado['ORIGIN_MEMO_INT'].astype(str).str.strip().str.upper()
+                        if 'ORIGIN_MEMO_INT' in df_consolidado.columns else ''
+                    )
+
                     # Filtro de negocio
                     df_filtrado = df_consolidado[
                         (df_consolidado['IS_ANULADA'] == False) &
-                        (df_consolidado['CANTIDAD_INT'] > 0)
+                        (df_consolidado['CANTIDAD_INT'] > 0) &
+                        (df_consolidado['ORIGIN_MEMO_INT'] == 'CLIENTES')
                     ].copy()
 
                     if not df_filtrado.empty:
