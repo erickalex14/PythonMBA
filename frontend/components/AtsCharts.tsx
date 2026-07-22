@@ -125,7 +125,7 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
   return (
     <section>
       <TierHeading title="Resumen Ejecutivo" first />
-      <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop} ${styles.chartsGridDonutRow}`} style={cardStyle}>
+      <div className={styles.chartsGridThree} style={cardStyle}>
         <ExpandableChartCard title="Bases Con IVA vs Sin IVA" styles={styles} render={(expanded) => (
           <DonutChart items={conIvaVsSinIva} formatter={fmtMoney} size={expanded ? 170 : 100} compact={!expanded} />
         )} />
@@ -139,15 +139,13 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
             compact={!expanded}
           />
         )} />
-      </div>
-      <div style={cardStyle}>
         <ExpandableChartCard title="Top 10 Proveedores por Monto Facturado" styles={styles} render={(expanded) => (
           <RankedBarChart items={topProveedores} color="var(--color-chart-accent)" formatter={fmtMoney} minHeight={expanded ? 260 : 100} maxVisibleItems={expanded ? undefined : 5} />
         )} />
       </div>
 
       <TierHeading title="Detalle y Clasificación" />
-      <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop}`} style={cardStyle}>
+      <div className={styles.chartsGridTwo} style={cardStyle}>
         <ExpandableChartCard title="Distribución por Clasificación SRI" styles={styles} render={(expanded) => (
           <Treemap items={porClasificacion} formatter={fmtMoney} height={expanded ? 460 : 170} />
         )} />
@@ -158,7 +156,7 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
       </div>
 
       <TierHeading title="Tendencia y Concentración" />
-      <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop}`} style={{ ...cardStyle, marginBottom: 0 }}>
+      <div className={styles.chartsGridTwo} style={{ ...cardStyle, marginBottom: 0 }}>
         <ExpandableChartCard title="Tendencia Diaria de Facturación" styles={styles} render={(expanded) => (
           <TrendLine points={tendenciaDiaria} formatter={fmtMoney2} color="var(--color-brand-primary)" height={expanded ? 300 : 130} />
         )} />
