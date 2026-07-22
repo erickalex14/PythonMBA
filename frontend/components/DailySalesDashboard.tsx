@@ -484,6 +484,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
     return { x, y };
   });
   const pathD = points.length > 0 ? `M ${points.map((p) => `${p.x} ${p.y}`).join(" L ")}` : "";
+  const areaPathD = points.length > 0 ? `${pathD} L${points[points.length - 1].x},170 L${points[0].x},170 Z` : "";
 
   return (
     <div>
@@ -550,7 +551,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
 
       {resumen && (
         <>
-          <h2 style={{ fontSize: "1.05rem", fontWeight: 700, margin: "2rem 0 1rem", color: "var(--color-text-primary)" }}>
+          <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "1.0625rem", fontWeight: 700, margin: "2rem 0 1rem", color: "var(--color-text-primary)" }}>
             Ventas por Período (Calendario)
           </h2>
           <section className={styles.chartsGrid}>
@@ -645,10 +646,20 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
           <h3>Tendencia Diaria de Ventas ({RANGE_DAYS} días)</h3>
           <div className={styles.svgContainer}>
             <svg viewBox="0 0 500 200" className={styles.svgChart}>
+              <defs>
+                <linearGradient id="dashboardTrendGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="var(--color-brand-primary)" stopOpacity="0.28" />
+                  <stop offset="100%" stopColor="var(--color-brand-primary)" stopOpacity="0" />
+                </linearGradient>
+              </defs>
               <line x1="50" y1="170" x2="450" y2="170" stroke="var(--color-border)" strokeWidth="1" />
 
               {points.length > 0 && (
-                <path d={pathD} fill="none" stroke="var(--color-chart-accent)" strokeWidth="2.5" strokeLinecap="round" />
+                <path d={areaPathD} fill="url(#dashboardTrendGrad)" stroke="none" />
+              )}
+
+              {points.length > 0 && (
+                <path d={pathD} fill="none" stroke="var(--color-chart-accent)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
               )}
 
               {dailySeries.length > 0 && (
@@ -775,7 +786,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
         </ClickableCard>
       </section>
 
-      <h2 style={{ fontSize: "1.05rem", fontWeight: 700, margin: "2rem 0 1rem", color: "var(--color-text-primary)" }}>
+      <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "1.0625rem", fontWeight: 700, margin: "2rem 0 1rem", color: "var(--color-text-primary)" }}>
         Indicadores Ejecutivos
       </h2>
       <section className={styles.chartsGridTwo}>
@@ -813,7 +824,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
         </ClickableCard>
       </section>
 
-      <h2 style={{ fontSize: "1.05rem", fontWeight: 700, margin: "2rem 0 1rem", color: "var(--color-text-primary)" }}>
+      <h2 style={{ fontFamily: "var(--font-heading)", fontSize: "1.0625rem", fontWeight: 700, margin: "2rem 0 1rem", color: "var(--color-text-primary)" }}>
         Comparativa entre Módulos
       </h2>
       <section className={styles.chartsGrid}>

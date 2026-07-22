@@ -2,6 +2,10 @@ import React from "react";
 import { ReportConfig } from "../lib/reports-config";
 import { Badge } from "./ui/Badge";
 
+// Concepto/tipo de movimiento manual se distingue con un color propio (no es
+// un estado de error/badge, solo una categoria distinta al resto).
+const MANUAL_CONCEPT_COLOR = "var(--color-warning-dark)";
+
 interface ReportTableProps {
   config: ReportConfig;
   paginatedData: any[];
@@ -55,6 +59,25 @@ export const ReportTable: React.FC<ReportTableProps> = ({ config, paginatedData,
                 return (
                   <td key={col.key}>
                     <strong>{val}</strong>
+                  </td>
+                );
+              }
+
+              if (col.type === "link") {
+                return (
+                  <td key={col.key}>
+                    <span style={{ color: "var(--color-brand-primary-dark)" }}>{val !== undefined && val !== null ? String(val) : ""}</span>
+                  </td>
+                );
+              }
+
+              if (col.type === "concept") {
+                const isManual = /manual/i.test(String(val || ""));
+                return (
+                  <td key={col.key}>
+                    <span style={isManual ? { color: MANUAL_CONCEPT_COLOR, fontWeight: 600 } : undefined}>
+                      {val !== undefined && val !== null ? String(val) : ""}
+                    </span>
                   </td>
                 );
               }

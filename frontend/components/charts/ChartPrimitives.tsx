@@ -371,9 +371,13 @@ export function DonutChart({
               // Un solo arco al 100% no debe llevar dasharray: "circumference 0"
               // deja una costura visible por el redondeo de punto flotante de
               // la circunferencia (irracional, 2*pi*R) - un circulo solido sin
-              // dasharray se ve completo sin ese artefacto.
+              // dasharray se ve completo sin ese artefacto. Con varios arcos,
+              // el mismo redondeo puede dejar un hueco de un par de px en la
+              // costura entre el ultimo y el primero - se solapa cada arco
+              // 1 unidad de mas (imperceptible sobre ~377 de circunferencia)
+              // para que el siguiente arco, pintado encima, tape cualquier hueco.
               {...(arcs.length > 1 ? {
-                strokeDasharray: `${a.dash} ${circumference - a.dash}`,
+                strokeDasharray: `${a.dash + 2.5} ${Math.max(circumference - a.dash - 2.5, 0)}`,
                 strokeDashoffset: -a.offset,
               } : {})}
               strokeOpacity={hovered === null || hovered === i ? 1 : 0.35}

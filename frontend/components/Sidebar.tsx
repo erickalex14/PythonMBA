@@ -63,7 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={`${styles.navItem} ${isActive("dashboard") ? styles.active : ""}`}
             onClick={() => goTo("dashboard")}
           >
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><rect x="2" y="2" width="7" height="7" rx="1.4" stroke="currentColor" strokeWidth="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.4" stroke="currentColor" strokeWidth="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.4" stroke="currentColor" strokeWidth="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.4" stroke="currentColor" strokeWidth="1.5"/></svg>
+            <svg className={styles.iconGrid} width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><rect x="2" y="2" width="7" height="7" rx="1.4" stroke="currentColor" strokeWidth="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.4" stroke="currentColor" strokeWidth="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.4" stroke="currentColor" strokeWidth="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.4" stroke="currentColor" strokeWidth="1.5"/></svg>
             <span className="flex-1">Dashboard</span>
           </button>
         )}
@@ -73,7 +73,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={`${styles.navItem} ${isActive("movimientos") ? styles.active : ""}`}
             onClick={() => goTo("movimientos")}
           >
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/><path d="M13 7l-2 5-4 1 2-5 4-1Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>
+            <svg className={styles.iconCompass} width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/><path d="M13 7l-2 5-4 1 2-5 4-1Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>
             <span className="flex-1">Movimientos</span>
           </button>
         )}
@@ -83,7 +83,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={`${styles.navItem} ${isActive("liquidaciones") ? styles.active : ""}`}
             onClick={() => goTo("liquidaciones")}
           >
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><rect x="3" y="3" width="14" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.5"/><line x1="6" y1="7.5" x2="14" y2="7.5" stroke="currentColor" strokeWidth="1.4"/><line x1="6" y1="10.5" x2="14" y2="10.5" stroke="currentColor" strokeWidth="1.4"/><line x1="6" y1="13.5" x2="11" y2="13.5" stroke="currentColor" strokeWidth="1.4"/></svg>
+            <svg className={styles.iconDoc} width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><rect x="3" y="3" width="14" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.5"/><line x1="6" y1="7.5" x2="14" y2="7.5" stroke="currentColor" strokeWidth="1.4"/><line x1="6" y1="10.5" x2="14" y2="10.5" stroke="currentColor" strokeWidth="1.4"/><line x1="6" y1="13.5" x2="11" y2="13.5" stroke="currentColor" strokeWidth="1.4"/></svg>
             <span className="flex-1">Liquidaciones</span>
           </button>
         )}
@@ -93,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={`${styles.navItem} ${isActive("ats") ? styles.active : ""}`}
             onClick={() => goTo("ats")}
           >
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><path d="M5 2.5h7l3 3v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-14a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><line x1="7" y1="9" x2="13" y2="9" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="12" x2="13" y2="12" stroke="currentColor" strokeWidth="1.3"/></svg>
+            <svg className={styles.iconFile} width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><path d="M5 2.5h7l3 3v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-14a1 1 0 0 1 1-1Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><line x1="7" y1="9" x2="13" y2="9" stroke="currentColor" strokeWidth="1.3"/><line x1="7" y1="12" x2="13" y2="12" stroke="currentColor" strokeWidth="1.3"/></svg>
             <span className="flex-1">Reporte ATS</span>
           </button>
         )}
@@ -103,7 +103,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={`${styles.navItem} ${isActive("ventas") ? styles.active : ""}`}
             onClick={() => goTo("ventas")}
           >
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><line x1="4" y1="17" x2="4" y2="9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><line x1="10" y1="17" x2="10" y2="3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><line x1="16" y1="17" x2="16" y2="12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+            <svg className={styles.iconBar} width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><line x1="4" y1="17" x2="4" y2="9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><line x1="10" y1="17" x2="10" y2="3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><line x1="16" y1="17" x2="16" y2="12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
             <span className="flex-1">Rentabilidad</span>
           </button>
         )}
@@ -113,7 +113,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={`${styles.navItem} ${isActive("estadisticas-ventas") ? styles.active : ""}`}
             onClick={() => goTo("estadisticas-ventas")}
           >
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><path d="M3 4h14v3H3z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M4 7v9a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7" stroke="currentColor" strokeWidth="1.5"/><line x1="7" y1="10" x2="13" y2="10" stroke="currentColor" strokeWidth="1.3"/></svg>
+            <svg className={styles.iconCart} width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><path d="M3 4h2l1.5 9h9L17 6.5H6.5" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"/><circle cx="8" cy="16" r="1" stroke="currentColor" strokeWidth="1.3"/><circle cx="14" cy="16" r="1" stroke="currentColor" strokeWidth="1.3"/></svg>
             <span className="flex-1">Ventas</span>
           </button>
         )}
@@ -123,7 +123,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={`${styles.navItem} ${isActive("logs") ? styles.active : ""}`}
             onClick={() => goTo("logs")}
           >
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/><path d="M10 6v4l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <svg className={styles.iconClock} width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><circle cx="10" cy="10" r="8" stroke="currentColor" strokeWidth="1.5"/><path d="M10 6v4l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             <span className="flex-1">Bitácora Auditoría</span>
           </button>
         )}
@@ -133,7 +133,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={`${styles.navItem} ${isActive("sync") ? styles.active : ""}`}
             onClick={() => goTo("sync")}
           >
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><path d="M15.5 6A6 6 0 1 0 16 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M15.5 2.5V6H12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <svg className={styles.iconSync} width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><path d="M15.5 6A6 6 0 1 0 16 10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/><path d="M15.5 2.5V6H12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
             <span className="flex-1">Sincronizar ERP</span>
           </button>
         )}
@@ -143,7 +143,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className={`${styles.navItem} ${isActive("admin") ? styles.active : ""}`}
             onClick={() => goTo("admin")}
           >
-            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><circle cx="10" cy="10" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.4 4.4l1.4 1.4M14.2 14.2l1.4 1.4M4.4 15.6l1.4-1.4M14.2 5.8l1.4-1.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
+            <svg className={styles.iconGear} width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><circle cx="10" cy="10" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.4 4.4l1.4 1.4M14.2 14.2l1.4 1.4M4.4 15.6l1.4-1.4M14.2 5.8l1.4-1.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
             <span className="flex-1">Administración</span>
           </button>
         )}

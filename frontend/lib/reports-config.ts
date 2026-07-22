@@ -1,7 +1,7 @@
 export interface ColumnConfig {
   key: string;
   label: string;
-  type: "text" | "currency" | "number" | "percent" | "badge" | "bold";
+  type: "text" | "currency" | "number" | "percent" | "badge" | "bold" | "link" | "concept";
   badgeStyles?: (value: any) => { label: string; className: string };
 }
 
@@ -28,13 +28,13 @@ export const REPORTS_CONFIG: Record<string, ReportConfig> = {
     endpoint: "/api/data/movimientos",
     excelType: "movimientos",
     columns: [
-      { key: "TRANS_DATE", label: "Fecha", type: "text" },
-      { key: "PRODUCT_NAME", label: "Producto", type: "text" },
-      { key: "Codigo_producto_convertido", label: "Cod. Convertido", type: "text" },
+      { key: "TRANS_DATE", label: "Fecha", type: "link" },
+      { key: "PRODUCT_NAME", label: "Producto", type: "bold" },
+      { key: "Codigo_producto_convertido", label: "Cod. Convertido", type: "link" },
       { key: "Codigo_Marca", label: "Marca", type: "text" },
       { key: "ORIGINAL_QTY", label: "Cantidad", type: "number" },
       { key: "ORIGIN_REF", label: "Ref. Origen", type: "text" },
-      { key: "ORIGIN_MEMO", label: "Concepto", type: "text" },
+      { key: "ORIGIN_MEMO", label: "Concepto", type: "concept" },
       { key: "BASE_COMISION", label: "Base Com.", type: "currency" },
       { key: "COD_SALESMAN", label: "Cod. Vendedor", type: "text" }
     ],
