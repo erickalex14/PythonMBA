@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { Card } from "./ui/Card";
+import { ExpandableChartCard } from "./charts/ChartPrimitives";
 
 interface RentabilidadChartsProps {
   data: any[];
@@ -108,7 +108,7 @@ function pctDescuento(a: Agg): number {
 // =====================================================================
 // 1. Waterfall de utilidad
 // =====================================================================
-function WaterfallUtilidad({ data }: { data: any[] }) {
+function WaterfallUtilidad({ data, expanded }: { data: any[]; expanded?: boolean }) {
   const [hovered, setHovered] = useState<number | null>(null);
 
   const steps = useMemo(() => {
@@ -147,8 +147,8 @@ function WaterfallUtilidad({ data }: { data: any[] }) {
   };
 
   return (
-    <div style={{ position: "relative", width: "100%", maxWidth: 620, margin: "0 auto" }}>
-      <svg viewBox={`0 0 500 ${H}`} style={{ width: "100%", height: 240, overflow: "visible" }}>
+    <div style={{ position: "relative", width: "100%", maxWidth: expanded ? 900 : 620, margin: "0 auto" }}>
+      <svg viewBox={`0 0 500 ${H}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
         <line x1="40" y1={plotBottom} x2="470" y2={plotBottom} stroke="var(--color-border-strong)" strokeWidth="1" />
         {steps.map((s, i) => {
           const x = 50 + i * (barW + gap);
@@ -251,7 +251,7 @@ function TopBottomMargen({ productos }: { productos: Agg[] }) {
 // =====================================================================
 // 3. Treemap Grupo -> Subgrupo (tamaño=utilidad, color=%margen)
 // =====================================================================
-function TreemapGrupoSubgrupo({ data }: { data: any[] }) {
+function TreemapGrupoSubgrupo({ data, expanded }: { data: any[]; expanded?: boolean }) {
   const [hovered, setHovered] = useState<string | null>(null);
 
   const grupos = useMemo(() => {
@@ -283,8 +283,8 @@ function TreemapGrupoSubgrupo({ data }: { data: any[] }) {
   let rowY = 0;
 
   return (
-    <div style={{ position: "relative", width: "100%", maxWidth: 620, margin: "0 auto" }}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 300, overflow: "visible" }}>
+    <div style={{ position: "relative", width: "100%", maxWidth: expanded ? 900 : 620, margin: "0 auto" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
         {grupos.map((g) => {
           const rowH = (g.total / grandTotal) * H;
           const y0 = rowY;
@@ -361,7 +361,7 @@ function TreemapGrupoSubgrupo({ data }: { data: any[] }) {
 // =====================================================================
 // 4. Scatter Cantidad vs %Utilidad (tamaño = utilidad total)
 // =====================================================================
-function ScatterCantidadMargen({ productos }: { productos: Agg[] }) {
+function ScatterCantidadMargen({ productos, expanded }: { productos: Agg[]; expanded?: boolean }) {
   const [hovered, setHovered] = useState<string | null>(null);
   const puntos = useMemo(() => productos.filter((p) => p.costo >= 5 && p.cantidad > 0), [productos]);
 
@@ -401,8 +401,8 @@ function ScatterCantidadMargen({ productos }: { productos: Agg[] }) {
   };
 
   return (
-    <div style={{ position: "relative", width: "100%", maxWidth: 640, margin: "0 auto" }}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 320, overflow: "visible" }}>
+    <div style={{ position: "relative", width: "100%", maxWidth: expanded ? 900 : 640, margin: "0 auto" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
         <line x1={pad} y1={pad} x2={pad} y2={H - pad} stroke="var(--color-border-strong)" strokeWidth="1" />
         <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="var(--color-border-strong)" strokeWidth="1" />
         <line x1={medianX} y1={pad} x2={medianX} y2={H - pad} stroke="var(--color-border)" strokeDasharray="4 4" strokeWidth="1" />
@@ -453,7 +453,7 @@ function ScatterCantidadMargen({ productos }: { productos: Agg[] }) {
 // =====================================================================
 // 5. Pareto de utilidad por producto (80/20)
 // =====================================================================
-function ParetoUtilidad({ productos }: { productos: Agg[] }) {
+function ParetoUtilidad({ productos, expanded }: { productos: Agg[]; expanded?: boolean }) {
   const [hovered, setHovered] = useState<number | null>(null);
 
   const items = useMemo(() => {
@@ -477,8 +477,8 @@ function ParetoUtilidad({ productos }: { productos: Agg[] }) {
   const cutIdx = items.findIndex((it) => it.cumPct >= 80);
 
   return (
-    <div style={{ position: "relative", width: "100%", maxWidth: 620, margin: "0 auto" }}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 260, overflow: "visible" }}>
+    <div style={{ position: "relative", width: "100%", maxWidth: expanded ? 900 : 620, margin: "0 auto" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
         {[0, 25, 50, 75, 100].map((p) => (
           <line key={p} x1={pad} y1={toY(p)} x2={W - pad} y2={toY(p)} stroke="var(--color-surface-subtle)" strokeWidth="1" />
         ))}
@@ -634,7 +634,7 @@ function DescuentoPorGrupo({ data }: { data: any[] }) {
 // =====================================================================
 // 8. Tendencia diaria: Ventas $ vs %Utilidad (small multiples, un eje c/u)
 // =====================================================================
-function MiniTrendLine({ points, formatter, color }: { points: { x: string; y: number }[]; formatter: (n: number) => string; color: string }) {
+function MiniTrendLine({ points, formatter, color, expanded }: { points: { x: string; y: number }[]; formatter: (n: number) => string; color: string; expanded?: boolean }) {
   const [hovered, setHovered] = useState<number | null>(null);
   const W = 500, H = 120, pad = 8;
   const maxY = Math.max(...points.map((p) => p.y), 1);
@@ -655,8 +655,8 @@ function MiniTrendLine({ points, formatter, color }: { points: { x: string; y: n
   const path = `M ${points.map((p, i) => `${toX(i)} ${toY(p.y)}`).join(" L ")}`;
 
   return (
-    <div style={{ position: "relative", maxWidth: 620, margin: "0 auto" }}>
-      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: 90, overflow: "visible" }}>
+    <div style={{ position: "relative", maxWidth: expanded ? 900 : 620, margin: "0 auto" }}>
+      <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
         <path d={path} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" />
         {points.map((p, i) => (
           <circle
@@ -676,7 +676,7 @@ function MiniTrendLine({ points, formatter, color }: { points: { x: string; y: n
   );
 }
 
-function TendenciaDiaria({ data }: { data: any[] }) {
+function TendenciaDiaria({ data, expanded }: { data: any[]; expanded?: boolean }) {
   const dias = useMemo(() => {
     const map = new Map<string, { ventas: number; costo: number; utilidad: number }>();
     data.forEach((row) => {
@@ -697,11 +697,11 @@ function TendenciaDiaria({ data }: { data: any[] }) {
     <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem" }}>
       <div>
         <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--color-text-muted)", marginBottom: "0.35rem" }}>VENTAS ($)</div>
-        <MiniTrendLine points={dias.map((d) => ({ x: d.fecha, y: d.ventas }))} formatter={fmtMoney2} color="var(--color-brand-primary)" />
+        <MiniTrendLine points={dias.map((d) => ({ x: d.fecha, y: d.ventas }))} formatter={fmtMoney2} color="var(--color-brand-primary)" expanded={expanded} />
       </div>
       <div>
         <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "var(--color-text-muted)", marginBottom: "0.35rem" }}>% UTILIDAD PROMEDIO</div>
-        <MiniTrendLine points={dias.map((d) => ({ x: d.fecha, y: d.pctMargen }))} formatter={fmtPct} color="var(--color-success-dark)" />
+        <MiniTrendLine points={dias.map((d) => ({ x: d.fecha, y: d.pctMargen }))} formatter={fmtPct} color="var(--color-success-dark)" expanded={expanded} />
       </div>
     </div>
   );
@@ -721,47 +721,43 @@ export const RentabilidadCharts: React.FC<RentabilidadChartsProps> = ({ data, st
     <section>
       <TierHeading title="Resumen Ejecutivo" first />
       <div className={styles.chartsGridTwo} style={cardStyle}>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Utilidad Neta del Período</h3>
-          <WaterfallUtilidad data={data} />
-        </Card>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Utilidad por Grupo y Subgrupo</h3>
-          <TreemapGrupoSubgrupo data={data} />
-        </Card>
+        <ExpandableChartCard title="Utilidad Neta del Período" styles={styles} render={(expanded) => (
+          <WaterfallUtilidad data={data} expanded={expanded} />
+        )} />
+        <ExpandableChartCard title="Utilidad por Grupo y Subgrupo" styles={styles} render={(expanded) => (
+          <TreemapGrupoSubgrupo data={data} expanded={expanded} />
+        )} />
       </div>
-      <Card variant="chartCard" styles={styles} style={cardStyle}>
-        <h3>Ranking de Productos por Margen (% Utilidad / Costo)</h3>
-        <TopBottomMargen productos={productos} />
-      </Card>
+      <div style={cardStyle}>
+        <ExpandableChartCard title="Ranking de Productos por Margen (% Utilidad / Costo)" styles={styles} render={() => (
+          <TopBottomMargen productos={productos} />
+        )} />
+      </div>
 
       <TierHeading title="Análisis de Márgenes" />
       <div className={styles.chartsGridTwo} style={cardStyle}>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Cantidad Vendida vs Margen por Producto</h3>
-          <ScatterCantidadMargen productos={productos} />
-        </Card>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Concentración de Utilidad por Producto</h3>
-          <ParetoUtilidad productos={productos} />
-        </Card>
+        <ExpandableChartCard title="Cantidad Vendida vs Margen por Producto" styles={styles} render={(expanded) => (
+          <ScatterCantidadMargen productos={productos} expanded={expanded} />
+        )} />
+        <ExpandableChartCard title="Concentración de Utilidad por Producto" styles={styles} render={(expanded) => (
+          <ParetoUtilidad productos={productos} expanded={expanded} />
+        )} />
       </div>
       <div className={styles.chartsGridTwo} style={cardStyle}>
-        <Card variant="chartCard" styles={styles} style={{ minHeight: 320 }}>
-          <h3>Margen Promedio por Bodega</h3>
+        <ExpandableChartCard title="Margen Promedio por Bodega" styles={styles} render={() => (
           <BodegaMargen data={data} />
-        </Card>
-        <Card variant="chartCard" styles={styles} style={{ minHeight: 320 }}>
-          <h3>Descuento sobre Bruto por Grupo</h3>
+        )} />
+        <ExpandableChartCard title="Descuento sobre Bruto por Grupo" styles={styles} render={() => (
           <DescuentoPorGrupo data={data} />
-        </Card>
+        )} />
       </div>
 
       <TierHeading title="Tendencia y Seguimiento" />
-      <Card variant="chartCard" styles={styles} style={{ minHeight: 320 }}>
-        <h3>Ventas vs Margen — Evolución Diaria</h3>
-        <TendenciaDiaria data={data} />
-      </Card>
+      <div style={cardStyle}>
+        <ExpandableChartCard title="Ventas vs Margen — Evolución Diaria" styles={styles} render={(expanded) => (
+          <TendenciaDiaria data={data} expanded={expanded} />
+        )} />
+      </div>
     </section>
   );
 };

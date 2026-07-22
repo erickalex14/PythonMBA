@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Card } from "./ui/Card";
+import { ExpandableChartCard } from "./charts/ChartPrimitives";
 
 interface Props {
   data: any[];
@@ -37,18 +38,19 @@ function TopRankingChart({ items, color, formatter }: { items: { label: string; 
       <svg viewBox={`0 0 500 ${chartHeight}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
         {items.map((p, index) => {
           const y = index * 26 + 12;
-          const barWidth = (p.total / max) * 300;
+          const trackWidth = 295;
+          const barWidth = (p.total / max) * trackWidth;
           const isHovered = hovered === index;
           const opacity = isHovered ? 1 : 0.5 + (p.total / max) * 0.5;
           return (
             <g key={index} onMouseEnter={() => setHovered(index)} onMouseLeave={() => setHovered(null)} style={{ cursor: "pointer" }}>
               <rect x="0" y={y - 3} width="500" height="23" fill="transparent" />
               <text x="5" y={y + 11} fill="var(--color-text-tertiary)" fontSize="9" fontWeight="600">
-                {index + 1}. {p.label.substring(0, 24)}
+                {index + 1}. {p.codigo || p.label.substring(0, 20)}
               </text>
-              <rect x="185" y={y} width="225" height="14" rx="4" fill="var(--color-surface-subtle)" />
-              <rect x="185" y={y} width={barWidth} height="14" rx="4" fill={color} fillOpacity={opacity} />
-              <text x={190 + barWidth} y={y + 11} fill="var(--color-text-tertiary)" fontSize="8.5" fontWeight="700">
+              <rect x="115" y={y} width={trackWidth} height="14" rx="4" fill="var(--color-surface-subtle)" />
+              <rect x="115" y={y} width={barWidth} height="14" rx="4" fill={color} fillOpacity={opacity} />
+              <text x={120 + barWidth} y={y + 11} fill="var(--color-text-tertiary)" fontSize="8.5" fontWeight="700">
                 {formatter(p.total)}
               </text>
             </g>
@@ -123,14 +125,12 @@ export const EstadisticasVentasCharts: React.FC<Props> = ({ data, styles }) => {
         />
       </div>
       <div className={styles.chartsGridTwo}>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Top 10 Productos Más Vendidos ($)</h3>
+        <ExpandableChartCard title="Top 10 Productos Más Vendidos ($)" styles={styles} render={() => (
           <TopRankingChart items={topDolares} color="var(--color-brand-primary)" formatter={fmtMoney} />
-        </Card>
-        <Card variant="chartCard" styles={styles}>
-          <h3>Top 10 Productos Más Vendidos (Cantidad)</h3>
+        )} />
+        <ExpandableChartCard title="Top 10 Productos Más Vendidos (Cantidad)" styles={styles} render={() => (
           <TopRankingChart items={topCantidad} color="var(--color-success-dark)" formatter={fmtNumber} />
-        </Card>
+        )} />
       </div>
     </section>
   );
