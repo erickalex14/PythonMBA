@@ -26,7 +26,9 @@ class SyncService:
             logging.error(f"SyncService: Formato de fechas inválido: {e}")
             return {"status": "error", "message": "Formato de fechas inválido (esperado YYYY-MM-DD)"}
 
-        token_actual = self.repository.obtener_token(env=env)
+        # force_refresh: el token en cache puede venir casi-expirado de otra operacion,
+        # dando 401 silencioso que ejecutar_consulta traga como [] (ver sync_ventas).
+        token_actual = self.repository.obtener_token(force_refresh=True, env=env)
         if not token_actual:
             logging.error("SyncService: No se pudo obtener el token inicial del ERP.")
             return {"status": "error", "message": "No se pudo conectar al ERP para obtener el token."}
@@ -152,7 +154,9 @@ class SyncService:
             logging.error(f"SyncService: Formato de fechas inválido en liquidaciones: {e}")
             return {"status": "error", "message": "Formato de fechas inválido (esperado YYYY-MM-DD)"}
 
-        token_actual = self.repository.obtener_token(env=env)
+        # force_refresh: el token en cache puede venir casi-expirado de otra operacion,
+        # dando 401 silencioso que ejecutar_consulta traga como [] (ver sync_ventas).
+        token_actual = self.repository.obtener_token(force_refresh=True, env=env)
         if not token_actual:
             logging.error("SyncService: No se pudo obtener el token inicial para liquidaciones.")
             return {"status": "error", "message": "No se pudo conectar al ERP para obtener el token."}
@@ -350,7 +354,9 @@ class SyncService:
             logging.error(f"SyncService: Formato de fechas inválido en ATS: {e}")
             return {"status": "error", "message": "Formato de fechas inválido (esperado YYYY-MM-DD)"}
 
-        token_actual = self.repository.obtener_token(env=env)
+        # force_refresh: el token en cache puede venir casi-expirado de otra operacion,
+        # dando 401 silencioso que ejecutar_consulta traga como [] (ver sync_ventas).
+        token_actual = self.repository.obtener_token(force_refresh=True, env=env)
         if not token_actual:
             logging.error("SyncService: No se pudo obtener el token inicial para ATS.")
             return {"status": "error", "message": "No se pudo conectar al ERP para obtener el token."}
