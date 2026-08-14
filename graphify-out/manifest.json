@@ -1,0 +1,552 @@
+{
+  ".claude/settings.local.json": {
+    "mtime": 1783724767.200015,
+    "ast_hash": "85e38f403354293d26d9356a39b1658c",
+    "semantic_hash": "85e38f403354293d26d9356a39b1658c"
+  },
+  "Backend/app/config.py": {
+    "mtime": 1783113107.1152394,
+    "ast_hash": "c3f8aeee2a41c27f31c4d673dfe8413b",
+    "semantic_hash": "c3f8aeee2a41c27f31c4d673dfe8413b"
+  },
+  "Backend/app/controllers/admin_controller.py": {
+    "mtime": 1783017113.8261788,
+    "ast_hash": "90dd55826ce7356cc6c3384c1f64e84d",
+    "semantic_hash": "90dd55826ce7356cc6c3384c1f64e84d"
+  },
+  "Backend/app/controllers/ats_controller.py": {
+    "mtime": 1783357168.9633412,
+    "ast_hash": "30d7f6ff70dde2b8446c717c029695dc",
+    "semantic_hash": "30d7f6ff70dde2b8446c717c029695dc"
+  },
+  "Backend/app/controllers/estadisticas_controller.py": {
+    "mtime": 1784052927.5454543,
+    "ast_hash": "e73993be830988c141fcd0eaa7b23899",
+    "semantic_hash": "e73993be830988c141fcd0eaa7b23899"
+  },
+  "Backend/app/controllers/excel_controller.py": {
+    "mtime": 1784055649.1385362,
+    "ast_hash": "a02d72507a54d63656dd0fe0df7bc79f",
+    "semantic_hash": "a02d72507a54d63656dd0fe0df7bc79f"
+  },
+  "Backend/app/controllers/health_controller.py": {
+    "mtime": 1782920182.4950306,
+    "ast_hash": "44c4f5754123c4b6701bab64bbdfe143",
+    "semantic_hash": "44c4f5754123c4b6701bab64bbdfe143"
+  },
+  "Backend/app/controllers/liquidaciones_controller.py": {
+    "mtime": 1783118788.110533,
+    "ast_hash": "c29280c3a72acdbb03b547cf13f29a84",
+    "semantic_hash": "c29280c3a72acdbb03b547cf13f29a84"
+  },
+  "Backend/app/controllers/movimientos_controller.py": {
+    "mtime": 1782920186.911096,
+    "ast_hash": "c7953185532a7babea8adaf7e462540f",
+    "semantic_hash": "c7953185532a7babea8adaf7e462540f"
+  },
+  "Backend/app/controllers/sync_controller.py": {
+    "mtime": 1783439463.5490189,
+    "ast_hash": "88e65e0ed9ae47aa7224b27cd9e93e74",
+    "semantic_hash": "88e65e0ed9ae47aa7224b27cd9e93e74"
+  },
+  "Backend/app/controllers/ventas_controller.py": {
+    "mtime": 1784154371.4415967,
+    "ast_hash": "4e08bbc2790ad4460adb543ae32864c5",
+    "semantic_hash": "4e08bbc2790ad4460adb543ae32864c5"
+  },
+  "Backend/app/core/database.py": {
+    "mtime": 1783113110.4426932,
+    "ast_hash": "f4046c6022e036a130fd6ee4d3f91309",
+    "semantic_hash": "f4046c6022e036a130fd6ee4d3f91309"
+  },
+  "Backend/app/core/scheduler.py": {
+    "mtime": 1784589708.8982475,
+    "ast_hash": "ca059ff07c914ed65ffb827986b24f1d",
+    "semantic_hash": "ca059ff07c914ed65ffb827986b24f1d"
+  },
+  "Backend/app/core/security.py": {
+    "mtime": 1782920172.8600569,
+    "ast_hash": "905a95fcc3f27c56c3ab3f57b3ca2ab8",
+    "semantic_hash": "905a95fcc3f27c56c3ab3f57b3ca2ab8"
+  },
+  "Backend/app/dependencies.py": {
+    "mtime": 1784052941.2476196,
+    "ast_hash": "b7100484d8441cf540348b419978bc40",
+    "semantic_hash": "b7100484d8441cf540348b419978bc40"
+  },
+  "Backend/app/dtos/ats.py": {
+    "mtime": 1783722756.0497515,
+    "ast_hash": "887d001bc4b8815a7df3f3ee2ede850b",
+    "semantic_hash": "887d001bc4b8815a7df3f3ee2ede850b"
+  },
+  "Backend/app/dtos/estadisticas.py": {
+    "mtime": 1784066598.2867794,
+    "ast_hash": "e09147f97aa991ee88bcdb5b56f5b389",
+    "semantic_hash": "e09147f97aa991ee88bcdb5b56f5b389"
+  },
+  "Backend/app/dtos/liquidaciones.py": {
+    "mtime": 1783008847.6913614,
+    "ast_hash": "a251fd3959d2f241cb8d0502180fb97b",
+    "semantic_hash": "a251fd3959d2f241cb8d0502180fb97b"
+  },
+  "Backend/app/dtos/movimientos.py": {
+    "mtime": 1782938277.732933,
+    "ast_hash": "7a8649ceffd7afba2fb62c8985fb936d",
+    "semantic_hash": "7a8649ceffd7afba2fb62c8985fb936d"
+  },
+  "Backend/app/dtos/ventas.py": {
+    "mtime": 1784154371.4425714,
+    "ast_hash": "68201d60c59afbfed3796bcbac9313d9",
+    "semantic_hash": "68201d60c59afbfed3796bcbac9313d9"
+  },
+  "Backend/app/main.py": {
+    "mtime": 1784242825.1947765,
+    "ast_hash": "76fab4f9bfb3710217129a3f3da55650",
+    "semantic_hash": "76fab4f9bfb3710217129a3f3da55650"
+  },
+  "Backend/app/models/ats.py": {
+    "mtime": 1783722536.756639,
+    "ast_hash": "95d406f7e226381f1a9046402c18c806",
+    "semantic_hash": "95d406f7e226381f1a9046402c18c806"
+  },
+  "Backend/app/models/liquidacion.py": {
+    "mtime": 1783463716.1125216,
+    "ast_hash": "8e2466b973402751bbeaaf51a79490c4",
+    "semantic_hash": "8e2466b973402751bbeaaf51a79490c4"
+  },
+  "Backend/app/models/movimiento.py": {
+    "mtime": 1783463701.944207,
+    "ast_hash": "41f79b8c18fb76740e3216ddbdb50507",
+    "semantic_hash": "41f79b8c18fb76740e3216ddbdb50507"
+  },
+  "Backend/app/models/ventas.py": {
+    "mtime": 1784047004.2277775,
+    "ast_hash": "b4bd62223c5bf834eb88a1670b471889",
+    "semantic_hash": "b4bd62223c5bf834eb88a1670b471889"
+  },
+  "Backend/app/repositories/mba3_repository.py": {
+    "mtime": 1783611004.917391,
+    "ast_hash": "3fef279c494414084281b0313681bd0b",
+    "semantic_hash": "3fef279c494414084281b0313681bd0b"
+  },
+  "Backend/app/services/ats_service.py": {
+    "mtime": 1783722738.963202,
+    "ast_hash": "6155838c43dc4c85abafa26091a54445",
+    "semantic_hash": "6155838c43dc4c85abafa26091a54445"
+  },
+  "Backend/app/services/estadisticas_service.py": {
+    "mtime": 1784588725.5274224,
+    "ast_hash": "7c37357081c8072dd45a61722a34e8f2",
+    "semantic_hash": "7c37357081c8072dd45a61722a34e8f2"
+  },
+  "Backend/app/services/excel_service.py": {
+    "mtime": 1784067071.2374988,
+    "ast_hash": "0f0437fcc0cbaac92f320bab71ac100d",
+    "semantic_hash": "0f0437fcc0cbaac92f320bab71ac100d"
+  },
+  "Backend/app/services/liquidaciones_service.py": {
+    "mtime": 1783356259.7160878,
+    "ast_hash": "03e5d1fe0da31d39a1ee6f0b171739a1",
+    "semantic_hash": "03e5d1fe0da31d39a1ee6f0b171739a1"
+  },
+  "Backend/app/services/movimientos_service.py": {
+    "mtime": 1783113159.5680466,
+    "ast_hash": "69610b6b706b1059e1a133d08884a8a1",
+    "semantic_hash": "69610b6b706b1059e1a133d08884a8a1"
+  },
+  "Backend/app/services/sync_service.py": {
+    "mtime": 1784050168.2755384,
+    "ast_hash": "cfdc3083e79489af162e6340823739e8",
+    "semantic_hash": "cfdc3083e79489af162e6340823739e8"
+  },
+  "Backend/app/services/ventas_service.py": {
+    "mtime": 1784652194.6497862,
+    "ast_hash": "c5f8505ea06b32c4105d68fe8c8182ed",
+    "semantic_hash": "c5f8505ea06b32c4105d68fe8c8182ed"
+  },
+  "Backend/consulta.json": {
+    "mtime": 1784564144.9595337,
+    "ast_hash": "176dab995a79e54ceeb7abd9279322dc",
+    "semantic_hash": "176dab995a79e54ceeb7abd9279322dc"
+  },
+  "Backend/dashboard_server.py": {
+    "mtime": 1784564041.9708178,
+    "ast_hash": "c98fd72e7d63220e501862a04abb3a9c",
+    "semantic_hash": "c98fd72e7d63220e501862a04abb3a9c"
+  },
+  "Backend/main.py": {
+    "mtime": 1782922373.0374234,
+    "ast_hash": "26db414a9b888054e4e6cd319d8a524f",
+    "semantic_hash": "26db414a9b888054e4e6cd319d8a524f"
+  },
+  "frontend/app/api/admin/config/route.ts": {
+    "mtime": 1783016546.1421475,
+    "ast_hash": "4d5f7ae0faaba3f0685c947032811726",
+    "semantic_hash": "4d5f7ae0faaba3f0685c947032811726"
+  },
+  "frontend/app/api/admin/roles/route.ts": {
+    "mtime": 1783024682.143415,
+    "ast_hash": "883a14f64bd1ffb64afc3872d5568cb0",
+    "semantic_hash": "883a14f64bd1ffb64afc3872d5568cb0"
+  },
+  "frontend/app/api/admin/users/route.ts": {
+    "mtime": 1783016541.8872209,
+    "ast_hash": "44daa9a998563888f3365e4511dcfae1",
+    "semantic_hash": "44daa9a998563888f3365e4511dcfae1"
+  },
+  "frontend/app/api/auth/[...nextauth]/route.ts": {
+    "mtime": 1783455851.0731692,
+    "ast_hash": "80c01a2f2e8c6d74b1c50cff9f6c2fc3",
+    "semantic_hash": "80c01a2f2e8c6d74b1c50cff9f6c2fc3"
+  },
+  "frontend/app/api/data/ats/route.ts": {
+    "mtime": 1783016568.0456688,
+    "ast_hash": "e8a2805434574f008d7d424b3c37a8fc",
+    "semantic_hash": "e8a2805434574f008d7d424b3c37a8fc"
+  },
+  "frontend/app/api/data/estadisticas-ventas/route.ts": {
+    "mtime": 1784053292.8541224,
+    "ast_hash": "97c43f923762a11aeda4fe8947333496",
+    "semantic_hash": "97c43f923762a11aeda4fe8947333496"
+  },
+  "frontend/app/api/data/excel/route.ts": {
+    "mtime": 1784055663.3785954,
+    "ast_hash": "3662365b1fa7469c77be14d5c06a5208",
+    "semantic_hash": "3662365b1fa7469c77be14d5c06a5208"
+  },
+  "frontend/app/api/data/liquidaciones/route.ts": {
+    "mtime": 1783016561.3014433,
+    "ast_hash": "253582d6a11e92742ecf6f0de14c9e74",
+    "semantic_hash": "253582d6a11e92742ecf6f0de14c9e74"
+  },
+  "frontend/app/api/data/logs/route.ts": {
+    "mtime": 1783016578.2302663,
+    "ast_hash": "20b27fb75683a0ec774a6d0a7185a192",
+    "semantic_hash": "20b27fb75683a0ec774a6d0a7185a192"
+  },
+  "frontend/app/api/data/movimientos/route.ts": {
+    "mtime": 1783016553.6371973,
+    "ast_hash": "d92f6546144ad05217bccc27dc73f647",
+    "semantic_hash": "d92f6546144ad05217bccc27dc73f647"
+  },
+  "frontend/app/api/data/pdf-log/route.ts": {
+    "mtime": 1783004037.033802,
+    "ast_hash": "2ef47388cbc7f05b71a579c96bdc1916",
+    "semantic_hash": "2ef47388cbc7f05b71a579c96bdc1916"
+  },
+  "frontend/app/api/data/sync/route.ts": {
+    "mtime": 1783439524.6814666,
+    "ast_hash": "f7af9f6c5dddfd40d30fa3ce40cf849b",
+    "semantic_hash": "f7af9f6c5dddfd40d30fa3ce40cf849b"
+  },
+  "frontend/app/api/data/ventas-resumen/route.ts": {
+    "mtime": 1784154371.44557,
+    "ast_hash": "b8680dfbcde83f690580b8845e7d8d02",
+    "semantic_hash": "b8680dfbcde83f690580b8845e7d8d02"
+  },
+  "frontend/app/api/data/ventas/route.ts": {
+    "mtime": 1783441258.7155824,
+    "ast_hash": "36f967db0f463416252b62e6c199e72a",
+    "semantic_hash": "36f967db0f463416252b62e6c199e72a"
+  },
+  "frontend/app/auth/acceso/page.tsx": {
+    "mtime": 1783618144.9088142,
+    "ast_hash": "cb4a699d5b10ae3fa6b1d5ee786d5902",
+    "semantic_hash": "cb4a699d5b10ae3fa6b1d5ee786d5902"
+  },
+  "frontend/app/layout.tsx": {
+    "mtime": 1783618144.9118147,
+    "ast_hash": "2dd4a34472155b099ee76110f1482090",
+    "semantic_hash": "2dd4a34472155b099ee76110f1482090"
+  },
+  "frontend/app/page.tsx": {
+    "mtime": 1783450498.7276049,
+    "ast_hash": "24893042248765c768f3df350095760f",
+    "semantic_hash": "24893042248765c768f3df350095760f"
+  },
+  "frontend/app/panel/admin/page.tsx": {
+    "mtime": 1784154364.456725,
+    "ast_hash": "173a335b7aab3da12c615888ee90cf47",
+    "semantic_hash": "173a335b7aab3da12c615888ee90cf47"
+  },
+  "frontend/app/panel/ats/page.tsx": {
+    "mtime": 1784658309.6694388,
+    "ast_hash": "aa25da5431303d8d0466cecc54f29688",
+    "semantic_hash": "aa25da5431303d8d0466cecc54f29688"
+  },
+  "frontend/app/panel/dashboard/page.tsx": {
+    "mtime": 1784154575.077354,
+    "ast_hash": "ed6623ec28acb3c0d63d361d9de363dc",
+    "semantic_hash": "ed6623ec28acb3c0d63d361d9de363dc"
+  },
+  "frontend/app/panel/estadisticas-ventas/page.tsx": {
+    "mtime": 1784658316.1501305,
+    "ast_hash": "7fe2bc0dcdeab790a609042db33f2d64",
+    "semantic_hash": "7fe2bc0dcdeab790a609042db33f2d64"
+  },
+  "frontend/app/panel/layout.tsx": {
+    "mtime": 1784154364.4627228,
+    "ast_hash": "8dc74c95d676dc25ec39eb664cc90018",
+    "semantic_hash": "8dc74c95d676dc25ec39eb664cc90018"
+  },
+  "frontend/app/panel/liquidaciones/page.tsx": {
+    "mtime": 1784658322.5846992,
+    "ast_hash": "fdc2667bebc3e080656227a2cc071fa0",
+    "semantic_hash": "fdc2667bebc3e080656227a2cc071fa0"
+  },
+  "frontend/app/panel/logs/page.tsx": {
+    "mtime": 1784657848.2094128,
+    "ast_hash": "b62f88af9000b1b4866d22dfa801f85b",
+    "semantic_hash": "b62f88af9000b1b4866d22dfa801f85b"
+  },
+  "frontend/app/panel/movimientos/page.tsx": {
+    "mtime": 1784658328.4928508,
+    "ast_hash": "09e3ec141fee08b6262eecc33642b77a",
+    "semantic_hash": "09e3ec141fee08b6262eecc33642b77a"
+  },
+  "frontend/app/panel/page.tsx": {
+    "mtime": 1784154364.4657297,
+    "ast_hash": "8572eed1aca162d14653227b342b25f0",
+    "semantic_hash": "8572eed1aca162d14653227b342b25f0"
+  },
+  "frontend/app/panel/sync/page.tsx": {
+    "mtime": 1784154364.466724,
+    "ast_hash": "92c2fb69bedc26447e85222cae366d6a",
+    "semantic_hash": "92c2fb69bedc26447e85222cae366d6a"
+  },
+  "frontend/app/panel/ventas/page.tsx": {
+    "mtime": 1784658333.9742372,
+    "ast_hash": "f2d8a46d0fdb1719041a915be0db4ae1",
+    "semantic_hash": "f2d8a46d0fdb1719041a915be0db4ae1"
+  },
+  "frontend/app/providers.tsx": {
+    "mtime": 1783618144.9188135,
+    "ast_hash": "c4017c9741b525210a71d1b16739e2ac",
+    "semantic_hash": "c4017c9741b525210a71d1b16739e2ac"
+  },
+  "frontend/components/AtsCharts.tsx": {
+    "mtime": 1784734659.9457314,
+    "ast_hash": "2d22dcd0c6f2f9aa90ed5d5eebcebbe6",
+    "semantic_hash": "2d22dcd0c6f2f9aa90ed5d5eebcebbe6"
+  },
+  "frontend/components/DailySalesDashboard.tsx": {
+    "mtime": 1784658373.7503476,
+    "ast_hash": "d8a85b05586219aad5f600ced9ef3de0",
+    "semantic_hash": "d8a85b05586219aad5f600ced9ef3de0"
+  },
+  "frontend/components/EstadisticasVentasCharts.tsx": {
+    "mtime": 1784734659.9477334,
+    "ast_hash": "09f5888bc8f4777dda09a5761195cc2b",
+    "semantic_hash": "09f5888bc8f4777dda09a5761195cc2b"
+  },
+  "frontend/components/KPICards.tsx": {
+    "mtime": 1784154364.4727275,
+    "ast_hash": "0e828191ed3234662a3bff56cebc5ed7",
+    "semantic_hash": "0e828191ed3234662a3bff56cebc5ed7"
+  },
+  "frontend/components/LiquidacionesCharts.tsx": {
+    "mtime": 1784657848.2114117,
+    "ast_hash": "1bd98bad7cd2414b83142c1db4516846",
+    "semantic_hash": "1bd98bad7cd2414b83142c1db4516846"
+  },
+  "frontend/components/MovimientosCharts.tsx": {
+    "mtime": 1784657848.2124112,
+    "ast_hash": "d02a94314a9462087a7c1202aa0dc5a3",
+    "semantic_hash": "d02a94314a9462087a7c1202aa0dc5a3"
+  },
+  "frontend/components/NovBILogin.tsx": {
+    "mtime": 1783711516.4873526,
+    "ast_hash": "27666840ea8f7daf8a89dd9e79a5bfe9",
+    "semantic_hash": "27666840ea8f7daf8a89dd9e79a5bfe9"
+  },
+  "frontend/components/NovbiSplash.tsx": {
+    "mtime": 1783618144.925812,
+    "ast_hash": "b85dafbf03a0e01059f711c85da4deff",
+    "semantic_hash": "b85dafbf03a0e01059f711c85da4deff"
+  },
+  "frontend/components/RentabilidadCharts.tsx": {
+    "mtime": 1784734659.9507298,
+    "ast_hash": "3f7e2c86e4a54c171e1ae30e38400367",
+    "semantic_hash": "3f7e2c86e4a54c171e1ae30e38400367"
+  },
+  "frontend/components/ReportTable.tsx": {
+    "mtime": 1783960124.190693,
+    "ast_hash": "77caf7f50b7ef7449f017c5e055dbab6",
+    "semantic_hash": "77caf7f50b7ef7449f017c5e055dbab6"
+  },
+  "frontend/components/Sidebar.tsx": {
+    "mtime": 1784154364.4747262,
+    "ast_hash": "2a24e0e82c4ec68775b71c3d8254a10b",
+    "semantic_hash": "2a24e0e82c4ec68775b71c3d8254a10b"
+  },
+  "frontend/components/SyncSection.tsx": {
+    "mtime": 1783618144.9308136,
+    "ast_hash": "880f6428f20c0cce53de77d79da2a396",
+    "semantic_hash": "880f6428f20c0cce53de77d79da2a396"
+  },
+  "frontend/components/charts/ChartPrimitives.tsx": {
+    "mtime": 1784657848.2144117,
+    "ast_hash": "41af55119874f6731c6094b1777767f4",
+    "semantic_hash": "41af55119874f6731c6094b1777767f4"
+  },
+  "frontend/components/ui/Badge.tsx": {
+    "mtime": 1783618144.9328117,
+    "ast_hash": "39b4f3dc7539443ab49213811f4d02d7",
+    "semantic_hash": "39b4f3dc7539443ab49213811f4d02d7"
+  },
+  "frontend/components/ui/Button.tsx": {
+    "mtime": 1783618144.9328117,
+    "ast_hash": "1ccba85e97de71aaabc07eb5cec606e3",
+    "semantic_hash": "1ccba85e97de71aaabc07eb5cec606e3"
+  },
+  "frontend/components/ui/Card.tsx": {
+    "mtime": 1783618144.9338121,
+    "ast_hash": "ab065762856fd67ca0b4bec549d83799",
+    "semantic_hash": "ab065762856fd67ca0b4bec549d83799"
+  },
+  "frontend/components/ui/FilterBar.tsx": {
+    "mtime": 1784657848.2154114,
+    "ast_hash": "695d26e6d7b7261fbd24499c22a41fc6",
+    "semantic_hash": "695d26e6d7b7261fbd24499c22a41fc6"
+  },
+  "frontend/components/ui/Modal.tsx": {
+    "mtime": 1783618144.9358122,
+    "ast_hash": "95eeb1d31d565a61aee99281bd865e4c",
+    "semantic_hash": "95eeb1d31d565a61aee99281bd865e4c"
+  },
+  "frontend/components/ui/Pagination.tsx": {
+    "mtime": 1783618144.9378142,
+    "ast_hash": "67749b7b7b9c391555f6a6fed6214321",
+    "semantic_hash": "67749b7b7b9c391555f6a6fed6214321"
+  },
+  "frontend/eslint.config.mjs": {
+    "mtime": 1782919953.7686205,
+    "ast_hash": "dfa1f5f6a7037bf39dc510f30b180002",
+    "semantic_hash": "dfa1f5f6a7037bf39dc510f30b180002"
+  },
+  "frontend/hooks/usePanelReportPage.ts": {
+    "mtime": 1784311021.1347144,
+    "ast_hash": "c579e18095d0f114a2be380bef0c88df",
+    "semantic_hash": "c579e18095d0f114a2be380bef0c88df"
+  },
+  "frontend/hooks/useReportQuery.ts": {
+    "mtime": 1783440064.0279124,
+    "ast_hash": "8f93d74654814b55de61752f514b48b1",
+    "semantic_hash": "8f93d74654814b55de61752f514b48b1"
+  },
+  "frontend/lib/empresa.ts": {
+    "mtime": 1783618144.9398162,
+    "ast_hash": "e1748f5b861aa4a73f7defb77f9fefd5",
+    "semantic_hash": "e1748f5b861aa4a73f7defb77f9fefd5"
+  },
+  "frontend/lib/marca.ts": {
+    "mtime": 1783711516.4883525,
+    "ast_hash": "a899463673888d9524664668c271441a",
+    "semantic_hash": "a899463673888d9524664668c271441a"
+  },
+  "frontend/lib/prisma.ts": {
+    "mtime": 1782924118.6684954,
+    "ast_hash": "37be107d8139cb7133034c75b96fa1f6",
+    "semantic_hash": "37be107d8139cb7133034c75b96fa1f6"
+  },
+  "frontend/lib/reports-config.ts": {
+    "mtime": 1784066744.4147549,
+    "ast_hash": "f3fe5f0985ea2023e602cdb15e220f5f",
+    "semantic_hash": "f3fe5f0985ea2023e602cdb15e220f5f"
+  },
+  "frontend/next.config.ts": {
+    "mtime": 1784318838.8245556,
+    "ast_hash": "79dec8eb26dd0385797a5449711b2f0a",
+    "semantic_hash": "79dec8eb26dd0385797a5449711b2f0a"
+  },
+  "frontend/package.json": {
+    "mtime": 1782924543.203957,
+    "ast_hash": "5350053fa03a8ecfd93d4e9515cdd31c",
+    "semantic_hash": "5350053fa03a8ecfd93d4e9515cdd31c"
+  },
+  "frontend/prisma.config.ts": {
+    "mtime": 1782924058.986271,
+    "ast_hash": "c34b05b3d93ab4710aa09c0806da6c2b",
+    "semantic_hash": "c34b05b3d93ab4710aa09c0806da6c2b"
+  },
+  "frontend/prisma/seed.ts": {
+    "mtime": 1783441254.2911196,
+    "ast_hash": "fec201ed0a4dedff1ac14bb6fe4d6b82",
+    "semantic_hash": "fec201ed0a4dedff1ac14bb6fe4d6b82"
+  },
+  "frontend/proxy.ts": {
+    "mtime": 1784313579.0323076,
+    "ast_hash": "296c2abd02ee6006c974bf5f4808d2ad",
+    "semantic_hash": "296c2abd02ee6006c974bf5f4808d2ad"
+  },
+  "frontend/tsconfig.json": {
+    "mtime": 1782919956.639664,
+    "ast_hash": "02fc19ad21338c2ab820a70136310db4",
+    "semantic_hash": "02fc19ad21338c2ab820a70136310db4"
+  },
+  "frontend/types/next-auth.d.ts": {
+    "mtime": 1782924166.181103,
+    "ast_hash": "ca68056ed0195d15a11f83868a317947",
+    "semantic_hash": "ca68056ed0195d15a11f83868a317947"
+  },
+  "Backend/requirements.txt": {
+    "mtime": 1784242808.1358392,
+    "ast_hash": "daf59c044e4a911922084c3233f141e8",
+    "semantic_hash": "daf59c044e4a911922084c3233f141e8"
+  },
+  "contexto-sesion/resumen.md": {
+    "mtime": 1785168858.758228,
+    "ast_hash": "c08d514b47df3dde3aebd064fe8bd116",
+    "semantic_hash": "c08d514b47df3dde3aebd064fe8bd116"
+  },
+  "docker-compose.yml": {
+    "mtime": 1783439372.1735833,
+    "ast_hash": "c66ba53579bf34b28d420cac3db2a4ac",
+    "semantic_hash": "c66ba53579bf34b28d420cac3db2a4ac"
+  },
+  "frontend/AGENTS.md": {
+    "mtime": 1782920103.6458237,
+    "ast_hash": "9e09241799026ac05be315a2f0b50055",
+    "semantic_hash": "9e09241799026ac05be315a2f0b50055"
+  },
+  "frontend/CLAUDE.md": {
+    "mtime": 1782920103.646819,
+    "ast_hash": "5c27369b226fcf2be8a6cfe52224e767",
+    "semantic_hash": "5c27369b226fcf2be8a6cfe52224e767"
+  },
+  "frontend/README.md": {
+    "mtime": 1782919953.7196207,
+    "ast_hash": "f15aaa42d5d299d091b1171097ea56ad",
+    "semantic_hash": "f15aaa42d5d299d091b1171097ea56ad"
+  },
+  "frontend/pnpm-workspace.yaml": {
+    "mtime": 1783618144.9408133,
+    "ast_hash": "daeab9c3092dab828f04d554cad3af92",
+    "semantic_hash": "daeab9c3092dab828f04d554cad3af92"
+  },
+  "frontend/Novicompu-El-Recreo.svg": {
+    "mtime": 1783018956.2368293,
+    "ast_hash": "870cb9f3049b54f9b879d55583632a9b",
+    "semantic_hash": "870cb9f3049b54f9b879d55583632a9b"
+  },
+  "frontend/public/NOVBI.png": {
+    "mtime": 1783618144.9428146,
+    "ast_hash": "4f60663e025154d25723ee79178a3d21",
+    "semantic_hash": "4f60663e025154d25723ee79178a3d21"
+  },
+  "frontend/public/NOVBI.svg": {
+    "mtime": 1783618144.9438145,
+    "ast_hash": "79ae853631d85e04f5d3b80cec2840f2",
+    "semantic_hash": "79ae853631d85e04f5d3b80cec2840f2"
+  },
+  "frontend/public/logo.svg": {
+    "mtime": 1783019147.0131395,
+    "ast_hash": "c1bf2eb759a314cb42236dacbaca976b",
+    "semantic_hash": "c1bf2eb759a314cb42236dacbaca976b"
+  },
+  "frontend/public/novbi-logo.png": {
+    "mtime": 1783618144.9438145,
+    "ast_hash": "6445f110dbb0b70130c4d32280610f32",
+    "semantic_hash": "6445f110dbb0b70130c4d32280610f32"
+  }
+}
