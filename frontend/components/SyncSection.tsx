@@ -6,6 +6,48 @@ interface SyncSectionProps {
   styles: any;
 }
 
+interface CoberturaTipo {
+  tipo: string;
+  tabla: string;
+  ultimo_dia_sincronizado: string | null;
+  dias_esperados: number;
+  dias_con_datos: number;
+  dias_faltantes: string[];
+  filas_en_rango: number;
+  error?: string;
+}
+
+const ETIQUETAS_TIPO: Record<string, string> = {
+  movimientos: "Movimientos",
+  ventas: "Ventas",
+  liquidaciones: "Liquidaciones",
+  ats: "ATS",
+};
+
+// Agrupa dias consecutivos en rangos ("2026-07-28 a 2026-07-30") para no listar
+// treinta fechas sueltas cuando falta un mes entero.
+function agruparEnRangos(dias: string[]): string[] {
+  if (dias.length === 0) return [];
+  const orden = [...dias].sort();
+  const rangos: string[] = [];
+  let desde = orden[0];
+  let previo = orden[0];
+
+  for (let i = 1; i <= orden.length; i++) {
+    const actual = orden[i];
+    const siguienteEsperado = new Date(previo + "T00:00:00");
+    siguienteEsperado.setDate(siguienteEsperado.getDate() + 1);
+    const esperadoStr = siguienteEsperado.toISOString().split("T")[0];
+
+    if (actual !== esperadoStr) {
+      rangos.push(desde === previo ? desde : `${desde} a ${previo}`);
+      desde = actual;
+    }
+    previo = actual;
+  }
+  return rangos;
+}
+
 function getDatesInRange(startStr: string, endStr: string): string[] {
   const start = new Date(startStr + "T00:00:00");
   const end = new Date(endStr + "T00:00:00");
@@ -28,7 +70,11 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
   const [estTimeRemaining, setEstTimeRemaining] = useState<number | null>(null);
   const [currentDateProcessing, setCurrentDateProcessing] = useState("");
   const [logs, setLogs] = useState<string[]>([]);
-  
+
+  const [cobertura, setCobertura] = useState<CoberturaTipo[]>([]);
+  const [verificando, setVerificando] = useState(false);
+  const [errorCobertura, setErrorCobertura] = useState<string | null>(null);
+
   const consoleEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll de la consola
@@ -42,6 +88,33 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
     const timestamp = new Date().toLocaleTimeString();
     setLogs((prev) => [...prev, `[${timestamp}] ${message}`]);
   };
+
+  const verificarCobertura = async () => {
+    if (!startDate || !endDate) return;
+    setVerificando(true);
+    setErrorCobertura(null);
+    try {
+      const res = await fetch(`/api/data/sync?inicio=${startDate}&fin=${endDate}`);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `HTTP ${res.status}`);
+      }
+      const json = await res.json();
+      setCobertura(Array.isArray(json) ? json : []);
+    } catch (err: any) {
+      setErrorCobertura(err.message || "No se pudo verificar la cobertura del staging.");
+      setCobertura([]);
+    } finally {
+      setVerificando(false);
+    }
+  };
+
+  // Al abrir la pantalla se muestra el estado sin que haya que pedirlo: el objetivo
+  // es que un hueco se vea antes de que alguien lo descubra en un reporte.
+  useEffect(() => {
+    verificarCobertura();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSync = async (type: "movimientos" | "liquidaciones" | "ats" | "ventas") => {
     if (syncing) return;
@@ -75,6 +148,8 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
     addLog(`Rango: ${startDate} al ${endDate}`);
     addLog(`Origen de Datos (ERP): Ambiente de ${selectedEnv.toUpperCase()}`);
     addLog(`Estableciendo conexión...`);
+
+    const diasVacios: string[] = [];
 
     try {
       const dates = getDatesInRange(startDate, endDate);
@@ -111,30 +186,49 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
         }
 
         const result = await res.json();
-        
+
         let details = "";
+        let registros = 0;
         if (type === "movimientos") {
-          details = `${result.records_count || 0} movimientos de inventario`;
+          registros = result.records_count || 0;
+          details = `${registros} movimientos de inventario`;
         } else if (type === "liquidaciones") {
+          registros = (result.cabeceras_count || 0) + (result.productos_count || 0);
           details = `${result.cabeceras_count || 0} liquidaciones, ${result.productos_count || 0} partidas`;
         } else if (type === "ats") {
+          registros = (result.facturas_count || 0) + (result.fiscal_count || 0);
           details = `${result.facturas_count || 0} facturas, ${result.fiscal_count || 0} registros fiscales`;
         } else if (type === "ventas") {
           // El backend de ventas devuelve kardex_count / facturas_count
+          registros = (result.kardex_count || 0) + (result.facturas_count || 0);
           details = `${result.kardex_count || 0} movimientos, ${result.facturas_count || 0} facturas`;
         }
 
-        addLog(`[OK] Día ${currentDate} sincronizado con éxito (${details}).`);
+        // Un dia con 0 registros casi nunca es correcto en estas tablas: suele ser un
+        // fallo de token que el ERP devuelve como respuesta vacia. Se marca distinto
+        // para que no se lea como exito.
+        if (registros === 0) {
+          diasVacios.push(currentDate);
+          addLog(`[AVISO] Día ${currentDate} devolvió 0 registros - revisar si es un hueco.`);
+        } else {
+          addLog(`[OK] Día ${currentDate} sincronizado con éxito (${details}).`);
+        }
       }
 
       setCurrentProgress(100);
       setEstTimeRemaining(0);
-      addLog(`>>> PROCESO FINALIZADO CON ÉXITO: 100% COMPLETADO <<<`);
-      addLog(`La tabla de staging local ya se encuentra al día con el ERP.`);
+      if (diasVacios.length > 0) {
+        addLog(`>>> PROCESO FINALIZADO CON ${diasVacios.length} DÍA(S) EN 0: ${diasVacios.join(", ")} <<<`);
+        addLog(`Verifica esos días abajo antes de dar el rango por sincronizado.`);
+      } else {
+        addLog(`>>> PROCESO FINALIZADO CON ÉXITO: 100% COMPLETADO <<<`);
+        addLog(`La tabla de staging local ya se encuentra al día con el ERP.`);
+      }
     } catch (err: any) {
       addLog(`>>> [FALLO DE PROCESO] Sincronización abortada: ${err.message} <<<`);
     } finally {
       setSyncing(false);
+      verificarCobertura();
     }
   };
 
@@ -183,6 +277,82 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
             disabled={syncing}
             className={styles.inputField}
           />
+        </div>
+      </div>
+
+      {/* Estado de cobertura del staging: hasta que dia hay datos y que dias faltan */}
+      <div style={{ marginBottom: "1.5rem", border: "1px solid var(--color-border)", borderRadius: "8px", padding: "1rem" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.75rem" }}>
+          <strong style={{ fontSize: "0.9rem" }}>ESTADO DEL STAGING ({startDate} al {endDate})</strong>
+          <Button onClick={verificarCobertura} disabled={verificando || syncing} className={styles.iconActionBtn}>
+            {verificando ? "Verificando..." : "Volver a verificar"}
+          </Button>
+        </div>
+
+        {errorCobertura && (
+          <p style={{ fontSize: "0.85rem", color: "var(--color-danger, #c0392b)", margin: 0 }}>{errorCobertura}</p>
+        )}
+
+        {!errorCobertura && cobertura.length === 0 && (
+          <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", margin: 0 }}>
+            {verificando ? "Consultando cobertura..." : "Sin información de cobertura."}
+          </p>
+        )}
+
+        <div style={{ display: "grid", gap: "0.5rem" }}>
+          {cobertura.map((c) => {
+            const completo = c.dias_faltantes.length === 0 && !c.error;
+            return (
+              <div
+                key={c.tipo}
+                style={{
+                  display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem",
+                  padding: "0.5rem 0.75rem", borderRadius: "6px",
+                  borderLeft: `4px solid ${completo ? "#2e7d32" : "#e67e22"}`,
+                  background: "var(--color-bg-subtle, rgba(0,0,0,0.03))",
+                }}
+              >
+                <strong style={{ minWidth: "110px", fontSize: "0.85rem" }}>
+                  {ETIQUETAS_TIPO[c.tipo] || c.tipo}
+                </strong>
+
+                {c.error ? (
+                  <span style={{ fontSize: "0.8rem", color: "var(--color-danger, #c0392b)" }}>Error: {c.error}</span>
+                ) : (
+                  <>
+                    <span style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
+                      Sincronizado hasta <strong>{c.ultimo_dia_sincronizado || "sin datos"}</strong>
+                    </span>
+                    <span style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
+                      {c.dias_con_datos}/{c.dias_esperados} días · {c.filas_en_rango.toLocaleString()} filas
+                    </span>
+                    {completo ? (
+                      <span style={{ fontSize: "0.8rem", color: "#2e7d32", fontWeight: 700 }}>Sin huecos</span>
+                    ) : (
+                      <span style={{ fontSize: "0.8rem", color: "#e67e22", fontWeight: 700 }}>
+                        Faltan {c.dias_faltantes.length} día(s): {agruparEnRangos(c.dias_faltantes).join(" · ")}
+                      </span>
+                    )}
+                    {!completo && (
+                      <Button
+                        onClick={() => {
+                          const orden = [...c.dias_faltantes].sort();
+                          setStartDate(orden[0]);
+                          setEndDate(orden[orden.length - 1]);
+                          addLog(`Rango ajustado al hueco de ${ETIQUETAS_TIPO[c.tipo] || c.tipo}: ${orden[0]} a ${orden[orden.length - 1]}. Ejecuta la sincronización de ese tipo.`);
+                        }}
+                        disabled={syncing}
+                        className={styles.iconActionBtn}
+                        title="Ajustar el rango de fechas al hueco detectado"
+                      >
+                        Usar este rango
+                      </Button>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 

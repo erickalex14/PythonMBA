@@ -10,10 +10,75 @@ from app.models.ats import AtsFacturaStaging, AtsProveedorStaging, AtsFiscalStag
 from app.models.ventas import VentasKardexStaging, VentasFacturaStaging
 
 
+# Tabla de staging y columna de fecha por cada tipo sincronizable. Las tablas
+# secundarias (ats_fiscal, ats_proveedores, liquidaciones_productos) no tienen fecha
+# propia: se sincronizan junto a su principal, asi que la cobertura se mide sobre esta.
+TABLAS_COBERTURA = {
+    "movimientos": ("movimientos_staging", "trans_date"),
+    "ventas": ("ventas_kardex_staging", "trans_date"),
+    "liquidaciones": ("liquidaciones_principal_staging", "liquidacion_fecha"),
+    "ats": ("ats_facturas_staging", "invoice_date"),
+}
+
+
 #SERVICIO PARA SINCRONIZAR TABLAS Y DATOS DESDE EL ERP HACIA LA BASE DE DATOS STAGING
 class SyncService:
     def __init__(self, repository: IMba3Repository):
         self.repository = repository
+
+    def verificar_cobertura(self, db: Session, fecha_inicio: str, fecha_fin: str) -> list:
+        """
+        Dias con datos y dias sin datos (huecos) por tipo de sincronizacion.
+
+        Existe porque un dia puede quedar vacio sin que el sync avise: si el ERP
+        responde 401 la consulta devuelve lista vacia y el dia se reporta como
+        "sincronizado con 0 registros". Sin esta verificacion el hueco solo se
+        descubre cuando un reporte no cuadra.
+        """
+        try:
+            dt_inicio = datetime.datetime.strptime(fecha_inicio, "%Y-%m-%d").date()
+            dt_fin = datetime.datetime.strptime(fecha_fin, "%Y-%m-%d").date()
+        except Exception as e:
+            logging.error(f"SyncService: formato de fechas inválido en cobertura: {e}")
+            return []
+
+        dias_rango = [dt_inicio + datetime.timedelta(days=i)
+                      for i in range((dt_fin - dt_inicio).days + 1)]
+        salida = []
+
+        for tipo, (tabla, columna) in TABLAS_COBERTURA.items():
+            # Se agrupa por dia (usa el indice de la columna de fecha) y los faltantes
+            # se calculan en Python: mas simple que un generate_series con LEFT JOIN
+            # sobre tablas de millones de filas.
+            sql = text(f"""
+                SELECT {columna} AS dia, COUNT(*) AS filas
+                FROM {tabla}
+                WHERE {columna} BETWEEN :inicio AND :fin
+                GROUP BY {columna}
+            """)
+            sql_ultimo = text(f"SELECT MAX({columna}) AS ultimo FROM {tabla}")
+            try:
+                with db.get_bind().connect() as conn:
+                    filas_por_dia = {r[0]: r[1] for r in conn.execute(
+                        sql, {"inicio": dt_inicio, "fin": dt_fin}).fetchall()}
+                    ultimo = conn.execute(sql_ultimo).scalar()
+            except Exception as e:
+                logging.error(f"SyncService: error verificando cobertura de {tabla}: {e}")
+                salida.append({"tipo": tipo, "tabla": tabla, "error": str(e)})
+                continue
+
+            faltantes = [d.isoformat() for d in dias_rango if d not in filas_por_dia]
+            salida.append({
+                "tipo": tipo,
+                "tabla": tabla,
+                "ultimo_dia_sincronizado": ultimo.isoformat() if ultimo else None,
+                "dias_esperados": len(dias_rango),
+                "dias_con_datos": len(dias_rango) - len(faltantes),
+                "dias_faltantes": faltantes,
+                "filas_en_rango": int(sum(filas_por_dia.values())),
+            })
+
+        return salida
 
     #FUNCION PRINCIPAL PARA SINCRONIZAR MOVIMIENTOS
     def sync_movimientos(self, db: Session, fecha_inicio: str, fecha_fin: str, env: Optional[str] = None) -> dict:

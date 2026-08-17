@@ -6,6 +6,26 @@ from app.services.sync_service import SyncService
 
 router = APIRouter(prefix="/api/v1/sync", tags=["Administración / Sincronización Staging"])
 
+@router.get("/cobertura")
+def verificar_cobertura(
+    inicio: str = Query(..., description="Fecha de inicio en formato YYYY-MM-DD"),
+    fin: str = Query(..., description="Fecha de fin en formato YYYY-MM-DD"),
+    api_key_valid: bool = Depends(verify_api_key),
+    db: Session = Depends(get_db),
+    sync_service: SyncService = Depends(get_sync_service)
+):
+    """
+    Cobertura del staging por tipo: hasta qué día está sincronizado y qué días
+    del rango quedaron sin datos (huecos que hay que volver a sincronizar).
+    """
+    if not api_key_valid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales de API Key no válidas para acceder a este recurso."
+        )
+    return sync_service.verificar_cobertura(db, inicio, fin)
+
+
 @router.post("/movimientos")
 def sync_movimientos(
     inicio: str = Query(..., description="Fecha de inicio en formato YYYY-MM-DD"),
