@@ -1,11 +1,18 @@
 import pandas as pd
 import logging
 import datetime
+import os
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
+from app.core import cache
 from typing import Optional
 from app.repositories.mba3_repository import IMba3Repository
+
+CLAVE_CACHE_CATALOGO = "estadisticas:catalogo_productos"
+# 10 min: suficiente para que varias consultas seguidas del mismo usuario (o del
+# presidente probando rangos) reusen el catalogo, sin dejar el inventario viejo.
+CATALOGO_TTL_SEGUNDOS = int(os.getenv("CATALOGO_TTL_SEGUNDOS", "600"))
 
 
 class EstadisticasVentasService:
@@ -167,6 +174,16 @@ class EstadisticasVentasService:
                 db.close()
 
     def _obtener_catalogo(self) -> pd.DataFrame:
+        # El catalogo es ~88% del tiempo del reporte (11s contra 2.6s de Postgres),
+        # es igual para todos los usuarios y no depende del rango de fechas.
+        # OJO: incluye existencia/asignado/disponible, que son el inventario "ahora";
+        # con TTL de 10 min pueden verse hasta 10 min viejos. Si Contabilidad
+        # necesita el dato al instante, bajar CATALOGO_TTL_SEGUNDOS.
+        cacheado = cache.obtener(CLAVE_CACHE_CATALOGO)
+        if cacheado:
+            logging.info(f"EstadisticasService: catálogo servido desde cache ({len(cacheado)} productos).")
+            return pd.DataFrame(cacheado)
+
         token = self.repository.obtener_token()
         if not token:
             logging.error("EstadisticasService: no se pudo obtener token para el catálogo.")
@@ -207,4 +224,9 @@ class EstadisticasVentasService:
         empresa_raw = df[col_corp].astype(str).str.strip() if col_corp else ""
         out["empresa"] = empresa_raw
         out["empresa_nombre"] = empresa_raw.map({"NVC01": "NOVICOMPU", "ENV01": "ENV"}).fillna(empresa_raw)
-        return out.drop_duplicates(subset=["codigo"])
+        out = out.drop_duplicates(subset=["codigo"])
+
+        # Se cachea ya procesado para que el hit devuelva el DataFrame sin rehacer
+        # el mapeo de columnas.
+        cache.guardar(CLAVE_CACHE_CATALOGO, out.to_dict(orient="records"), CATALOGO_TTL_SEGUNDOS)
+        return out

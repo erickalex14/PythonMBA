@@ -1,10 +1,28 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from app.core import cache
 from app.core.security import verify_api_key
 from app.dependencies import get_db, get_sync_service
 from app.services.sync_service import SyncService
 
 router = APIRouter(prefix="/api/v1/sync", tags=["Administración / Sincronización Staging"])
+
+@router.post("/limpiar-cache")
+def limpiar_cache(
+    api_key_valid: bool = Depends(verify_api_key),
+):
+    """
+    Borra el catálogo de productos cacheado para que el próximo reporte lo traiga
+    fresco del ERP, sin esperar a que venza el TTL.
+    """
+    if not api_key_valid:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Credenciales de API Key no válidas para acceder a este recurso."
+        )
+    borradas = cache.invalidar("estadisticas:*")
+    return {"status": "ok", "claves_borradas": borradas}
+
 
 @router.get("/cobertura")
 def verificar_cobertura(

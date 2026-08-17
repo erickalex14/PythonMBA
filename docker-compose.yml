@@ -12,6 +12,14 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    container_name: mba3-bi-redis
+    restart: unless-stopped
+    # Solo accesible desde la red interna del compose: no se publica al host para
+    # no chocar con el Redis de otros stacks del servidor.
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru", "--save", ""]
+
   backend:
     build:
       context: ./Backend
@@ -24,8 +32,10 @@ services:
       - ./deploy/env/backend.env:/app/.env
     environment:
       ROOT_PATH: "/apimbav1"
+      REDIS_URL: "redis://redis:6379/0"
     depends_on:
       - db
+      - redis
 
   frontend:
     build:
