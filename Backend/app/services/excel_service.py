@@ -287,10 +287,16 @@ class ExcelService:
             inicio, fin, columnas, money_cols, qty_cols={"CANTIDAD"}, resumen=resumen, anchos=anchos
         )
 
-    def generar_reporte_estadisticas_ventas(self, df: pd.DataFrame, inicio: str, fin: str) -> io.BytesIO:
+    def generar_reporte_estadisticas_ventas(self, df: pd.DataFrame, inicio: str, fin: str,
+                                            top_cantidades: int = 11, top_dolares: int = 10) -> io.BytesIO:
         """
         Replica el reporte nativo "Estadisticas de Inventarios" del ERP: hoja principal
-        (todos los productos) + 2 hojas de Top 10 (por unidades y por dólares vendidos).
+        (todos los productos) + 2 hojas de Top por unidades y por dólares vendidos.
+
+        Los tamaños por defecto (11 y 10) son los del reporte que entrega Contabilidad
+        para julio 2026. El 11 no sale de una regla del ERP: son los 13 primeros por
+        unidades menos 2 filas de ruido que ellos borran a mano, asi que si cambian el
+        criterio se ajusta aqui sin tocar el resto.
         """
         columnas = [
             ("codigo", "Código"), ("producto", "Descripción"), ("empresa_nombre", "Empresa"), ("unidad", "Unidad"),
@@ -320,17 +326,19 @@ class ExcelService:
             ("Total Anulado", float(num("total_anulado").sum())),
         ]
 
-        # Las hojas de Top excluyen ruido promocional y servicios (igual que el reporte
-        # del ERP); la hoja principal los incluye, por eso el filtro va solo aqui.
-        df_top = df
-        if "producto" in df_top.columns:
-            ruido = df_top["producto"].astype(str).str.upper()
-            df_top = df_top[~ruido.str.contains("GLOBO", na=False) & ~ruido.str.contains("FUNDA", na=False)]
-        if "product_type" in df_top.columns:
-            df_top = df_top[df_top["product_type"] != "Servicio"]
+        # El Top por unidades excluye ruido promocional y servicios (Contabilidad los
+        # borra de esa hoja); el de dolares y la hoja principal los incluyen.
+        df_sin_ruido = df
+        if "producto" in df_sin_ruido.columns:
+            ruido = df_sin_ruido["producto"].astype(str).str.upper()
+            df_sin_ruido = df_sin_ruido[~ruido.str.contains("GLOBO", na=False) & ~ruido.str.contains("FUNDA", na=False)]
+        if "product_type" in df_sin_ruido.columns:
+            df_sin_ruido = df_sin_ruido[df_sin_ruido["product_type"] != "Servicio"]
 
-        top_cantidad = df_top.sort_values(by="unidades_vendidas", ascending=False).head(10) if "unidades_vendidas" in df_top.columns else df_top.head(0)
-        top_dolares = df_top.sort_values(by="total_ventas", ascending=False).head(10) if "total_ventas" in df_top.columns else df_top.head(0)
+        top_cantidad = (df_sin_ruido.sort_values(by="unidades_vendidas", ascending=False).head(top_cantidades)
+                        if "unidades_vendidas" in df_sin_ruido.columns else df_sin_ruido.head(0))
+        top_dolares_df = (df.sort_values(by="total_ventas", ascending=False).head(top_dolares)
+                          if "total_ventas" in df.columns else df.head(0))
 
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
@@ -341,11 +349,13 @@ class ExcelService:
                 inicio, fin, columnas, money_cols, qty_cols=qty_cols, resumen=resumen, anchos=anchos
             )
             self._escribir_hoja_corporativa(
-                writer.book, top_cantidad, "Mas Vendido en Cantidades", "Top 10 Productos por Unidades Vendidas",
+                writer.book, top_cantidad, "Mas Vendido en Cantidades",
+                f"Top {len(top_cantidad)} Productos por Unidades Vendidas",
                 inicio, fin, columnas, money_cols, qty_cols=qty_cols, anchos=anchos
             )
             self._escribir_hoja_corporativa(
-                writer.book, top_dolares, "Mas Vendido en Dolares", "Top 10 Productos por Total Vendido ($)",
+                writer.book, top_dolares_df, "Mas Vendido en Dolares",
+                f"Top {len(top_dolares_df)} Productos por Total Vendido ($)",
                 inicio, fin, columnas, money_cols, qty_cols=qty_cols, anchos=anchos
             )
         output.seek(0)
