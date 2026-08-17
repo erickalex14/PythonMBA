@@ -172,7 +172,7 @@ export default function EstadisticasVentasPage() {
           <h3>Detalle Consolidado de Datos</h3>
           {!loading && filteredData.length > 0 && (
             <div style={{ display: "flex", gap: "0.5rem" }}>
-              <Button onClick={() => panel.handleDownloadExcel(filteredData)} className={styles.iconActionBtn} disabled={panel.downloading} title="Descargar Excel" aria-label="Descargar Excel">
+              <Button onClick={() => panel.handleDownloadExcel(filteredData, selectedEmpresa || undefined)} className={styles.iconActionBtn} disabled={panel.downloading} title="Descargar Excel" aria-label="Descargar Excel">
                 {panel.downloading ? (
                   <span className={styles.iconBtnSpinner} />
                 ) : (

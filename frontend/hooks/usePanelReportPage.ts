@@ -36,7 +36,10 @@ export function usePanelReportPage(reportId: string) {
     ? Math.min(95, Math.round(100 * (1 - Math.exp(-downloadElapsedMs / 8000))))
     : 0;
 
-  const handleDownloadExcel = async (filteredData: any[]) => {
+  // sufijoNombre: distingue descargas del mismo reporte y rango que solo cambian por
+  // un filtro (ej. una empresa por archivo); sin esto los dos .xlsx salen con el
+  // mismo nombre y el segundo se pisa en la carpeta de descargas.
+  const handleDownloadExcel = async (filteredData: any[], sufijoNombre?: string) => {
     if (!reportConfig) return;
     // Sin este aviso el boton no hacia nada visible cuando la tabla estaba vacia:
     // ni Excel, ni barra de progreso, ni error - parecia que la app se colgaba.
@@ -68,7 +71,8 @@ export function usePanelReportPage(reportId: string) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Reporte_${reportId}_${startDate}_a_${endDate}.xlsx`;
+      const sufijo = sufijoNombre ? `_${sufijoNombre}` : "";
+      a.download = `Reporte_${reportId}_${startDate}_a_${endDate}${sufijo}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
