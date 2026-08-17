@@ -1,12 +1,36 @@
+import os
 from fastapi import APIRouter, Depends, Query
 from typing import List
 from sqlalchemy.orm import Session
+from app.core import cache
 from app.core.security import verify_api_key
+
+# El dashboard se abre muchas veces al día y los datos cambian solo cuando corre
+# el sync, asi que 5 min de cache no muestran nada viejo en la practica.
+DASHBOARD_TTL_SEGUNDOS = int(os.getenv("DASHBOARD_TTL_SEGUNDOS", "300"))
 from app.dependencies import get_ventas_service, get_db
 from app.services.ventas_service import VentasService
 from app.dtos.ventas import VentasDTO, ResumenVentasDTO
 
 router = APIRouter(prefix="/api/v1/ventas", tags=["Ventas / Reporte Espejo"])
+
+@router.get("/dashboard", dependencies=[Depends(verify_api_key)])
+def read_dashboard_ventas(
+    fecha_ancla: str = Query(None, pattern="^\\d{4}-\\d{2}-\\d{2}$", description="Día a tomar como 'hoy'. Si se omite, el último día con ventas."),
+    db: Session = Depends(get_db),
+    service: VentasService = Depends(get_ventas_service)
+):
+    """
+    Dashboard de ventas en una sola llamada: totales por rango (hoy, ayer,
+    semana, últimos 15 días, mes y año), comparación real contra el período
+    anterior equivalente, y top de productos por cantidad y por dinero.
+    """
+    clave = f"ventas:dashboard:{fecha_ancla or 'auto'}"
+    return cache.memoizar(
+        clave, DASHBOARD_TTL_SEGUNDOS,
+        lambda: service.obtener_dashboard_ventas(db, fecha_ancla),
+    )
+
 
 @router.get("/resumen", response_model=ResumenVentasDTO, dependencies=[Depends(verify_api_key)])
 def read_resumen_ventas(

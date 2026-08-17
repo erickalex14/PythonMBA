@@ -73,6 +73,23 @@ def guardar(clave: str, valor: Any, ttl_segundos: int) -> bool:
         return False
 
 
+def memoizar(clave: str, ttl_segundos: int, calcular) -> Any:
+    """
+    Devuelve el valor cacheado o lo calcula y lo guarda.
+
+    Si Redis no esta disponible simplemente calcula, asi que envolver una
+    consulta con esto nunca cambia el resultado, solo puede ahorrarse el trabajo.
+    """
+    valor = obtener(clave)
+    if valor is not None:
+        logging.info(f"Cache: hit en '{clave}'")
+        return valor
+    valor = calcular()
+    if valor:  # no se cachea vacio: un fallo del ERP no debe quedar fijado por el TTL
+        guardar(clave, valor, ttl_segundos)
+    return valor
+
+
 def invalidar(patron: str) -> int:
     """Borra las claves que coinciden con el patron (ej. 'catalogo:*').
     Devuelve cuantas borro; 0 si Redis no esta disponible."""

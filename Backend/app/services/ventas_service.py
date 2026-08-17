@@ -2,6 +2,7 @@ import pandas as pd
 import logging
 import datetime
 import re
+from zoneinfo import ZoneInfo
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
@@ -307,6 +308,188 @@ class VentasService:
         mask_validos = df_final.notna()
         df_final = df_final.astype(object).where(mask_validos, None)
         return df_final
+
+    def obtener_dashboard_ventas(self, db: Optional[Session] = None, fecha_ancla: Optional[str] = None) -> dict:
+        """
+        Todo lo que necesita el dashboard de ventas en UNA llamada: totales por
+        rango (hoy / ayer / semana / 15 dias / mes / año), su comparacion real
+        contra el periodo anterior equivalente, y el top de productos por
+        cantidad y por dinero en cada rango.
+
+        Todo se agrega en SQL. El dashboard viejo bajaba ~45 MB de lineas crudas
+        (ventas, movimientos, liquidaciones y ATS) y tardaba ~36s solo para
+        calcular totales en el navegador; esto devuelve unos pocos KB.
+
+        fecha_ancla: si no viene, se usa el ultimo dia con ventas registradas. El
+        sync puede estar atrasado, asi que el dia del reloj no sirve como "hoy";
+        antes el front pedia 14 dias de lineas (25s, 15 MB) solo para deducirlo.
+        """
+        close_db_manually = False
+        if db is None:
+            db = SessionLocal()
+            close_db_manually = True
+
+        try:
+            with db.get_bind().connect() as conn:
+                if fecha_ancla:
+                    ancla = datetime.datetime.strptime(fecha_ancla, "%Y-%m-%d").date()
+                else:
+                    ancla = conn.execute(text("SELECT MAX(fecha) FROM view_ventas_espejo_reporte")).scalar()
+                    if ancla is None:
+                        return {"fecha_ancla": None, "rangos": [], "tops": {}}
+
+                periodos = self._calcular_periodos(ancla)
+
+                # Un solo escaneo: cada rango (actual y su comparativo) es un CASE.
+                partes = []
+                params = {}
+                for clave, p in periodos.items():
+                    for sufijo in ("act", "ant"):
+                        desde, hasta = (p["desde"], p["hasta"]) if sufijo == "act" else (p["desde_ant"], p["hasta_ant"])
+                        params[f"{clave}_{sufijo}_desde"] = desde.isoformat()
+                        params[f"{clave}_{sufijo}_hasta"] = hasta.isoformat()
+                        cond = f"fecha BETWEEN :{clave}_{sufijo}_desde AND :{clave}_{sufijo}_hasta"
+                        partes.append(f"SUM(CASE WHEN {cond} THEN total_linea ELSE 0 END) AS {clave}_{sufijo}_monto")
+                        partes.append(f"SUM(CASE WHEN {cond} THEN cantidad ELSE 0 END) AS {clave}_{sufijo}_cantidad")
+
+                minimo = min(p["desde_ant"] for p in periodos.values())
+                params["piso"] = minimo.isoformat()
+                params["techo"] = ancla.isoformat()
+                sql_totales = (f"SELECT {', '.join(partes)} FROM view_ventas_espejo_reporte "
+                               f"WHERE fecha BETWEEN :piso AND :techo")
+                fila = conn.execute(text(sql_totales), params).mappings().first()
+
+                rangos = []
+                for clave, p in periodos.items():
+                    monto = float(fila[f"{clave}_act_monto"] or 0)
+                    monto_ant = float(fila[f"{clave}_ant_monto"] or 0)
+                    rangos.append({
+                        "clave": clave,
+                        "etiqueta": p["etiqueta"],
+                        "desde": p["desde"].isoformat(),
+                        "hasta": p["hasta"].isoformat(),
+                        "monto": monto,
+                        "cantidad": int(fila[f"{clave}_act_cantidad"] or 0),
+                        "comparado_con": p["etiqueta_ant"],
+                        "monto_anterior": monto_ant,
+                        "cantidad_anterior": int(fila[f"{clave}_ant_cantidad"] or 0),
+                        # None y no 0: sin periodo previo con ventas, el porcentaje
+                        # no existe y el front debe mostrar "sin comparativo".
+                        "delta_pct": round((monto - monto_ant) / monto_ant * 100, 1) if monto_ant > 0 else None,
+                    })
+
+                # Top de productos: se agrega por producto una sola vez sobre el
+                # rango mas largo y se recorta por periodo en Python.
+                sql_top = """
+                    SELECT codigo, producto, fecha, SUM(cantidad) AS cantidad, SUM(total_linea) AS monto
+                    FROM view_ventas_espejo_reporte
+                    WHERE fecha BETWEEN :desde AND :hasta
+                    GROUP BY codigo, producto, fecha
+                """
+                filas_top = conn.execute(text(sql_top), {
+                    "desde": periodos["anio"]["desde"].isoformat(),
+                    "hasta": ancla.isoformat(),
+                }).mappings().all()
+
+                # Hora de corte real: las ventas se sincronizan varias veces al dia,
+                # asi que "ventas de hoy" siempre son "hasta el ultimo sync". Sale de
+                # updated_at del staging, no de un texto fijo.
+                corte = conn.execute(text(
+                    "SELECT MAX(updated_at) FROM ventas_kardex_staging WHERE trans_date = :ancla"
+                ), {"ancla": ancla.isoformat()}).scalar()
+                if corte is None:
+                    corte = conn.execute(text("SELECT MAX(updated_at) FROM ventas_kardex_staging")).scalar()
+
+            tops = self._calcular_tops(filas_top, periodos)
+            return {
+                "fecha_ancla": ancla.isoformat(),
+                "ultima_sincronizacion": self._a_hora_local(corte),
+                "rangos": rangos,
+                "tops": tops,
+            }
+        finally:
+            if close_db_manually:
+                db.close()
+
+    @staticmethod
+    def _a_hora_local(momento) -> Optional[str]:
+        """
+        Pasa el updated_at del staging a hora de Ecuador.
+
+        Los contenedores corren en UTC y la columna es 'timestamp without time
+        zone', asi que el valor guardado es UTC. Mostrarlo crudo adelantaria el
+        corte 5 horas: el sync de las 12:00 se leeria como "hasta las 17:00".
+        """
+        if momento is None:
+            return None
+        if momento.tzinfo is None:
+            momento = momento.replace(tzinfo=datetime.timezone.utc)
+        return momento.astimezone(ZoneInfo("America/Guayaquil")).isoformat()
+
+    @staticmethod
+    def _calcular_periodos(ancla: datetime.date) -> dict:
+        """Cada rango del dashboard con el periodo anterior equivalente para comparar."""
+        un_dia = datetime.timedelta(days=1)
+        ayer = ancla - un_dia
+        inicio_semana = ancla - datetime.timedelta(days=ancla.weekday())
+        dias_semana = (ancla - inicio_semana).days
+        inicio_mes = ancla.replace(day=1)
+
+        # Mes anterior: mismo tramo de dias (1 al mismo numero), recortado si el mes
+        # anterior es mas corto - comparar un mes completo contra medio mes mentiria.
+        fin_mes_ant = inicio_mes - un_dia
+        inicio_mes_ant = fin_mes_ant.replace(day=1)
+        hasta_mes_ant = inicio_mes_ant.replace(day=min(ancla.day, fin_mes_ant.day))
+
+        inicio_anio = ancla.replace(month=1, day=1)
+        try:
+            hasta_anio_ant = ancla.replace(year=ancla.year - 1)
+        except ValueError:  # 29 de febrero
+            hasta_anio_ant = ancla.replace(year=ancla.year - 1, day=28)
+        inicio_anio_ant = inicio_anio.replace(year=inicio_anio.year - 1)
+
+        return {
+            "hoy": {"etiqueta": "Hoy", "desde": ancla, "hasta": ancla,
+                    "etiqueta_ant": "ayer", "desde_ant": ayer, "hasta_ant": ayer},
+            "ayer": {"etiqueta": "Ayer", "desde": ayer, "hasta": ayer,
+                     "etiqueta_ant": "anteayer", "desde_ant": ayer - un_dia, "hasta_ant": ayer - un_dia},
+            "semana": {"etiqueta": "Esta semana", "desde": inicio_semana, "hasta": ancla,
+                       "etiqueta_ant": "semana anterior",
+                       "desde_ant": inicio_semana - datetime.timedelta(days=7),
+                       "hasta_ant": inicio_semana - datetime.timedelta(days=7 - dias_semana)},
+            "quincena": {"etiqueta": "Últimos 15 días", "desde": ancla - datetime.timedelta(days=14), "hasta": ancla,
+                         "etiqueta_ant": "15 días previos",
+                         "desde_ant": ancla - datetime.timedelta(days=29),
+                         "hasta_ant": ancla - datetime.timedelta(days=15)},
+            "mes": {"etiqueta": "Este mes", "desde": inicio_mes, "hasta": ancla,
+                    "etiqueta_ant": "mes anterior", "desde_ant": inicio_mes_ant, "hasta_ant": hasta_mes_ant},
+            "anio": {"etiqueta": "Este año", "desde": inicio_anio, "hasta": ancla,
+                     "etiqueta_ant": "año anterior", "desde_ant": inicio_anio_ant, "hasta_ant": hasta_anio_ant},
+        }
+
+    @staticmethod
+    def _calcular_tops(filas, periodos: dict, limite: int = 10) -> dict:
+        """Top de productos por cantidad y por dinero en cada rango."""
+        if not filas:
+            return {clave: {"cantidad": [], "dinero": []} for clave in periodos}
+
+        df = pd.DataFrame([dict(f) for f in filas])
+        df["fecha"] = pd.to_datetime(df["fecha"]).dt.date
+        df["cantidad"] = pd.to_numeric(df["cantidad"], errors="coerce").fillna(0)
+        df["monto"] = pd.to_numeric(df["monto"], errors="coerce").fillna(0)
+
+        tops = {}
+        for clave, p in periodos.items():
+            ventana = df[(df["fecha"] >= p["desde"]) & (df["fecha"] <= p["hasta"])]
+            if ventana.empty:
+                tops[clave] = {"cantidad": [], "dinero": []}
+                continue
+            agrupado = ventana.groupby(["codigo", "producto"], as_index=False)[["cantidad", "monto"]].sum()
+            tops[clave] = {
+                "cantidad": agrupado.nlargest(limite, "cantidad").to_dict(orient="records"),
+                "dinero": agrupado.nlargest(limite, "monto").to_dict(orient="records"),
+            }
+        return tops
 
     def obtener_resumen_dashboard(self, fecha_ancla: str, db: Optional[Session] = None) -> dict:
         """
