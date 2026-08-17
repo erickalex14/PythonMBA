@@ -15,10 +15,10 @@ from app.repositories.mba3_repository import procesar_respuesta_erp
 
 # tabla -> columna de fecha para filtrar (None = sin filtro, solo estructura)
 TABLAS = {
-    "SIST_Parametros_Empresa": None,
-    "SIST_Parametros_Modulos": None,
+    "SIST_Lista_3": None,
+    "INVT_Bodegas_Lista": None,
 }
-LIMIT = 50
+LIMIT = 30
 FECHA_DESDE = "2026-01-01"
 FECHA_HASTA = "2026-01-31"
 

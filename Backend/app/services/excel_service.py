@@ -300,9 +300,13 @@ class ExcelService:
             ("precio_promedio", "Precio Promedio"), ("precio_maximo", "Precio Máximo"),
             ("precio_minimo", "Precio Mínimo"), ("ultimo_precio", "Último Precio"),
             ("ultima_fecha_venta", "Última Fecha Venta"), ("no_dias", "No. Días"),
+            ("unid_dev", "UNID DEV"), ("robo", "ROBO"), ("unid_vend_final", "UNID VEND FINAL"),
+            ("unid_anuladas", "UNID ANULADAS"), ("total_anulado", "TOTAL ANULADO"),
         ]
-        money_cols = {"total_ventas", "precio_promedio", "precio_maximo", "precio_minimo", "ultimo_precio"}
-        qty_cols = {"existencia", "asignado", "disponible", "unidades_vendidas", "no_dias"}
+        money_cols = {"total_ventas", "precio_promedio", "precio_maximo", "precio_minimo",
+                      "ultimo_precio", "total_anulado"}
+        qty_cols = {"existencia", "asignado", "disponible", "unidades_vendidas", "no_dias",
+                    "unid_dev", "robo", "unid_vend_final", "unid_anuladas"}
         anchos = {"producto": 34, "codigo": 16}
 
         def num(col):
@@ -311,10 +315,22 @@ class ExcelService:
             ("Total Productos", len(df)),
             ("Unidades Vendidas", float(num("unidades_vendidas").sum())),
             ("Total Ventas", float(num("total_ventas").sum())),
+            ("Unid Vend Final", float(num("unid_vend_final").sum())),
+            ("Unidades Anuladas", float(num("unid_anuladas").sum())),
+            ("Total Anulado", float(num("total_anulado").sum())),
         ]
 
-        top_cantidad = df.sort_values(by="unidades_vendidas", ascending=False).head(10) if "unidades_vendidas" in df.columns else df.head(0)
-        top_dolares = df.sort_values(by="total_ventas", ascending=False).head(10) if "total_ventas" in df.columns else df.head(0)
+        # Las hojas de Top excluyen ruido promocional y servicios (igual que el reporte
+        # del ERP); la hoja principal los incluye, por eso el filtro va solo aqui.
+        df_top = df
+        if "producto" in df_top.columns:
+            ruido = df_top["producto"].astype(str).str.upper()
+            df_top = df_top[~ruido.str.contains("GLOBO", na=False) & ~ruido.str.contains("FUNDA", na=False)]
+        if "product_type" in df_top.columns:
+            df_top = df_top[df_top["product_type"] != "Servicio"]
+
+        top_cantidad = df_top.sort_values(by="unidades_vendidas", ascending=False).head(10) if "unidades_vendidas" in df_top.columns else df_top.head(0)
+        top_dolares = df_top.sort_values(by="total_ventas", ascending=False).head(10) if "total_ventas" in df_top.columns else df_top.head(0)
 
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:

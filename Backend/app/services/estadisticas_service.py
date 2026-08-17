@@ -41,18 +41,30 @@ class EstadisticasVentasService:
         # float('nan') mantiene el dtype numerico y se comporta igual para esto.
         df["precio_promedio"] = (df["total_ventas"] / df["unidades_vendidas"].replace(0, float('nan'))).fillna(0).round(4)
 
-        hoy = pd.Timestamp(datetime.date.today())
+        # No. Dias se cuenta contra el FIN DEL RANGO (inclusivo), no contra hoy: el
+        # reporte nativo del ERP da 1 para una venta el ultimo dia del rango, y el
+        # numero debe ser estable sin importar cuando se corra el reporte.
+        fin_dt = pd.Timestamp(fecha_fin)
         fecha_dt = pd.to_datetime(df["ultima_fecha_venta"], errors="coerce")
-        no_dias = (hoy - fecha_dt).dt.days
+        no_dias = (fin_dt - fecha_dt).dt.days + 1
         # NaN (producto sin ventas en el rango) rompe la serializacion JSON - None en su lugar.
         df["no_dias"] = no_dias.astype(object).where(no_dias.notna(), None)
 
-        # Ruido promocional/regalo y servicios (no son productos fisicos reales).
-        df = df[~df["producto"].str.upper().str.contains("GLOBO", na=False)]
-        df = df[~df["producto"].str.upper().str.contains("FUNDA", na=False)]
-        df = df[df["product_type"] != "Servicio"]
-        df = df.drop(columns=["product_type"])
+        # Devoluciones y ventas anuladas del rango (columnas UNID DEV / UNID ANULADAS).
+        ajustes = self._obtener_ajustes_inventario(fecha_inicio, fecha_fin, db)
+        df = df.merge(ajustes, on="codigo", how="left")
+        for col in ["unid_dev", "unid_anuladas", "total_anulado"]:
+            df[col] = df[col].fillna(0)
 
+        # ROBO: el reporte de contabilidad trae esta columna agregada a mano (no sale
+        # del reporte nativo del ERP: hay productos con ROBO>0 y cero movimientos de
+        # ajuste en el kardex). Queda en 0 hasta tener la fuente real; la formula ya
+        # la descuenta, asi que al conectar el dato el neto cuadra sin tocar nada mas.
+        df["robo"] = 0
+        df["unid_vend_final"] = df["unidades_vendidas"] - df["unid_dev"] - df["robo"]
+
+        # product_type se conserva para que el Excel excluya servicios en las hojas
+        # de Top; la hoja principal replica el ERP, que los incluye.
         return df.sort_values(by="unidades_vendidas", ascending=False)
 
     def _obtener_ventas_agregadas(self, fecha_inicio: str, fecha_fin: str, db: Optional[Session] = None) -> pd.DataFrame:
@@ -92,6 +104,63 @@ class EstadisticasVentasService:
                 df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0.0)
             df["ultima_fecha_venta"] = pd.to_datetime(df["ultima_fecha_venta"]).dt.strftime("%Y-%m-%d")
             df["codigo"] = df["codigo"].astype(str).str.strip()
+            return df
+        finally:
+            if close_db_manually:
+                db.close()
+
+    def _obtener_ajustes_inventario(self, fecha_inicio: str, fecha_fin: str, db: Optional[Session] = None) -> pd.DataFrame:
+        """
+        Por producto en el rango: unidades devueltas (UNID DEV) y ventas anuladas.
+        Sale del kardex crudo, no de view_ventas_espejo_reporte: esa vista filtra
+        origin_memo='CLIENTES' y descarta anuladas, asi que no trae ninguno de los dos.
+
+        Las anuladas van en columna aparte a proposito: no se descuentan del neto
+        (el reporte del ERP ya las excluye de Unidades Vendidas), solo dan visibilidad
+        de lo que se facturo y luego se anulo en el rango.
+        """
+        close_db_manually = False
+        if db is None:
+            db = SessionLocal()
+            close_db_manually = True
+        try:
+            # Anulada = kardex anulado O factura anulada, el mismo criterio que descarta
+            # view_ventas_espejo_reporte. Se usa EXISTS y no JOIN porque numero_factura
+            # esta repetido en el staging y un JOIN multiplicaria las filas del kardex.
+            query_sql = """
+                SELECT
+                    k.product_id_corp AS codigo,
+                    SUM(CASE WHEN k.origin_memo ILIKE 'Devoluci%%' AND k.anulada = false
+                             THEN ROUND(k.quantity)::integer ELSE 0 END) AS unid_dev,
+                    SUM(CASE WHEN k.origin_memo = 'CLIENTES' AND es_anulada
+                             THEN ROUND(k.quantity)::integer ELSE 0 END) AS unid_anuladas,
+                    SUM(CASE WHEN k.origin_memo = 'CLIENTES' AND es_anulada
+                             THEN k.net_line_total ELSE 0 END) AS total_anulado
+                FROM (
+                    SELECT *,
+                        (anulada = true OR EXISTS (
+                            SELECT 1 FROM ventas_facturas_staging f
+                            WHERE f.numero_factura = ventas_kardex_staging.origin_ref
+                              AND f.anulada = true
+                        )) AS es_anulada
+                    FROM ventas_kardex_staging
+                    WHERE trans_date BETWEEN :inicio AND :fin
+                ) k
+                GROUP BY k.product_id_corp
+            """
+            with db.get_bind().connect() as conn:
+                result = conn.execute(text(query_sql), {"inicio": fecha_inicio, "fin": fecha_fin})
+                rows = result.fetchall()
+                keys = result.keys()
+
+            cols = ["codigo", "unid_dev", "unid_anuladas", "total_anulado"]
+            if not rows:
+                return pd.DataFrame(columns=cols)
+
+            df = pd.DataFrame([dict(zip(keys, row)) for row in rows])
+            df["codigo"] = df["codigo"].astype(str).str.strip()
+            for col in ["unid_dev", "unid_anuladas", "total_anulado"]:
+                df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
             return df
         finally:
             if close_db_manually:
