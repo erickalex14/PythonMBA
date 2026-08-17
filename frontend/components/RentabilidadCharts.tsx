@@ -212,13 +212,18 @@ function TopBottomMargen({ productos }: { productos: Agg[] }) {
         return (
           <div
             key={p.key}
+            // title: el nombre completo tambien queda accesible al pasar el puntero,
+            // ademas del tooltip con el detalle.
+            title={`${p.label} (${p.key})`}
             style={{ marginBottom: "0.4rem", position: "relative", cursor: "pointer" }}
             onMouseEnter={() => setHovered(key)}
             onMouseLeave={() => setHovered(null)}
           >
             <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", marginBottom: 2 }}>
+              {/* Sin substring: el CSS ya recorta con puntos suspensivos segun el
+                  ancho real, cortar a 26 caracteres fijos escondia nombres que si entraban. */}
               <span style={{ color: "var(--color-text-tertiary)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "70%" }}>
-                {p.label.substring(0, 26)}
+                {p.label}
               </span>
               <span style={{ fontWeight: 700, color: positive ? "var(--color-success-dark)" : "var(--color-danger)" }}>{fmtPct(pct)}</span>
             </div>

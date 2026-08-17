@@ -440,6 +440,72 @@ class VentasService:
             if close_db_manually:
                 db.close()
 
+    def obtener_totales_rango(self, inicio: str, fin: str, db: Optional[Session] = None) -> dict:
+        """
+        Totales de un rango cualquiera con las devoluciones desglosadas, para los
+        KPIs del reporte de Ventas.
+
+        Las devoluciones salen del kardex y no de view_ventas_espejo_reporte: esa
+        vista filtra origin_memo='CLIENTES', asi que el front no puede calcularlas
+        con las lineas que ya tiene por mas que las sume.
+        """
+        # Periodo previo del mismo largo, para que el % de los KPIs sea real.
+        d_ini = datetime.datetime.strptime(inicio, "%Y-%m-%d").date()
+        d_fin = datetime.datetime.strptime(fin, "%Y-%m-%d").date()
+        largo = (d_fin - d_ini).days + 1
+        fin_ant = d_ini - datetime.timedelta(days=1)
+        inicio_ant = fin_ant - datetime.timedelta(days=largo - 1)
+
+        close_db_manually = False
+        if db is None:
+            db = SessionLocal()
+            close_db_manually = True
+        try:
+            sql_venta = text("""
+                SELECT COALESCE(SUM(total_linea), 0) AS monto,
+                       COALESCE(SUM(cantidad), 0) AS cantidad
+                FROM view_ventas_espejo_reporte
+                WHERE fecha BETWEEN :inicio AND :fin
+            """)
+            sql_dev = text("""
+                SELECT COALESCE(SUM(net_line_total), 0) AS monto,
+                       COALESCE(SUM(ROUND(quantity)::integer), 0) AS cantidad
+                FROM ventas_kardex_staging
+                WHERE trans_date BETWEEN :inicio AND :fin
+                  AND anulada = false AND origin_memo ILIKE 'Devoluci%'
+            """)
+            actual = {"inicio": inicio, "fin": fin}
+            previo = {"inicio": inicio_ant.isoformat(), "fin": fin_ant.isoformat()}
+
+            with db.get_bind().connect() as conn:
+                venta = conn.execute(sql_venta, actual).mappings().first()
+                dev = conn.execute(sql_dev, actual).mappings().first()
+                venta_ant = conn.execute(sql_venta, previo).mappings().first()
+                dev_ant = conn.execute(sql_dev, previo).mappings().first()
+
+            monto = float(venta["monto"] or 0)
+            monto_dev = float(dev["monto"] or 0)
+            neto = monto - monto_dev
+            neto_ant = float(venta_ant["monto"] or 0) - float(dev_ant["monto"] or 0)
+
+            return {
+                "inicio": inicio,
+                "fin": fin,
+                "monto": monto,
+                "monto_devoluciones": monto_dev,
+                "monto_neto": neto,
+                "cantidad": int(venta["cantidad"] or 0),
+                "cantidad_devoluciones": int(dev["cantidad"] or 0),
+                "comparado_con": f"{inicio_ant.isoformat()} a {fin_ant.isoformat()}",
+                "monto_neto_anterior": neto_ant,
+                # null si no hay periodo previo con ventas: es preferible a un 0%
+                # que se leeria como "igual que antes".
+                "delta_pct": round((neto - neto_ant) / neto_ant * 100, 1) if neto_ant > 0 else None,
+            }
+        finally:
+            if close_db_manually:
+                db.close()
+
     @staticmethod
     def _a_hora_local(momento) -> Optional[str]:
         """

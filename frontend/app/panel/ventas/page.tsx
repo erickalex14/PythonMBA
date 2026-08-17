@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import styles from "../dashboard.module.css";
-import { KPICards } from "../../../components/KPICards";
+import { KPICards, TotalesRango } from "../../../components/KPICards";
 import { RentabilidadCharts } from "../../../components/RentabilidadCharts";
 import { ReportTable } from "../../../components/ReportTable";
 import { Button } from "../../../components/ui/Button";
@@ -21,12 +21,25 @@ export default function VentasPage() {
   const [selectedBranch, setSelectedBranch] = useState("");
   const [selectedEmpresa, setSelectedEmpresa] = useState(panel.initialEmpresaFromUrl);
   const [codigoSearch, setCodigoSearch] = useState("");
+  const [totales, setTotales] = useState<TotalesRango | null>(null);
+
+  // Las devoluciones no vienen en las líneas del reporte (la vista filtra
+  // origin_memo='CLIENTES'), así que los totales con/sin devoluciones se piden
+  // aparte al backend, que los agrega en SQL.
+  const cargarTotales = (inicio: string, fin: string) => {
+    setTotales(null);
+    fetch(`/api/data/ventas-totales?inicio=${inicio}&fin=${fin}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => setTotales(json && !json.error ? json : null))
+      .catch(() => setTotales(null));
+  };
 
   // Si venimos del click-through del Dashboard, la URL trae fechas y, para
   // Ventas, también la Empresa activa en la tarjeta del Dashboard.
   useEffect(() => {
     if (panel.initialStartFromUrl && panel.initialEndFromUrl) {
       fetchReportData("ventas", panel.initialStartFromUrl, panel.initialEndFromUrl);
+      cargarTotales(panel.initialStartFromUrl, panel.initialEndFromUrl);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -35,7 +48,10 @@ export default function VentasPage() {
     panel.setCurrentPage(1);
   }, [selectedProduct, selectedBranch, selectedEmpresa, codigoSearch]);
 
-  const handleQuery = () => fetchReportData("ventas", panel.startDate, panel.endDate);
+  const handleQuery = () => {
+    fetchReportData("ventas", panel.startDate, panel.endDate);
+    cargarTotales(panel.startDate, panel.endDate);
+  };
 
   // Ventas no aplica la búsqueda global de texto (tiene sus propios filtros
   // específicos: código, empresa, producto, grupo) - igual que antes.
@@ -157,7 +173,7 @@ export default function VentasPage() {
         </section>
       )}
 
-      {!loading && <KPICards filteredData={filteredData} activeTab="ventas" styles={styles} />}
+      {!loading && <KPICards filteredData={filteredData} activeTab="ventas" styles={styles} totales={totales} />}
       {!loading && <RentabilidadCharts data={filteredData} styles={styles} />}
 
       <section className={styles.reportSection}>

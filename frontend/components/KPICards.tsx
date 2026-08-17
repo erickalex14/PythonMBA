@@ -1,13 +1,50 @@
 import React, { useMemo } from "react";
 import { Card } from "./ui/Card";
 
+export interface TotalesRango {
+  monto: number;
+  monto_devoluciones: number;
+  monto_neto: number;
+  cantidad_devoluciones: number;
+  comparado_con: string;
+  delta_pct: number | null;
+}
+
 interface KPICardsProps {
   filteredData: any[];
   activeTab: string;
   styles: any;
+  /** Totales del rango calculados en el backend (incluyen devoluciones, que no
+   *  vienen en las líneas del reporte). Sin esto no se muestran esas tarjetas. */
+  totales?: TotalesRango | null;
 }
 
-export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, styles }) => {
+/** Pie de tarjeta con el % real contra el período anterior del mismo largo. */
+function DeltaReal({ delta, comparadoCon }: { delta: number | null; comparadoCon?: string }) {
+  if (delta === null || delta === undefined) {
+    return (
+      <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
+        sin período anterior para comparar
+      </div>
+    );
+  }
+  const sube = delta >= 0;
+  const color = sube ? "var(--color-success-dark)" : "#c0392b";
+  return (
+    <div
+      title={comparadoCon ? `Comparado con ${comparadoCon}` : undefined}
+      style={{ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}
+    >
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="3" style={{ transform: sube ? "none" : "scaleY(-1)" }}>
+        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" />
+      </svg>
+      <span style={{ color, fontWeight: 700 }}>{sube ? "+" : ""}{delta}%</span>
+      <span>vs. período anterior</span>
+    </div>
+  );
+}
+
+export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, styles, totales }) => {
   const kpis = useMemo(() => {
     const totalRecords = filteredData.length;
     let mainMetricLabel = "Métrica Principal";
@@ -97,10 +134,8 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
           </div>
         </div>
         <p className={styles.kpiValue}>{kpis.totalRecords.toLocaleString()}</p>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-success-dark)" strokeWidth="3"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          <span style={{ color: "var(--color-success-dark)", fontWeight: "700" }}>+8.3%</span>
-          <span>vs. mes anterior</span>
+        <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
+          líneas en el rango consultado
         </div>
       </Card>
 
@@ -112,11 +147,13 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
           </div>
         </div>
         <p className={styles.kpiValue}>{kpis.mainMetricValue}</p>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-success-dark)" strokeWidth="3"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-          <span style={{ color: "var(--color-success-dark)", fontWeight: "700" }}>+12.6%</span>
-          <span>vs. mes anterior</span>
-        </div>
+        {totales ? (
+          <DeltaReal delta={totales.delta_pct} comparadoCon={totales.comparado_con} />
+        ) : (
+          <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
+            total del rango consultado
+          </div>
+        )}
       </Card>
 
       <Card variant="kpiCard" styles={styles}>
@@ -127,12 +164,50 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
           </div>
         </div>
         <p className={styles.kpiValue}>{kpis.secondMetricValue}</p>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.25rem", fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--color-danger)" strokeWidth="3"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg>
-          <span style={{ color: "var(--color-danger)", fontWeight: "700" }}>-3.2%</span>
-          <span>vs. mes anterior</span>
+        <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
+          acumulado del rango consultado
         </div>
       </Card>
+
+      {/* Devoluciones: solo en Ventas y solo si el backend las devolvió. No se
+          pueden sumar de las líneas del reporte, que excluyen las devoluciones. */}
+      {totales && (
+        <>
+          <Card variant="kpiCard" styles={styles}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <h3>Ventas con devoluciones</h3>
+            </div>
+            <p className={styles.kpiValue}>
+              {totales.monto.toLocaleString("es-EC", { style: "currency", currency: "USD" })}
+            </p>
+            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
+              facturado bruto, sin descontar
+            </div>
+          </Card>
+
+          <Card variant="kpiCard" styles={styles}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <h3>Devoluciones</h3>
+            </div>
+            <p className={styles.kpiValue} style={{ color: totales.monto_devoluciones > 0 ? "#c0392b" : undefined }}>
+              {totales.monto_devoluciones.toLocaleString("es-EC", { style: "currency", currency: "USD" })}
+            </p>
+            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
+              {totales.cantidad_devoluciones.toLocaleString("es-EC")} unidades devueltas
+            </div>
+          </Card>
+
+          <Card variant="kpiCard" styles={styles}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <h3>Ventas sin devoluciones</h3>
+            </div>
+            <p className={styles.kpiValue}>
+              {totales.monto_neto.toLocaleString("es-EC", { style: "currency", currency: "USD" })}
+            </p>
+            <DeltaReal delta={totales.delta_pct} comparadoCon={totales.comparado_con} />
+          </Card>
+        </>
+      )}
 
       {kpis.ventasSeg && (
         <>

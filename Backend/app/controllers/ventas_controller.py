@@ -32,6 +32,23 @@ def read_dashboard_ventas(
     )
 
 
+@router.get("/totales", dependencies=[Depends(verify_api_key)])
+def read_totales_ventas(
+    inicio: str = Query(..., pattern="^\\d{4}-\\d{2}-\\d{2}$", description="Fecha de inicio (YYYY-MM-DD)"),
+    fin: str = Query(..., pattern="^\\d{4}-\\d{2}-\\d{2}$", description="Fecha de fin (YYYY-MM-DD)"),
+    db: Session = Depends(get_db),
+    service: VentasService = Depends(get_ventas_service)
+):
+    """
+    Totales del rango con devoluciones desglosadas (con devoluciones, solo
+    devoluciones y neto) para los KPIs del reporte de Ventas.
+    """
+    return cache.memoizar(
+        f"ventas:totales:{inicio}:{fin}", DASHBOARD_TTL_SEGUNDOS,
+        lambda: service.obtener_totales_rango(inicio, fin, db),
+    )
+
+
 @router.get("/resumen", response_model=ResumenVentasDTO, dependencies=[Depends(verify_api_key)])
 def read_resumen_ventas(
     fecha_ancla: str = Query(..., pattern="^\\d{4}-\\d{2}-\\d{2}$", description="Fecha 'hoy real' (la que ya calcula el front por atraso de sync)"),
