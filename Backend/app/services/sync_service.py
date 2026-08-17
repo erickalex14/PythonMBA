@@ -2,6 +2,7 @@ import logging
 import datetime
 import time
 from typing import Optional
+from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.repositories.mba3_repository import IMba3Repository
 from app.models.movimiento import MovimientoStaging
@@ -10,14 +11,20 @@ from app.models.ats import AtsFacturaStaging, AtsProveedorStaging, AtsFiscalStag
 from app.models.ventas import VentasKardexStaging, VentasFacturaStaging
 
 
-# Tabla de staging y columna de fecha por cada tipo sincronizable. Las tablas
-# secundarias (ats_fiscal, ats_proveedores, liquidaciones_productos) no tienen fecha
-# propia: se sincronizan junto a su principal, asi que la cobertura se mide sobre esta.
+# Tabla de staging, columna de fecha y frecuencia esperada por tipo sincronizable.
+# Las tablas secundarias (ats_fiscal, ats_proveedores, liquidaciones_productos) no
+# tienen fecha propia: se sincronizan junto a su principal, asi que la cobertura se
+# mide sobre esta.
+#
+# frecuencia distingue el hueco real del dia legitimamente vacio: movimientos y
+# ventas tienen transacciones todos los dias, asi que un dia sin filas es un fallo
+# de sync. Liquidaciones de importacion y facturas de compra (ATS) son esporadicas
+# y pasan dias sin ninguna, por lo que ahi el dato es informativo, no una alerta.
 TABLAS_COBERTURA = {
-    "movimientos": ("movimientos_staging", "trans_date"),
-    "ventas": ("ventas_kardex_staging", "trans_date"),
-    "liquidaciones": ("liquidaciones_principal_staging", "liquidacion_fecha"),
-    "ats": ("ats_facturas_staging", "invoice_date"),
+    "movimientos": ("movimientos_staging", "trans_date", "diaria"),
+    "ventas": ("ventas_kardex_staging", "trans_date", "diaria"),
+    "liquidaciones": ("liquidaciones_principal_staging", "liquidacion_fecha", "esporadica"),
+    "ats": ("ats_facturas_staging", "invoice_date", "esporadica"),
 }
 
 
@@ -46,7 +53,7 @@ class SyncService:
                       for i in range((dt_fin - dt_inicio).days + 1)]
         salida = []
 
-        for tipo, (tabla, columna) in TABLAS_COBERTURA.items():
+        for tipo, (tabla, columna, frecuencia) in TABLAS_COBERTURA.items():
             # Se agrupa por dia (usa el indice de la columna de fecha) y los faltantes
             # se calculan en Python: mas simple que un generate_series con LEFT JOIN
             # sobre tablas de millones de filas.
@@ -64,13 +71,14 @@ class SyncService:
                     ultimo = conn.execute(sql_ultimo).scalar()
             except Exception as e:
                 logging.error(f"SyncService: error verificando cobertura de {tabla}: {e}")
-                salida.append({"tipo": tipo, "tabla": tabla, "error": str(e)})
+                salida.append({"tipo": tipo, "tabla": tabla, "frecuencia": frecuencia, "error": str(e)})
                 continue
 
             faltantes = [d.isoformat() for d in dias_rango if d not in filas_por_dia]
             salida.append({
                 "tipo": tipo,
                 "tabla": tabla,
+                "frecuencia": frecuencia,
                 "ultimo_dia_sincronizado": ultimo.isoformat() if ultimo else None,
                 "dias_esperados": len(dias_rango),
                 "dias_con_datos": len(dias_rango) - len(faltantes),

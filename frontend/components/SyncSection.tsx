@@ -9,6 +9,7 @@ interface SyncSectionProps {
 interface CoberturaTipo {
   tipo: string;
   tabla: string;
+  frecuencia: "diaria" | "esporadica";
   ultimo_dia_sincronizado: string | null;
   dias_esperados: number;
   dias_con_datos: number;
@@ -302,13 +303,17 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
         <div style={{ display: "grid", gap: "0.5rem" }}>
           {cobertura.map((c) => {
             const completo = c.dias_faltantes.length === 0 && !c.error;
+            // Solo las tablas diarias tienen que estar completas; en las esporadicas
+            // (liquidaciones, ATS) un dia sin registros es normal y no es un hueco.
+            const esAlerta = !completo && !c.error && c.frecuencia === "diaria";
+            const colorBorde = c.error ? "#c0392b" : completo ? "#2e7d32" : esAlerta ? "#e67e22" : "var(--color-border)";
             return (
               <div
                 key={c.tipo}
                 style={{
                   display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem",
                   padding: "0.5rem 0.75rem", borderRadius: "6px",
-                  borderLeft: `4px solid ${completo ? "#2e7d32" : "#e67e22"}`,
+                  borderLeft: `4px solid ${colorBorde}`,
                   background: "var(--color-bg-subtle, rgba(0,0,0,0.03))",
                 }}
               >
@@ -328,12 +333,16 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
                     </span>
                     {completo ? (
                       <span style={{ fontSize: "0.8rem", color: "#2e7d32", fontWeight: 700 }}>Sin huecos</span>
-                    ) : (
+                    ) : esAlerta ? (
                       <span style={{ fontSize: "0.8rem", color: "#e67e22", fontWeight: 700 }}>
                         Faltan {c.dias_faltantes.length} día(s): {agruparEnRangos(c.dias_faltantes).join(" · ")}
                       </span>
+                    ) : (
+                      <span style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
+                        {c.dias_faltantes.length} día(s) sin registros (normal: no ocurre todos los días)
+                      </span>
                     )}
-                    {!completo && (
+                    {esAlerta && (
                       <Button
                         onClick={() => {
                           const orden = [...c.dias_faltantes].sort();
