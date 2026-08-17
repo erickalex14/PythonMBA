@@ -37,7 +37,13 @@ export function usePanelReportPage(reportId: string) {
     : 0;
 
   const handleDownloadExcel = async (filteredData: any[]) => {
-    if (filteredData.length === 0 || !reportConfig) return;
+    if (!reportConfig) return;
+    // Sin este aviso el boton no hacia nada visible cuando la tabla estaba vacia:
+    // ni Excel, ni barra de progreso, ni error - parecia que la app se colgaba.
+    if (filteredData.length === 0) {
+      alert("No hay datos para exportar. Genera primero la consulta del reporte.");
+      return;
+    }
     setDownloading(true);
     setDownloadElapsedMs(0);
     const startedAt = Date.now();

@@ -111,7 +111,6 @@ class Mba3Repository(IMba3Repository):
         base_url = settings.MBA3_BASE_URL_PROD if target_env == "PROD" else settings.MBA3_BASE_URL_TEST
         url_consulta = f"{base_url}/ws2_mba3_serv_Consultas_Externas_/"
 
-        headers = {"Authorization": token}
         payload = {
             "select": select,
             "from": table
@@ -120,19 +119,37 @@ class Mba3Repository(IMba3Repository):
             payload["where"] = where
         if limit:
             payload["limit"] = str(limit)
-            
-        try:
-            response = requests.post(url_consulta, headers=headers, data=payload, timeout=120)
-            if response.status_code == 401:
-                logging.warning(f"Repository: Recibido HTTP 401. Invalidando token de caché para entorno {target_env}...")
-                if target_env in Mba3Repository._cached_tokens:
-                    del Mba3Repository._cached_tokens[target_env]
-            response.raise_for_status()
-            datos = response.json()
-            return procesar_respuesta_erp(datos, f"tabla {table}")
-        except Exception as e:
-            logging.error(f"Repository: Error de comunicación al consultar la tabla {table} en {target_env}: {e}")
-            if hasattr(e, 'response') and e.response is not None and e.response.status_code == 401:
-                if target_env in Mba3Repository._cached_tokens:
-                    del Mba3Repository._cached_tokens[target_env]
-            return []
+
+        # Un 401 (token de caché ya vencido) se reintenta UNA vez con login fresco.
+        # Antes solo se invalidaba la caché y se devolvía [], que los servicios no
+        # distinguen de "sin registros": el reporte salía vacío sin error visible y
+        # recién la siguiente petición del usuario volvía a funcionar.
+        for intento in (1, 2):
+            try:
+                response = requests.post(
+                    url_consulta, headers={"Authorization": token}, data=payload, timeout=120
+                )
+                if response.status_code == 401:
+                    logging.warning(f"Repository: Recibido HTTP 401. Invalidando token de caché para entorno {target_env}...")
+                    Mba3Repository._cached_tokens.pop(target_env, None)
+                    if intento == 1:
+                        nuevo_token = self.obtener_token(force_refresh=True, env=env)
+                        if nuevo_token:
+                            token = nuevo_token
+                            logging.info(f"Repository: Reintentando consulta a {table} con token fresco.")
+                            continue
+                response.raise_for_status()
+                datos = response.json()
+                return procesar_respuesta_erp(datos, f"tabla {table}")
+            except Exception as e:
+                logging.error(f"Repository: Error de comunicación al consultar la tabla {table} en {target_env}: {e}")
+                es_401 = getattr(getattr(e, "response", None), "status_code", None) == 401
+                if es_401:
+                    Mba3Repository._cached_tokens.pop(target_env, None)
+                    if intento == 1:
+                        nuevo_token = self.obtener_token(force_refresh=True, env=env)
+                        if nuevo_token:
+                            token = nuevo_token
+                            continue
+                return []
+        return []
