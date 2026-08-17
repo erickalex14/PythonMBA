@@ -3,40 +3,25 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 import styles from "../dashboard.module.css";
-import { DailySalesDashboard } from "../../../components/DailySalesDashboard";
+import { VentasDashboard } from "../../../components/VentasDashboard";
 
 export default function DashboardTabPage() {
   const router = useRouter();
 
-  // Click en una tarjeta del Dashboard: navega a la URL real del reporte
-  // correspondiente, ya filtrada igual que la tarjeta (mismo rango de
-  // fechas y, para Ventas, la misma Empresa activa en el Dashboard) - cada
-  // página de reporte lee estos query params al montar y dispara el fetch
-  // sola (ver hooks/usePanelReportPage.ts).
-  const handleDashboardNavigate = (
-    tab: "ventas" | "movimientos" | "liquidaciones" | "ats",
-    start: string,
-    end: string,
-    empresa: string = "",
-    producto: string = ""
-  ) => {
-    const params = new URLSearchParams({ start, end });
-    if (tab === "ventas" && empresa) {
-      params.set("empresa", empresa);
-    }
-    if (tab === "ventas" && producto) {
-      params.set("producto", producto);
-    }
-    router.push(`/panel/${tab}?${params.toString()}`);
+  // Abre el reporte de Ventas ya filtrado con el mismo rango de la tarjeta
+  // activa; la página lee estos query params al montar y dispara el fetch sola
+  // (ver hooks/usePanelReportPage.ts).
+  const irAlDetalleDeVentas = (start: string, end: string) => {
+    router.push(`/panel/ventas?${new URLSearchParams({ start, end }).toString()}`);
   };
 
   return (
     <>
       <header className={styles.contentHeader}>
         <h1>Dashboard</h1>
-        <p className={styles.subtext}>Resumen ejecutivo de ventas y comparativa con Movimientos, Liquidaciones y ATS</p>
+        <p className={styles.subtext}>Ventas por período, con devoluciones desglosadas y productos más vendidos</p>
       </header>
-      <DailySalesDashboard styles={styles} onNavigate={handleDashboardNavigate} />
+      <VentasDashboard styles={styles} onNavigate={irAlDetalleDeVentas} />
     </>
   );
 }
