@@ -359,23 +359,52 @@ class VentasService:
                                f"WHERE fecha BETWEEN :piso AND :techo")
                 fila = conn.execute(text(sql_totales), params).mappings().first()
 
+                # Devoluciones: van aparte porque la vista de ventas filtra
+                # origin_memo='CLIENTES' y no las incluye. Se leen del kardex con el
+                # mismo recorte de rangos para poder mostrar bruto, devuelto y neto.
+                partes_dev = []
+                for clave in periodos:
+                    for sufijo in ("act", "ant"):
+                        cond = f"trans_date BETWEEN :{clave}_{sufijo}_desde AND :{clave}_{sufijo}_hasta"
+                        partes_dev.append(
+                            f"SUM(CASE WHEN {cond} THEN net_line_total ELSE 0 END) AS {clave}_{sufijo}_dev")
+                sql_dev = (f"SELECT {', '.join(partes_dev)} FROM ventas_kardex_staging "
+                           f"WHERE trans_date BETWEEN :piso AND :techo "
+                           f"AND anulada = false AND origin_memo ILIKE 'Devoluci%'")
+                fila_dev = conn.execute(text(sql_dev), params).mappings().first()
+
                 rangos = []
                 for clave, p in periodos.items():
                     monto = float(fila[f"{clave}_act_monto"] or 0)
                     monto_ant = float(fila[f"{clave}_ant_monto"] or 0)
+                    dev = float(fila_dev[f"{clave}_act_dev"] or 0) if fila_dev else 0.0
+                    dev_ant = float(fila_dev[f"{clave}_ant_dev"] or 0) if fila_dev else 0.0
+                    neto = monto - dev
+                    neto_ant = monto_ant - dev_ant
+                    # "hoy" queda cortado en el ultimo sync del dia, asi que compararlo
+                    # contra un dia completo siempre daria negativo: se marca en curso
+                    # y se devuelve delta_pct=None para que el front no muestre %.
+                    # Semana/mes/año tambien estan en curso pero su comparativo usa el
+                    # mismo tramo del periodo anterior, asi que ahi el % si es justo.
                     rangos.append({
                         "clave": clave,
                         "etiqueta": p["etiqueta"],
                         "desde": p["desde"].isoformat(),
                         "hasta": p["hasta"].isoformat(),
-                        "monto": monto,
+                        "monto": monto,                      # ventas con devoluciones incluidas
+                        "monto_devoluciones": dev,
+                        "monto_neto": neto,                  # ventas descontando devoluciones
                         "cantidad": int(fila[f"{clave}_act_cantidad"] or 0),
                         "comparado_con": p["etiqueta_ant"],
                         "monto_anterior": monto_ant,
+                        "monto_devoluciones_anterior": dev_ant,
+                        "monto_neto_anterior": neto_ant,
                         "cantidad_anterior": int(fila[f"{clave}_ant_cantidad"] or 0),
+                        "periodo_en_curso": clave == "hoy",
                         # None y no 0: sin periodo previo con ventas, el porcentaje
                         # no existe y el front debe mostrar "sin comparativo".
-                        "delta_pct": round((monto - monto_ant) / monto_ant * 100, 1) if monto_ant > 0 else None,
+                        "delta_pct": (round((neto - neto_ant) / neto_ant * 100, 1)
+                                      if neto_ant > 0 and clave != "hoy" else None),
                     })
 
                 # Top de productos: se agrega por producto una sola vez sobre el
