@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import styles from "../dashboard.module.css";
-import { KPICards } from "../../../components/KPICards";
+import { KPICards, TotalesRango } from "../../../components/KPICards";
 import { EstadisticasVentasCharts } from "../../../components/EstadisticasVentasCharts";
 import { ReportTable } from "../../../components/ReportTable";
 import { Button } from "../../../components/ui/Button";
@@ -19,6 +19,19 @@ export default function EstadisticasVentasPage() {
 
   const [selectedEmpresa, setSelectedEmpresa] = useState("");
   const [selectedBranch, setSelectedBranch] = useState("");
+  const [totales, setTotales] = useState<TotalesRango | null>(null);
+
+  // Mismo endpoint que el reporte de Rentabilidad: suma sobre la misma vista y
+  // el mismo kardex de devoluciones, asi que los montos con/sin devoluciones
+  // coinciden exacto entre los dos reportes (no depende del catalogo de
+  // productos, que es lo unico que cambia entre uno y otro).
+  const cargarTotales = (inicio: string, fin: string) => {
+    setTotales(null);
+    fetch(`/api/data/ventas-totales?inicio=${inicio}&fin=${fin}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((json) => setTotales(json && !json.error ? json : null))
+      .catch(() => setTotales(null));
+  };
 
   // Ventas (Estadisticas): una fila por producto agregada sobre TODO el
   // rango - a diferencia de los demas reportes (linea x linea), no se puede
@@ -45,6 +58,7 @@ export default function EstadisticasVentasPage() {
   useEffect(() => {
     if (panel.initialStartFromUrl && panel.initialEndFromUrl) {
       fetchEstadisticasVentas(panel.initialStartFromUrl, panel.initialEndFromUrl);
+      cargarTotales(panel.initialStartFromUrl, panel.initialEndFromUrl);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -53,7 +67,10 @@ export default function EstadisticasVentasPage() {
     panel.setCurrentPage(1);
   }, [selectedEmpresa, selectedBranch, panel.searchQuery]);
 
-  const handleQuery = () => fetchEstadisticasVentas(panel.startDate, panel.endDate);
+  const handleQuery = () => {
+    fetchEstadisticasVentas(panel.startDate, panel.endDate);
+    cargarTotales(panel.startDate, panel.endDate);
+  };
 
   const filteredData = useMemo(() => {
     return data.filter((row) => {
@@ -164,7 +181,7 @@ export default function EstadisticasVentasPage() {
         )}
       </section>
 
-      {!loading && <KPICards filteredData={filteredData} activeTab="estadisticas-ventas" styles={styles} />}
+      {!loading && <KPICards filteredData={filteredData} activeTab="estadisticas-ventas" styles={styles} totales={totales} />}
       {!loading && <EstadisticasVentasCharts data={filteredData} styles={styles} />}
 
       <section className={styles.reportSection}>
