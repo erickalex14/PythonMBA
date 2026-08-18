@@ -5,12 +5,23 @@ import {
   TierHeading,
   TwoBarComparison,
   ParetoChart,
-  TrendLine,
-  DonutChart,
   Treemap,
   ScatterXY,
   ExpandableChartCard,
 } from "./charts/ChartPrimitives";
+import { DevolucionesDonut, type DonutSegment } from "./charts/DevolucionesDonut";
+import { TrendLineAdvanced } from "./charts/TrendLineAdvanced";
+
+// Mismo lenguaje de color que el resto de la app para las 2 empresas.
+const EMPRESA_COLOR: Record<string, string> = {
+  Novicompu: "var(--color-brand-primary)",
+  "ENV Accesorios y Sistemas": "var(--color-brand-accent)",
+};
+const EMPRESA_COLOR_FALLBACK = [
+  "var(--color-chart-accent)",
+  "var(--color-brand-primary-alt)",
+  "var(--color-text-tertiary)",
+];
 
 interface LiquidacionesChartsProps {
   data: any[];
@@ -126,6 +137,18 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
       .slice(0, 20);
   }, [data]);
 
+  const porEmpresaSegments: DonutSegment[] = useMemo(
+    () =>
+      porEmpresa.map((e, i) => ({
+        key: e.label,
+        label: e.label,
+        value: e.value,
+        color: EMPRESA_COLOR[e.label] ?? EMPRESA_COLOR_FALLBACK[i % EMPRESA_COLOR_FALLBACK.length],
+      })),
+    [porEmpresa]
+  );
+  const totalCif = useMemo(() => porEmpresa.reduce((a, e) => a + e.value, 0), [porEmpresa]);
+
   const cardStyle: React.CSSProperties = { marginBottom: "1.5rem" };
 
   return (
@@ -133,7 +156,14 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
       <TierHeading title="Resumen Ejecutivo" first />
       <div className={styles.chartsGridThree} style={cardStyle}>
         <ExpandableChartCard title="Distribución de CIF por Empresa" styles={styles} render={(expanded) => (
-          <DonutChart items={porEmpresa} formatter={fmtMoney} size={expanded ? 170 : 100} compact={!expanded} />
+          <DevolucionesDonut
+            segments={porEmpresaSegments}
+            totalLabel="Total CIF"
+            totalValue={totalCif}
+            formatter={fmtMoney}
+            size={expanded ? 220 : 130}
+            strokeWidth={expanded ? 26 : 17}
+          />
         )} />
         <ExpandableChartCard title="Subtotal CIF vs Total CIF" styles={styles} render={(expanded) => (
           <TwoBarComparison
@@ -171,7 +201,7 @@ export const LiquidacionesCharts: React.FC<LiquidacionesChartsProps> = ({ data, 
       <TierHeading title="Tendencia y Concentración" />
       <div className={styles.chartsGridTwo} style={{ ...cardStyle, marginBottom: 0 }}>
         <ExpandableChartCard title="Tendencia Diaria de Monto CIF" styles={styles} render={(expanded) => (
-          <TrendLine points={tendenciaDiaria} formatter={fmtMoney2} color="var(--color-brand-primary)" height={expanded ? 300 : 130} />
+          <TrendLineAdvanced points={tendenciaDiaria} formatter={fmtMoney2} color="var(--color-brand-primary)" height={expanded ? 320 : 160} />
         )} />
         <ExpandableChartCard title="Concentración de CIF por Producto (80/20)" styles={styles} render={(expanded) => (
           <ParetoChart items={paretoProductos} formatter={fmtMoney2} height={expanded ? 420 : 130} />

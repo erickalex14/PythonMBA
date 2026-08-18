@@ -334,17 +334,61 @@
   line-height: 1.5;
 }
 
+/* Mismo lenguaje tipográfico del Dashboard (Poppins + degradé de marca en el
+   título, subtexto con acento lateral) pero con nombre genérico para poder
+   reutilizarlo en otros módulos del panel (Movimientos, Ventas, ...) sin que
+   el nombre de la clase quede pegado al Dashboard. */
+.contentHeader h1.moduleTitle {
+  font-size: 1.85rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, var(--color-text-primary) 35%, var(--color-brand-primary) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.moduleSubtext {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin: 0;
+  padding-left: 0.65rem;
+  border-left: 3px solid var(--color-brand-accent);
+  line-height: 1.5;
+}
+
 /* Panel de Filtros unificado: fecha/búsqueda (dispara consulta al ERP) y
    filtros locales (instantáneos, sin recargar) viven en la misma tarjeta
    en vez de dos cajas sueltas apiladas - la línea divisoria interna es lo
    único que distingue una sección de la otra. */
 .filterPanel {
+  position: relative;
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
-  padding: 1.25rem;
+  padding: 1.4rem 1.5rem;
   margin-bottom: 1.5rem;
   box-shadow: var(--shadow-card);
+}
+
+/* Franja de acento arriba de la tarjeta de filtros - le da un poco de
+   carácter a una tarjeta que de otra forma es puro blanco/gris plano.
+   Redondeada en las puntas en vez de recortada con overflow:hidden en el
+   padre - ese overflow se comía los dropdowns (MultiSelect/DatePicker) que
+   viven dentro de esta misma tarjeta. */
+.filterPanel::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+  background: linear-gradient(90deg, var(--color-brand-primary) 0%, var(--color-chart-accent) 55%, var(--color-brand-accent) 100%);
 }
 
 .filterPanelTopRow {
@@ -355,17 +399,28 @@
 }
 
 .filterPanelDivider {
-  border-top: 1px solid var(--color-border);
-  margin: 1.1rem 0 1rem;
+  border-top: 1px dashed var(--color-border);
+  margin: 1.25rem 0 1.1rem;
 }
 
 .filterPanelSubLabel {
-  margin: 0 0 0.85rem 0;
-  color: var(--color-text-faint);
-  font-size: 0.72rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 1rem 0;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-surface-tint);
+  color: var(--color-brand-primary);
+  font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.filterPanelSubLabelIcon {
+  flex-shrink: 0;
+  display: flex;
 }
 
 .dateFilters {
@@ -399,15 +454,33 @@
   border-radius: var(--radius-md);
   outline: none;
   font-size: 0.85rem;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
   min-width: 140px;
   font-family: inherit;
+}
+
+.filterGroup select,
+select.selectFilter {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.1rem;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 20 20' fill='none'%3E%3Cpath d='M5 8l5 5 5-5' stroke='%23708099' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+}
+
+.filterGroup input[type="date"]:hover,
+.filterGroup select:hover,
+.selectFilter:hover {
+  border-color: var(--color-chart-accent);
 }
 
 .filterGroup input[type="date"]:focus,
 .filterGroup select:focus,
 .selectFilter:focus {
   border-color: var(--color-chart-accent);
+  box-shadow: 0 0 0 3px rgba(28, 63, 102, 0.14);
 }
 
 .queryBtn {
@@ -478,6 +551,103 @@
     width: 100%;
     min-width: 0;
     box-sizing: border-box;
+  }
+}
+
+/* Toolbar compacta de filtros (fecha desde/hasta + consultar) - reemplazo
+   más dinámico de las cajas .filterGroup con borde propio: los campos viven
+   sueltos separados por una línea vertical fina, y el botón queda pegado a
+   la derecha con gradiente de marca. Nace en Movimientos (de ahí el prefijo
+   "mov") pero se reutiliza en todas las páginas de reporte (Ventas,
+   Liquidaciones, ATS, ...) para que la toolbar se vea igual en todos lados. */
+.movToolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.4rem;
+  width: 100%;
+  background-color: var(--color-surface-faint);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 0.7rem 1rem;
+}
+
+.movToolbarField {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.movToolbarFieldLabel {
+  display: flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-faint);
+  white-space: nowrap;
+}
+
+.movToolbarDivider {
+  width: 1px;
+  height: 26px;
+  background-color: var(--color-border);
+  flex-shrink: 0;
+}
+
+.movToolbarSpacer {
+  flex: 1 1 auto;
+}
+
+.movToolbarBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: linear-gradient(135deg, var(--color-brand-primary) 0%, var(--color-brand-primary-alt) 100%);
+  color: #ffffff;
+  border: none;
+  font-weight: 700;
+  padding: 0.6rem 1.4rem;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-size: 0.85rem;
+  box-shadow: var(--shadow-brand-md);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+
+.movToolbarBtn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(0, 93, 170, 0.28);
+}
+
+.movToolbarBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.movToolbarBtnArrow {
+  display: inline-block;
+  transition: transform 0.18s ease;
+}
+
+.movToolbarBtn:hover:not(:disabled) .movToolbarBtnArrow {
+  transform: translateX(3px);
+}
+
+@media (max-width: 640px) {
+  .movToolbar {
+    gap: 0.85rem;
+  }
+
+  .movToolbarDivider {
+    display: none;
+  }
+
+  .movToolbarBtn {
+    width: 100%;
+    justify-content: center;
   }
 }
 
@@ -581,6 +751,13 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.kpiCard:hover {
+  transform: translateY(-3px);
+  border-color: var(--color-chart-accent);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.14);
 }
 
 .kpiCard h3 {
@@ -758,6 +935,13 @@
   opacity: 1;
 }
 
+.chartCard {
+  --bar-font-name: 0.76rem;
+  --bar-font-value: 0.76rem;
+  --bar-row-height: 30px;
+  --bar-row-gap: 0.5rem;
+}
+
 .chartCard h3 {
   font-size: 0.85rem;
   font-weight: 700;
@@ -767,6 +951,19 @@
   padding-left: 0.5rem;
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+
+@media (max-width: 420px) {
+  .chartCard h3 {
+    font-size: 0.66rem;
+  }
+
+  .chartCard {
+    --bar-font-name: 0.58rem;
+    --bar-font-value: 0.58rem;
+    --bar-row-height: 20px;
+    --bar-row-gap: 0.3rem;
+  }
 }
 
 .svgContainer {
@@ -795,10 +992,66 @@
   --rc-delta-up: #2e7d32;
   --rc-delta-down: #c0392b;
   --rc-divider: var(--color-surface-subtle);
+  --rc-font-eyebrow: 0.72rem;
+  --rc-font-badge: 0.72rem;
+  --rc-font-value: 1.45rem;
+  --rc-font-subtext: 0.68rem;
+  --rc-font-row: 0.72rem;
   position: relative;
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+/* Fuente reducida solo en celular: en desktop/tablet ya entra cómoda con
+   2-3-6 columnas, pero en el layout de 2 columnas de mobile (<420px) el
+   tamaño normal se siente apretado contra el ancho de tarjeta angosto. */
+@media (max-width: 420px) {
+  .rangeCard {
+    --rc-font-eyebrow: 0.56rem;
+    --rc-font-badge: 0.54rem;
+    --rc-font-value: 1rem;
+    --rc-font-subtext: 0.54rem;
+    --rc-font-row: 0.58rem;
+  }
+}
+
+/* Toggle único arriba de toda la grilla de tarjetas de rango, solo en
+   celular: colapsa/oculta las 6 tarjetas de un tirón para bajar directo a
+   los gráficos de más vendidos, sin scrollear todas las tarjetas. En
+   desktop/tablet no aparece (las tarjetas ya entran cómodas en pantalla). */
+.rangeCardsToggleRow {
+  display: none;
+}
+
+@media (max-width: 420px) {
+  .rangeCardsToggleRow {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .rangeCardsToggleBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: none;
+    border: 1px solid var(--color-border-strong);
+    color: var(--color-chart-accent);
+    padding: 0.3rem 0.7rem;
+    border-radius: var(--radius-pill);
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .rangeCardsToggleArrow {
+    display: inline-block;
+    transition: transform 0.18s ease;
+  }
+
+  .rangeCardGrid[data-visible="false"] {
+    display: none;
+  }
 }
 
 .rangeCard:hover {
@@ -809,6 +1062,36 @@
   --rc-delta-up: #86efac;
   --rc-delta-down: #fca5a5;
   --rc-divider: rgba(255, 255, 255, 0.2);
+}
+
+/* Grilla de tarjetas de rango (HOY/AYER/.../ANIO, 6 en total). Columnas fijas
+   por breakpoint en vez de auto-fit: auto-fit reparte según el ancho libre y
+   en resoluciones intermedias deja 5 tarjetas en una fila y la 6ta sola
+   abajo (feo/asimétrico) - con columnas fijas siempre cierra en filas
+   parejas (6, 3+3, 2+2+2 o 1 por fila) sin importar la resolución. */
+.rangeCardGrid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 0.75rem;
+}
+
+@media (max-width: 1400px) {
+  .rangeCardGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 720px) {
+  .rangeCardGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 420px) {
+  .rangeCardGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
 }
 
 /* Pestañas General/NOVICOMPU/ENV de la dona de devoluciones - el indicador
@@ -1172,6 +1455,12 @@
 
 .adminCard {
   padding: 1.5rem;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.adminCard:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
 }
 
 .adminCard h3 {

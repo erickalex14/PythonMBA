@@ -1,0 +1,109 @@
+.wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 38px;
+}
+
+.buttonContentInner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  height: 38px;
+}
+
+/* Pastilla/input: mismo elemento visual en los dos pasos - colapsado es un
+   botón sólido color marca ("Buscar"), expandido se transforma en el campo
+   de texto real (fondo claro, borde, texto oscuro). */
+.searchBtn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 38px;
+  border-radius: 999px;
+  cursor: pointer;
+  overflow: hidden;
+  background-color: var(--color-chart-accent);
+  box-shadow: 0 2px 6px rgba(28, 63, 102, 0.2);
+}
+
+.searchBtnExpanded {
+  cursor: text;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  box-shadow: none;
+}
+
+.searchText {
+  width: 100%;
+  text-align: center;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  user-select: none;
+}
+
+.searchInput {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-size: 0.85rem;
+  font-family: inherit;
+  padding: 0 1.7rem 0 0.9rem;
+  text-overflow: ellipsis;
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-faint);
+}
+
+/* "x" para limpiar el texto ya escrito - vive DENTRO de la pastilla,
+   pegada al borde, distinta del botón circular de buscar que vive afuera. */
+.inlineClearBtn {
+  position: absolute;
+  right: 0.55rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--color-text-faint);
+  cursor: pointer;
+}
+
+.inlineClearBtn:hover {
+  color: var(--color-text-primary);
+}
+
+/* Botón circular de lupa, afuera de la pastilla: dispara la búsqueda al
+   click (o Enter dentro del input) - ya no filtra en cada tecla. */
+.separateElement {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--color-chart-accent);
+  color: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(28, 63, 102, 0.2);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.separateElement:hover {
+  background-color: var(--color-brand-primary);
+}

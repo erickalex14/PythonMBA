@@ -2,24 +2,31 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
+import { Poppins } from "next/font/google";
+import { motion } from "framer-motion";
 import styles from "../dashboard.module.css";
 import { KPICards } from "../../../components/KPICards";
 import { LiquidacionesCharts } from "../../../components/LiquidacionesCharts";
 import { ReportTable } from "../../../components/ReportTable";
 import { Button } from "../../../components/ui/Button";
+import { DatePicker } from "../../../components/ui/DatePicker";
+import { GooeySearchBar } from "../../../components/ui/GooeySearchBar";
+import { SegmentedProgressBar } from "../../../components/ui/SegmentedProgressBar";
 import { Pagination } from "../../../components/ui/Pagination";
 import { FilterBar, FilterFieldConfig } from "../../../components/ui/FilterBar";
 import { useReportQuery } from "../../../hooks/useReportQuery";
 import { usePanelReportPage } from "../../../hooks/usePanelReportPage";
+
+const poppins = Poppins({ weight: ["600", "700"], subsets: ["latin"] });
 
 export default function LiquidacionesPage() {
   const { data: session } = useSession();
   const panel = usePanelReportPage("liquidaciones");
   const { loading, queryProgress, estTimeRemaining, currentQueryingDate, data, error, fetchReportData, cancelQuery } = useReportQuery();
 
-  const [selectedProduct, setSelectedProduct] = useState("");
-  const [selectedPartida, setSelectedPartida] = useState("");
-  const [selectedRecepcion, setSelectedRecepcion] = useState("");
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [selectedPartidas, setSelectedPartidas] = useState<string[]>([]);
+  const [selectedRecepciones, setSelectedRecepciones] = useState<string[]>([]);
 
   useEffect(() => {
     if (panel.initialStartFromUrl && panel.initialEndFromUrl) {
@@ -30,7 +37,7 @@ export default function LiquidacionesPage() {
 
   useEffect(() => {
     panel.setCurrentPage(1);
-  }, [selectedProduct, selectedPartida, selectedRecepcion, panel.searchQuery]);
+  }, [selectedProducts, selectedPartidas, selectedRecepciones, panel.searchQuery]);
 
   const handleQuery = () => fetchReportData("liquidaciones", panel.startDate, panel.endDate);
 
@@ -42,12 +49,12 @@ export default function LiquidacionesPage() {
         );
         if (!match) return false;
       }
-      if (selectedProduct && String(row.PRODUCTO_ID_CORP).trim() !== selectedProduct) return false;
-      if (selectedPartida && String(row.PARTIDA_ID_CORP).trim() !== selectedPartida) return false;
-      if (selectedRecepcion && String(row.IdRecepcionRelacionada).trim() !== selectedRecepcion) return false;
+      if (selectedProducts.length > 0 && !selectedProducts.includes(String(row.PRODUCTO_ID_CORP).trim())) return false;
+      if (selectedPartidas.length > 0 && !selectedPartidas.includes(String(row.PARTIDA_ID_CORP).trim())) return false;
+      if (selectedRecepciones.length > 0 && !selectedRecepciones.includes(String(row.IdRecepcionRelacionada).trim())) return false;
       return true;
     });
-  }, [data, panel.searchQuery, selectedProduct, selectedPartida, selectedRecepcion]);
+  }, [data, panel.searchQuery, selectedProducts, selectedPartidas, selectedRecepciones]);
 
   const paginatedData = useMemo(() => {
     const start = (panel.currentPage - 1) * panel.itemsPerPage;
@@ -71,13 +78,33 @@ export default function LiquidacionesPage() {
   }, [data]);
 
   const filterFields: FilterFieldConfig[] = [
-    { label: "Filtrar por ID Producto", value: selectedProduct, onChange: setSelectedProduct, placeholder: "Todos los Productos...", options: filterOptions.products },
-    { label: "Filtrar por Partida Arancelaria", value: selectedPartida, onChange: setSelectedPartida, placeholder: "Todas las Partidas...", options: filterOptions.partidas },
-    { label: "Filtrar por Recepción Relacionada", value: selectedRecepcion, onChange: setSelectedRecepcion, placeholder: "Todas las Recepciones...", options: filterOptions.recepciones },
+    { label: "Filtrar por ID Producto", value: selectedProducts, onChange: setSelectedProducts, placeholder: "Todos los Productos...", options: filterOptions.products, type: "multiselect" },
+    { label: "Filtrar por Partida Arancelaria", value: selectedPartidas, onChange: setSelectedPartidas, placeholder: "Todas las Partidas...", options: filterOptions.partidas, type: "multiselect" },
+    { label: "Filtrar por Recepción Relacionada", value: selectedRecepciones, onChange: setSelectedRecepciones, placeholder: "Todas las Recepciones...", options: filterOptions.recepciones, type: "multiselect" },
   ];
 
   const totalQty = useMemo(() => data.reduce((acc, row) => acc + (Number(row.CANTIDAD) || 0), 0), [data]);
   const totalAmount = useMemo(() => data.reduce((acc, row) => acc + (Number(row.VALOR_TOTAL_CIF) || 0), 0), [data]);
+
+  // Tendencia diaria real (LIQUIDACION_FECHA) para los sparklines de las
+  // tarjetas KPI - misma idea que en Movimientos/Ventas.
+  const kpiSparklines = useMemo(() => {
+    const porDia: Record<string, { registros: number; cif: number; cantidad: number }> = {};
+    filteredData.forEach((row) => {
+      const fecha = String(row.LIQUIDACION_FECHA || "").trim();
+      if (!fecha) return;
+      if (!porDia[fecha]) porDia[fecha] = { registros: 0, cif: 0, cantidad: 0 };
+      porDia[fecha].registros += 1;
+      porDia[fecha].cif += Number(row.VALOR_TOTAL_CIF) || 0;
+      porDia[fecha].cantidad += Number(row.CANTIDAD) || 0;
+    });
+    const dias = Object.keys(porDia).sort();
+    return {
+      registros: dias.map((d) => porDia[d].registros),
+      principal: dias.map((d) => porDia[d].cif),
+      segunda: dias.map((d) => porDia[d].cantidad),
+    };
+  }, [filteredData]);
 
   return (
     <>
@@ -111,36 +138,51 @@ export default function LiquidacionesPage() {
       </div>
 
       <header className={styles.contentHeader}>
-        <h1>Liquidaciones de Importaciones</h1>
-        <p className={styles.subtext}>Consolidado de costos CIF y detalle de productos liquidados</p>
+        <h1 className={`${poppins.className} ${styles.moduleTitle}`}>Liquidaciones de Importaciones</h1>
+        <p className={styles.moduleSubtext}>Consolidado de costos CIF y detalle de productos liquidados</p>
       </header>
 
-      <section className={styles.filterPanel}>
-        <div className={styles.filterPanelTopRow}>
-          <div className={styles.filtersRow}>
-            <div className={styles.filterGroup}>
-              <label>Fecha de Inicio</label>
-              <input type="date" value={panel.startDate} onChange={(e) => panel.setStartDate(e.target.value)} disabled={loading} />
-            </div>
-            <div className={styles.filterGroup}>
-              <label>Fecha de Fin</label>
-              <input type="date" value={panel.endDate} onChange={(e) => panel.setEndDate(e.target.value)} disabled={loading} />
-            </div>
-            <Button onClick={handleQuery} className={styles.queryBtn} loading={loading} loadingText="Consultando...">
-              Consultar Datos
-            </Button>
+      <motion.section
+        className={styles.filterPanel}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      >
+        <div className={styles.movToolbar}>
+          <div className={styles.movToolbarField}>
+            <span className={styles.movToolbarFieldLabel}>Desde</span>
+            <DatePicker value={panel.startDate} onChange={panel.setStartDate} disabled={loading} variant="plain" />
           </div>
-          <div className={styles.searchFilter}>
-            <div className={styles.filterGroup}>
-              <label>Búsqueda Global</label>
-              <input
-                type="text"
-                placeholder="Buscar en todos los campos..."
+          <div className={styles.movToolbarDivider} />
+          <div className={styles.movToolbarField}>
+            <span className={styles.movToolbarFieldLabel}>Hasta</span>
+            <DatePicker value={panel.endDate} onChange={panel.setEndDate} disabled={loading} variant="plain" />
+          </div>
+
+          {data.length > 0 && !loading && (
+            <>
+              <div className={styles.movToolbarDivider} />
+              <GooeySearchBar
                 value={panel.searchQuery}
-                onChange={(e) => panel.setSearchQuery(e.target.value)}
+                onChange={panel.setSearchQuery}
+                placeholder="Buscar en todos los campos..."
               />
-            </div>
-          </div>
+            </>
+          )}
+
+          <div className={styles.movToolbarSpacer} />
+          <motion.button
+            type="button"
+            onClick={handleQuery}
+            className={styles.movToolbarBtn}
+            disabled={loading}
+            whileHover={loading ? undefined : { scale: 1.03 }}
+            whileTap={loading ? undefined : { scale: 0.97 }}
+          >
+            {loading ? <span className={styles.iconBtnSpinner} /> : null}
+            {loading ? "Consultando..." : "Consultar Datos"}
+            {!loading && <span className={styles.movToolbarBtnArrow}>→</span>}
+          </motion.button>
         </div>
 
         {data.length > 0 && !loading && (
@@ -149,7 +191,7 @@ export default function LiquidacionesPage() {
             <FilterBar fields={filterFields} styles={styles} />
           </>
         )}
-      </section>
+      </motion.section>
 
       {loading && (
         <section className={styles.progressCard}>
@@ -160,8 +202,8 @@ export default function LiquidacionesPage() {
               <button type="button" className={styles.progressCancelBtn} onClick={cancelQuery}>Cancelar</button>
             </div>
           </div>
-          <div className={styles.progressBarBg}>
-            <div className={styles.progressBarFill} style={{ width: `${queryProgress}%` }}></div>
+          <div style={{ margin: "0.5rem 0" }}>
+            <SegmentedProgressBar pct={queryProgress} />
           </div>
           <div className={styles.progressMeta}>
             <p>Procesando fecha: <strong>{currentQueryingDate}</strong></p>
@@ -170,8 +212,12 @@ export default function LiquidacionesPage() {
         </section>
       )}
 
-      {!loading && <KPICards filteredData={filteredData} activeTab="liquidaciones" styles={styles} />}
-      {!loading && <LiquidacionesCharts data={filteredData} styles={styles} />}
+      {!loading && (
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: "easeOut" }}>
+          <KPICards filteredData={filteredData} activeTab="liquidaciones" styles={styles} sparklines={kpiSparklines} />
+          <LiquidacionesCharts data={filteredData} styles={styles} />
+        </motion.div>
+      )}
 
       <section className={styles.reportSection}>
         <div className={styles.reportHeaderActions}>
@@ -209,8 +255,8 @@ export default function LiquidacionesPage() {
                 <button type="button" className={styles.progressCancelBtn} onClick={panel.cancelDownload}>Cancelar</button>
               </div>
             </div>
-            <div className={styles.progressBarBg}>
-              <div className={styles.progressBarFill} style={{ width: `${panel.downloadProgressPct}%` }}></div>
+            <div style={{ margin: "0.5rem 0" }}>
+              <SegmentedProgressBar pct={panel.downloadProgressPct} />
             </div>
             <div className={styles.progressMeta}>
               <p>Tiempo transcurrido: <strong>{panel.downloadElapsedSeconds}s</strong></p>

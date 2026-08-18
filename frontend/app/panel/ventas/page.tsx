@@ -2,24 +2,30 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
+import { Poppins } from "next/font/google";
+import { motion } from "framer-motion";
 import styles from "../dashboard.module.css";
 import { KPICards, TotalesRango } from "../../../components/KPICards";
 import { RentabilidadCharts } from "../../../components/RentabilidadCharts";
 import { ReportTable } from "../../../components/ReportTable";
 import { Button } from "../../../components/ui/Button";
+import { DatePicker } from "../../../components/ui/DatePicker";
+import { SegmentedProgressBar } from "../../../components/ui/SegmentedProgressBar";
 import { Pagination } from "../../../components/ui/Pagination";
 import { FilterBar, FilterFieldConfig } from "../../../components/ui/FilterBar";
 import { useReportQuery } from "../../../hooks/useReportQuery";
 import { usePanelReportPage } from "../../../hooks/usePanelReportPage";
+
+const poppins = Poppins({ weight: ["600", "700"], subsets: ["latin"] });
 
 export default function VentasPage() {
   const { data: session } = useSession();
   const panel = usePanelReportPage("ventas");
   const { loading, queryProgress, estTimeRemaining, currentQueryingDate, data, error, fetchReportData, cancelQuery } = useReportQuery();
 
-  const [selectedProduct, setSelectedProduct] = useState(panel.initialProductoFromUrl);
-  const [selectedBranch, setSelectedBranch] = useState("");
-  const [selectedEmpresa, setSelectedEmpresa] = useState(panel.initialEmpresaFromUrl);
+  const [selectedProducts, setSelectedProducts] = useState<string[]>(panel.initialProductoFromUrl ? [panel.initialProductoFromUrl] : []);
+  const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
+  const [selectedEmpresas, setSelectedEmpresas] = useState<string[]>(panel.initialEmpresaFromUrl ? [panel.initialEmpresaFromUrl] : []);
   const [codigoSearch, setCodigoSearch] = useState("");
   const [totales, setTotales] = useState<TotalesRango | null>(null);
 
@@ -46,7 +52,7 @@ export default function VentasPage() {
 
   useEffect(() => {
     panel.setCurrentPage(1);
-  }, [selectedProduct, selectedBranch, selectedEmpresa, codigoSearch]);
+  }, [selectedProducts, selectedBranches, selectedEmpresas, codigoSearch]);
 
   const handleQuery = () => {
     fetchReportData("ventas", panel.startDate, panel.endDate);
@@ -57,13 +63,13 @@ export default function VentasPage() {
   // específicos: código, empresa, producto, grupo) - igual que antes.
   const filteredData = useMemo(() => {
     return data.filter((row) => {
-      if (selectedProduct && String(row.producto).trim() !== selectedProduct) return false;
-      if (selectedBranch && String(row.grupo).trim() !== selectedBranch) return false;
-      if (selectedEmpresa && String(row.empresa || "").trim() !== selectedEmpresa) return false;
+      if (selectedProducts.length > 0 && !selectedProducts.includes(String(row.producto).trim())) return false;
+      if (selectedBranches.length > 0 && !selectedBranches.includes(String(row.grupo).trim())) return false;
+      if (selectedEmpresas.length > 0 && !selectedEmpresas.includes(String(row.empresa || "").trim())) return false;
       if (codigoSearch && !String(row.codigo || "").toLowerCase().includes(codigoSearch.trim().toLowerCase())) return false;
       return true;
     });
-  }, [data, selectedProduct, selectedBranch, selectedEmpresa, codigoSearch]);
+  }, [data, selectedProducts, selectedBranches, selectedEmpresas, codigoSearch]);
 
   const paginatedData = useMemo(() => {
     const start = (panel.currentPage - 1) * panel.itemsPerPage;
@@ -88,13 +94,33 @@ export default function VentasPage() {
 
   const filterFields: FilterFieldConfig[] = [
     { label: "Buscar por Código de Producto", value: codigoSearch, onChange: setCodigoSearch, placeholder: "Ej: 1AENV8395-NVC01", options: [], type: "text" },
-    { label: "Filtrar por Empresa", value: selectedEmpresa, onChange: setSelectedEmpresa, placeholder: "Todas las Empresas...", options: filterOptions.empresas },
-    { label: "Filtrar por Producto", value: selectedProduct, onChange: setSelectedProduct, placeholder: "Todos los Productos...", options: filterOptions.products },
-    { label: "Filtrar por Grupo", value: selectedBranch, onChange: setSelectedBranch, placeholder: "Todos los Grupos...", options: filterOptions.branches },
+    { label: "Filtrar por Empresa", value: selectedEmpresas, onChange: setSelectedEmpresas, placeholder: "Todas las Empresas...", options: filterOptions.empresas, type: "multiselect" },
+    { label: "Filtrar por Producto", value: selectedProducts, onChange: setSelectedProducts, placeholder: "Todos los Productos...", options: filterOptions.products, type: "multiselect" },
+    { label: "Filtrar por Grupo", value: selectedBranches, onChange: setSelectedBranches, placeholder: "Todos los Grupos...", options: filterOptions.branches, type: "multiselect" },
   ];
 
   const totalQty = useMemo(() => data.reduce((acc, row) => acc + (Number(row.cantidad) || Number(row.CANTIDAD) || 0), 0), [data]);
   const totalAmount = useMemo(() => data.reduce((acc, row) => acc + (Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0), 0), [data]);
+
+  // Tendencia diaria real (agrupando por el campo "fecha" de cada línea) para
+  // los sparklines de las tarjetas KPI - misma idea que en Movimientos.
+  const kpiSparklines = useMemo(() => {
+    const porDia: Record<string, { registros: number; monto: number; cantidad: number }> = {};
+    filteredData.forEach((row) => {
+      const fecha = String(row.fecha || "").trim();
+      if (!fecha) return;
+      if (!porDia[fecha]) porDia[fecha] = { registros: 0, monto: 0, cantidad: 0 };
+      porDia[fecha].registros += 1;
+      porDia[fecha].monto += Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0;
+      porDia[fecha].cantidad += Number(row.cantidad) || Number(row.CANTIDAD) || 0;
+    });
+    const dias = Object.keys(porDia).sort();
+    return {
+      registros: dias.map((d) => porDia[d].registros),
+      principal: dias.map((d) => porDia[d].monto),
+      segunda: dias.map((d) => porDia[d].cantidad),
+    };
+  }, [filteredData]);
 
   return (
     <>
@@ -128,25 +154,39 @@ export default function VentasPage() {
       </div>
 
       <header className={styles.contentHeader}>
-        <h1>Rentabilidad (Detalle)</h1>
-        <p className={styles.subtext}>Costo, utilidad y margen por línea de venta — facturación de clientes</p>
+        <h1 className={`${poppins.className} ${styles.moduleTitle}`}>Rentabilidad (Detalle)</h1>
+        <p className={styles.moduleSubtext}>Costo, utilidad y margen por línea de venta — facturación de clientes</p>
       </header>
 
-      <section className={styles.filterPanel}>
-        <div className={styles.filterPanelTopRow}>
-          <div className={styles.filtersRow}>
-            <div className={styles.filterGroup}>
-              <label>Fecha de Inicio</label>
-              <input type="date" value={panel.startDate} onChange={(e) => panel.setStartDate(e.target.value)} disabled={loading} />
-            </div>
-            <div className={styles.filterGroup}>
-              <label>Fecha de Fin</label>
-              <input type="date" value={panel.endDate} onChange={(e) => panel.setEndDate(e.target.value)} disabled={loading} />
-            </div>
-            <Button onClick={handleQuery} className={styles.queryBtn} loading={loading} loadingText="Consultando...">
-              Consultar Datos
-            </Button>
+      <motion.section
+        className={styles.filterPanel}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      >
+        <div className={styles.movToolbar}>
+          <div className={styles.movToolbarField}>
+            <span className={styles.movToolbarFieldLabel}>Desde</span>
+            <DatePicker value={panel.startDate} onChange={panel.setStartDate} disabled={loading} variant="plain" />
           </div>
+          <div className={styles.movToolbarDivider} />
+          <div className={styles.movToolbarField}>
+            <span className={styles.movToolbarFieldLabel}>Hasta</span>
+            <DatePicker value={panel.endDate} onChange={panel.setEndDate} disabled={loading} variant="plain" />
+          </div>
+          <div className={styles.movToolbarSpacer} />
+          <motion.button
+            type="button"
+            onClick={handleQuery}
+            className={styles.movToolbarBtn}
+            disabled={loading}
+            whileHover={loading ? undefined : { scale: 1.03 }}
+            whileTap={loading ? undefined : { scale: 0.97 }}
+          >
+            {loading ? <span className={styles.iconBtnSpinner} /> : null}
+            {loading ? "Consultando..." : "Consultar Datos"}
+            {!loading && <span className={styles.movToolbarBtnArrow}>→</span>}
+          </motion.button>
         </div>
 
         {data.length > 0 && !loading && (
@@ -155,7 +195,7 @@ export default function VentasPage() {
             <FilterBar fields={filterFields} styles={styles} />
           </>
         )}
-      </section>
+      </motion.section>
 
       {loading && (
         <section className={styles.progressCard}>
@@ -166,8 +206,8 @@ export default function VentasPage() {
               <button type="button" className={styles.progressCancelBtn} onClick={cancelQuery}>Cancelar</button>
             </div>
           </div>
-          <div className={styles.progressBarBg}>
-            <div className={styles.progressBarFill} style={{ width: `${queryProgress}%` }}></div>
+          <div style={{ margin: "0.5rem 0" }}>
+            <SegmentedProgressBar pct={queryProgress} />
           </div>
           <div className={styles.progressMeta}>
             <p>Procesando fecha: <strong>{currentQueryingDate}</strong></p>
@@ -176,8 +216,12 @@ export default function VentasPage() {
         </section>
       )}
 
-      {!loading && <KPICards filteredData={filteredData} activeTab="ventas" styles={styles} totales={totales} />}
-      {!loading && <RentabilidadCharts data={filteredData} styles={styles} />}
+      {!loading && (
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: "easeOut" }}>
+          <KPICards filteredData={filteredData} activeTab="ventas" styles={styles} totales={totales} sparklines={kpiSparklines} />
+          <RentabilidadCharts data={filteredData} styles={styles} />
+        </motion.div>
+      )}
 
       <section className={styles.reportSection}>
         <div className={styles.reportHeaderActions}>
@@ -215,8 +259,8 @@ export default function VentasPage() {
                 <button type="button" className={styles.progressCancelBtn} onClick={panel.cancelDownload}>Cancelar</button>
               </div>
             </div>
-            <div className={styles.progressBarBg}>
-              <div className={styles.progressBarFill} style={{ width: `${panel.downloadProgressPct}%` }}></div>
+            <div style={{ margin: "0.5rem 0" }}>
+              <SegmentedProgressBar pct={panel.downloadProgressPct} />
             </div>
             <div className={styles.progressMeta}>
               <p>Tiempo transcurrido: <strong>{panel.downloadElapsedSeconds}s</strong></p>

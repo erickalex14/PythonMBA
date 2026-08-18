@@ -1,12 +1,13 @@
 import React from "react";
+import { MultiSelect } from "./MultiSelect";
 
 export interface FilterFieldConfig {
   label: string;
-  value: string;
-  onChange: (value: string) => void;
+  value: string | string[];
+  onChange: ((value: string) => void) | ((value: string[]) => void);
   placeholder: string;
   options: string[];
-  type?: "select" | "text";
+  type?: "select" | "text" | "multiselect";
 }
 
 interface FilterBarProps {
@@ -24,7 +25,12 @@ export const FilterBar: React.FC<FilterBarProps> = ({
   label = "Filtros de Segmentación Local (Sin recargar base de datos)",
 }) => (
   <div>
-    <h4 className={styles.filterPanelSubLabel}>{label}</h4>
+    <h4 className={styles.filterPanelSubLabel}>
+      <svg className={styles.filterPanelSubLabelIcon} width="12" height="12" viewBox="0 0 20 20" fill="none">
+        <path d="M3 4.5h14M6 10h8M8.5 15.5h3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+      {label}
+    </h4>
     <div className={styles.subFiltersRow}>
       {fields.map((field) => (
         <div key={field.label} className={styles.filterGroup}>
@@ -32,15 +38,22 @@ export const FilterBar: React.FC<FilterBarProps> = ({
           {field.type === "text" ? (
             <input
               type="text"
-              value={field.value}
-              onChange={(e) => field.onChange(e.target.value)}
+              value={field.value as string}
+              onChange={(e) => (field.onChange as (v: string) => void)(e.target.value)}
               placeholder={field.placeholder}
               className={styles.selectFilter}
             />
+          ) : field.type === "multiselect" ? (
+            <MultiSelect
+              options={field.options}
+              selected={field.value as string[]}
+              onChange={field.onChange as (v: string[]) => void}
+              placeholder={field.placeholder}
+            />
           ) : (
             <select
-              value={field.value}
-              onChange={(e) => field.onChange(e.target.value)}
+              value={field.value as string}
+              onChange={(e) => (field.onChange as (v: string) => void)(e.target.value)}
               className={styles.selectFilter}
             >
               <option value="">{field.placeholder}</option>

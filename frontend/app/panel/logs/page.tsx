@@ -1,11 +1,16 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import { Poppins } from "next/font/google";
+import { motion } from "framer-motion";
 import styles from "../dashboard.module.css";
 import { Badge } from "../../../components/ui/Badge";
 import { Button } from "../../../components/ui/Button";
+import { GooeySearchBar } from "../../../components/ui/GooeySearchBar";
 import { Pagination } from "../../../components/ui/Pagination";
 import { usePanelReportPage } from "../../../hooks/usePanelReportPage";
+
+const poppins = Poppins({ weight: ["600", "700"], subsets: ["latin"] });
 
 export default function LogsPage() {
   const panel = usePanelReportPage("logs");
@@ -59,30 +64,42 @@ export default function LogsPage() {
   return (
     <>
       <header className={styles.contentHeader}>
-        <h1>Bitácora de Auditoría</h1>
-        <p className={styles.subtext}>Historial de descargas de reportes para auditoría de seguridad</p>
+        <h1 className={`${poppins.className} ${styles.moduleTitle}`}>Bitácora de Auditoría</h1>
+        <p className={styles.moduleSubtext}>Historial de descargas de reportes para auditoría de seguridad</p>
       </header>
 
-      <section className={styles.filterPanel}>
-        <div className={styles.filterPanelTopRow}>
-          <div className={styles.filtersRow}>
-            <Button onClick={fetchLogs} className={styles.queryBtn} loading={loading} loadingText="Consultando...">
-              Consultar Datos
-            </Button>
-          </div>
-          <div className={styles.searchFilter}>
-            <div className={styles.filterGroup}>
-              <label>Búsqueda Global</label>
-              <input
-                type="text"
-                placeholder="Buscar en todos los campos..."
+      <motion.section
+        className={styles.filterPanel}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      >
+        <div className={styles.movToolbar}>
+          <motion.button
+            type="button"
+            onClick={fetchLogs}
+            className={styles.movToolbarBtn}
+            disabled={loading}
+            whileHover={loading ? undefined : { scale: 1.03 }}
+            whileTap={loading ? undefined : { scale: 0.97 }}
+          >
+            {loading ? <span className={styles.iconBtnSpinner} /> : null}
+            {loading ? "Consultando..." : "Consultar Datos"}
+            {!loading && <span className={styles.movToolbarBtnArrow}>→</span>}
+          </motion.button>
+          {logs.length > 0 && !loading && (
+            <>
+              <div className={styles.movToolbarDivider} />
+              <GooeySearchBar
                 value={panel.searchQuery}
-                onChange={(e) => panel.setSearchQuery(e.target.value)}
+                onChange={panel.setSearchQuery}
+                placeholder="Buscar en todos los campos..."
               />
-            </div>
-          </div>
+            </>
+          )}
+          <div className={styles.movToolbarSpacer} />
         </div>
-      </section>
+      </motion.section>
 
       <section className={styles.reportSection}>
         <div className={styles.reportHeaderActions}>
@@ -120,8 +137,13 @@ export default function LogsPage() {
                 </tr>
               </thead>
               <tbody>
-                {paginatedLogs.map((log) => (
-                  <tr key={log.id}>
+                {paginatedLogs.map((log, i) => (
+                  <motion.tr
+                    key={log.id}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.25, delay: Math.min(i, 20) * 0.02 }}
+                  >
                     <td><strong>{log.user_name}</strong></td>
                     <td>{log.user_cedula}</td>
                     <td>
@@ -133,7 +155,7 @@ export default function LogsPage() {
                     <td>{log.query_period}</td>
                     <td>{log.records_count}</td>
                     <td>{new Date(log.timestamp).toLocaleString("es-EC")}</td>
-                  </tr>
+                  </motion.tr>
                 ))}
               </tbody>
             </table>
