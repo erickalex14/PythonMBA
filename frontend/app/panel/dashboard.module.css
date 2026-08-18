@@ -299,6 +299,41 @@
   margin: 0;
 }
 
+/* Encabezado del Dashboard: eyebrow uppercase + título serif con degradé de
+   marca + subtexto con acento lateral. Clases propias (no .subtext) para no
+   afectar el encabezado simple de las demás pantallas del panel. */
+.dashboardEyebrow {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-brand-accent-dark);
+  margin-bottom: 0.3rem;
+}
+
+.contentHeader h1.dashboardTitle {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.02em;
+  background: linear-gradient(120deg, var(--color-text-primary) 35%, var(--color-brand-primary) 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.dashboardSubtext {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin: 0;
+  padding-left: 0.65rem;
+  border-left: 3px solid var(--color-brand-accent);
+  line-height: 1.5;
+}
+
 /* Panel de Filtros unificado: fecha/búsqueda (dispara consulta al ERP) y
    filtros locales (instantáneos, sin recargar) viven en la misma tarjeta
    en vez de dos cajas sueltas apiladas - la línea divisoria interna es lo
@@ -722,6 +757,87 @@
   width: 100%;
   height: auto;
   overflow: visible;
+}
+
+/* Tarjetas de rango del Dashboard de Ventas (HOY/AYER/ESTA SEMANA/...).
+   Al hover se invierten los colores (fondo solido + texto claro) - las
+   variables --rc-* se redefinen aca y las usan los estilos inline del
+   componente (VentasDashboard.tsx), asi que un solo :hover alcanza para
+   voltear todos los textos/deltas hijos sin tocar cada uno por separado. */
+.rangeCard {
+  --rc-text: var(--color-text-primary);
+  --rc-text-muted: var(--color-text-muted);
+  --rc-delta-up: #2e7d32;
+  --rc-delta-down: #c0392b;
+  --rc-divider: var(--color-surface-subtle);
+  position: relative;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+.rangeCard:hover {
+  background-color: var(--color-chart-accent);
+  border-color: var(--color-chart-accent);
+  --rc-text: #ffffff;
+  --rc-text-muted: rgba(255, 255, 255, 0.75);
+  --rc-delta-up: #86efac;
+  --rc-delta-down: #fca5a5;
+  --rc-divider: rgba(255, 255, 255, 0.2);
+}
+
+/* Pestañas General/NOVICOMPU/ENV de la dona de devoluciones - el indicador
+   activo es un motion.span con layoutId (mismo patrón que el anillo de las
+   tarjetas de rango) que se desliza entre pestañas en vez de saltar. */
+.empresaTabBar {
+  display: flex;
+  gap: 0.25rem;
+  background-color: var(--color-surface-subtle);
+  padding: 0.25rem;
+  border-radius: var(--radius-pill);
+  width: fit-content;
+  margin-top: 0.75rem;
+}
+
+.empresaTab {
+  position: relative;
+  background: none;
+  border: none;
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.empresaTabIndicator {
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-surface);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+}
+
+.empresaTabLabel {
+  position: relative;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  transition: color 0.15s ease;
+}
+
+.empresaTabLabel[data-active="true"] {
+  color: var(--color-chart-accent);
+}
+
+/* Anillo de selección: motion.div con layoutId separado del fondo/borde de
+   hover de arriba, para que ambas animaciones (invertir color / mover
+   anillo) puedan coexistir sin pisarse. */
+.rangeCardRing {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 2px solid var(--color-brand-accent);
+  pointer-events: none;
 }
 
 /* Progress List (Distribución) */
@@ -1674,6 +1790,50 @@
 .iconActionBtn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Boton "Ver detalle de <rango>": mismo lenguaje invertido de iconActionBtn
+   pero con ancho automatico y sin salto de linea - iconActionBtn es
+   cuadrada de 38px (pensada para un solo icono) y con texto largo lo
+   partia en varias lineas. */
+.viewDetailBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 0.9rem;
+  white-space: nowrap;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  color: var(--color-chart-accent);
+  border-radius: var(--radius-pill);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease;
+  flex-shrink: 0;
+}
+
+.viewDetailBtn:hover:not(:disabled) {
+  background-color: var(--color-chart-accent);
+  border-color: var(--color-chart-accent);
+  color: var(--color-surface);
+  transform: translateY(-1px);
+}
+
+.viewDetailBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.viewDetailBtnArrow {
+  display: inline-block;
+  transition: transform 0.18s ease;
+}
+
+.viewDetailBtn:hover:not(:disabled) .viewDetailBtnArrow {
+  transform: translateX(3px);
 }
 
 .iconBtnSpinner {
