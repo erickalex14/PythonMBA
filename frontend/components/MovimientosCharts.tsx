@@ -5,12 +5,32 @@ import {
   TierHeading,
   TwoBarComparison,
   RadialGauge,
-  TrendLine,
-  DonutChart,
   Treemap,
   ParetoChart,
   ExpandableChartCard,
 } from "./charts/ChartPrimitives";
+import { DevolucionesDonut, type DonutSegment } from "./charts/DevolucionesDonut";
+import { TrendLineAdvanced } from "./charts/TrendLineAdvanced";
+
+// Mismo lenguaje de color que el resto de la app: marca para los tipos
+// "normales" de movimiento, rojo de alerta para Devolución (igual que las
+// devoluciones del Dashboard), gris para lo no clasificado. Categorías que
+// no calcen con ninguna de estas (poco probable, pero el memo de origen
+// varía) rotan sobre una paleta sobria de respaldo.
+const TIPO_COLOR: Record<string, string> = {
+  Proveedores: "var(--color-brand-primary)",
+  Clientes: "var(--color-brand-accent)",
+  Transferencia: "var(--color-chart-accent)",
+  "Movimiento Manual": "var(--color-brand-primary-alt)",
+  "Devolución": "#c0392b",
+  "Sin Clasificar": "var(--color-text-tertiary)",
+};
+const TIPO_COLOR_FALLBACK = [
+  "var(--color-chart-accent)",
+  "var(--color-brand-primary)",
+  "var(--color-brand-primary-alt)",
+  "var(--color-brand-accent-dark)",
+];
 
 interface MovimientosChartsProps {
   data: any[];
@@ -112,6 +132,17 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
       .sort((a, b) => a.x.localeCompare(b.x));
   }, [data]);
 
+  const porTipoSegments: DonutSegment[] = useMemo(
+    () =>
+      porTipo.map((t, i) => ({
+        key: t.label,
+        label: t.label,
+        value: t.value,
+        color: TIPO_COLOR[t.label] ?? TIPO_COLOR_FALLBACK[i % TIPO_COLOR_FALLBACK.length],
+      })),
+    [porTipo]
+  );
+
   const pctDevoluciones = useMemo(() => {
     const devoluciones = porTipo.find((t) => t.label === "Devolución")?.value || 0;
     return data.length > 0 ? (devoluciones / data.length) * 100 : 0;
@@ -124,7 +155,14 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
       <TierHeading title="Resumen Ejecutivo" first />
       <div className={styles.chartsGridThree} style={cardStyle}>
         <ExpandableChartCard title="Distribución por Tipo de Movimiento" styles={styles} render={(expanded) => (
-          <DonutChart items={porTipo} formatter={fmtNumber} size={expanded ? 170 : 100} compact={!expanded} />
+          <DevolucionesDonut
+            segments={porTipoSegments}
+            totalLabel="Movimientos"
+            totalValue={data.length}
+            formatter={fmtNumber}
+            size={expanded ? 220 : 130}
+            strokeWidth={expanded ? 26 : 17}
+          />
         )} />
         <ExpandableChartCard title="Entradas (Proveedores) vs Salidas (Clientes)" styles={styles} render={(expanded) => (
           <TwoBarComparison
@@ -154,7 +192,7 @@ export const MovimientosCharts: React.FC<MovimientosChartsProps> = ({ data, styl
       <TierHeading title="Tendencia y Calidad" />
       <div className={`${styles.chartsGridTwo} ${styles.chartsGridTwoTop}`} style={{ ...cardStyle, marginBottom: 0 }}>
         <ExpandableChartCard title="Tendencia Diaria de Transacciones" styles={styles} render={(expanded) => (
-          <TrendLine points={tendenciaDiaria} formatter={fmtNumber} color="var(--color-brand-primary)" height={expanded ? 300 : 130} />
+          <TrendLineAdvanced points={tendenciaDiaria} formatter={fmtNumber} color="var(--color-brand-primary)" height={expanded ? 320 : 160} />
         )} />
         <Card variant="chartCard" styles={styles} style={{ minHeight: 200 }}>
           <h3>% Devoluciones sobre el Total</h3>

@@ -6,11 +6,16 @@ import {
   TwoBarComparison,
   RadialGauge,
   ParetoChart,
-  TrendLine,
-  DonutChart,
   Treemap,
   ExpandableChartCard,
 } from "./charts/ChartPrimitives";
+import { DevolucionesDonut, type DonutSegment } from "./charts/DevolucionesDonut";
+import { TrendLineAdvanced } from "./charts/TrendLineAdvanced";
+
+const IVA_COLOR: Record<string, string> = {
+  "Con IVA": "var(--color-brand-primary)",
+  "Sin IVA": "var(--color-chart-accent)",
+};
 
 interface AtsChartsProps {
   data: any[];
@@ -120,6 +125,12 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
       .slice(0, 20);
   }, [activos]);
 
+  const conIvaVsSinIvaSegments: DonutSegment[] = useMemo(
+    () => conIvaVsSinIva.map((e) => ({ key: e.label, label: e.label, value: e.value, color: IVA_COLOR[e.label] ?? "var(--color-text-tertiary)" })),
+    [conIvaVsSinIva]
+  );
+  const totalIva = useMemo(() => conIvaVsSinIva.reduce((a, e) => a + e.value, 0), [conIvaVsSinIva]);
+
   const cardStyle: React.CSSProperties = { marginBottom: "1.5rem" };
 
   return (
@@ -127,7 +138,14 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
       <TierHeading title="Resumen Ejecutivo" first />
       <div className={styles.chartsGridThree} style={cardStyle}>
         <ExpandableChartCard title="Bases Con IVA vs Sin IVA" styles={styles} render={(expanded) => (
-          <DonutChart items={conIvaVsSinIva} formatter={fmtMoney} size={expanded ? 170 : 100} compact={!expanded} />
+          <DevolucionesDonut
+            segments={conIvaVsSinIvaSegments}
+            totalLabel="Total bases"
+            totalValue={totalIva}
+            formatter={fmtMoney}
+            size={expanded ? 220 : 130}
+            strokeWidth={expanded ? 26 : 17}
+          />
         )} />
         <ExpandableChartCard title="Productos vs Servicios Facturados" styles={styles} render={(expanded) => (
           <TwoBarComparison
@@ -158,7 +176,7 @@ export const AtsCharts: React.FC<AtsChartsProps> = ({ data, styles }) => {
       <TierHeading title="Tendencia y Concentración" />
       <div className={styles.chartsGridTwo} style={{ ...cardStyle, marginBottom: 0 }}>
         <ExpandableChartCard title="Tendencia Diaria de Facturación" styles={styles} render={(expanded) => (
-          <TrendLine points={tendenciaDiaria} formatter={fmtMoney2} color="var(--color-brand-primary)" height={expanded ? 300 : 130} />
+          <TrendLineAdvanced points={tendenciaDiaria} formatter={fmtMoney2} color="var(--color-brand-primary)" height={expanded ? 320 : 160} />
         )} />
         <ExpandableChartCard title="Concentración de Facturación por Proveedor (80/20)" styles={styles} render={(expanded) => (
           <ParetoChart items={paretoProveedores} formatter={fmtMoney2} height={expanded ? 420 : 130} />

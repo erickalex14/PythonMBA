@@ -2,11 +2,15 @@
 
 import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
+import { Poppins } from "next/font/google";
+import { motion } from "framer-motion";
 import styles from "../dashboard.module.css";
 import { Badge } from "../../../components/ui/Badge";
 import { Button } from "../../../components/ui/Button";
 import { Card } from "../../../components/ui/Card";
 import { Modal } from "../../../components/ui/Modal";
+
+const poppins = Poppins({ weight: ["600", "700"], subsets: ["latin"] });
 
 export default function AdminPage() {
   const { data: session } = useSession();
@@ -216,12 +220,13 @@ export default function AdminPage() {
   return (
     <>
       <header className={styles.contentHeader}>
-        <h1>Panel de Administración</h1>
-        <p className={styles.subtext}>Gestión de seguridad, control de acceso de usuarios y configuración del entorno</p>
+        <h1 className={`${poppins.className} ${styles.moduleTitle}`}>Panel de Administración</h1>
+        <p className={styles.moduleSubtext}>Gestión de seguridad, control de acceso de usuarios y configuración del entorno</p>
       </header>
 
       <section className={styles.adminGrid}>
         {session?.user && (session.user as any).permissions?.includes("MANAGE_CONFIG") && (
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: "easeOut" }}>
           <Card variant="adminCard" styles={styles}>
             <h3>Configuración de Conexión ERP MBA3</h3>
 
@@ -324,9 +329,11 @@ export default function AdminPage() {
               Guardar Configuración Persistente (.env)
             </Button>
           </Card>
+          </motion.div>
         )}
 
         {session?.user && (session.user as any).permissions?.includes("MANAGE_CONFIG") && (
+          <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}>
           <Card variant="adminCard" styles={styles}>
             <div className={styles.adminCardHeader}>
               <h3>Gestión de Cuentas de Usuarios</h3>
@@ -352,8 +359,8 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {adminUsers.map((u) => (
-                      <tr key={u.id}>
+                    {adminUsers.map((u, i) => (
+                      <motion.tr key={u.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: Math.min(i, 20) * 0.02 }}>
                         <td><strong>{u.cedula}</strong></td>
                         <td>{u.name}</td>
                         <td>
@@ -369,7 +376,7 @@ export default function AdminPage() {
                             Eliminar
                           </Button>
                         </td>
-                      </tr>
+                      </motion.tr>
                     ))}
                   </tbody>
                 </table>
@@ -394,8 +401,8 @@ export default function AdminPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {adminRoles.map((role) => (
-                      <tr key={role.id}>
+                    {adminRoles.map((role, i) => (
+                      <motion.tr key={role.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: Math.min(i, 20) * 0.02 }}>
                         <td><strong>{role.name}</strong></td>
                         <td>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem" }}>
@@ -415,13 +422,14 @@ export default function AdminPage() {
                             Editar
                           </Button>
                         </td>
-                      </tr>
+                      </motion.tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             </div>
           </Card>
+          </motion.div>
         )}
       </section>
 

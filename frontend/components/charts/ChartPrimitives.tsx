@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { motion } from "framer-motion";
 
 // Mide el ancho real en px del contenedor via ResizeObserver - se usa para
 // que el viewBox del SVG coincida exactamente con el ancho renderizado (en
@@ -83,22 +84,30 @@ export function RankedBarChart({
           const isHovered = hovered === index;
           const opacity = isHovered ? 1 : 0.45 + (p.total / max) * 0.55;
           return (
-            <g
+            <motion.g
               key={index}
               onMouseEnter={() => setHovered(index)}
               onMouseLeave={() => setHovered(null)}
               style={{ cursor: "pointer" }}
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.35, delay: index * 0.03, ease: "easeOut" }}
             >
               <rect x="0" y={y - 2} width="500" height="19" fill="transparent" />
               <text x="5" y={y + 11} fill="var(--color-text-tertiary)" fontSize="9" fontWeight="600">
                 {p.label.substring(0, 11)}
               </text>
               <rect x="90" y={y} width="320" height="13" rx="4" fill="var(--color-surface-subtle)" />
-              <rect x="90" y={y} width={barWidth} height="13" rx="4" fill={color} fillOpacity={opacity} />
+              <motion.rect
+                x="90" y={y} height="13" rx="4" fill={color}
+                initial={{ width: 0 }}
+                animate={{ width: barWidth, fillOpacity: opacity }}
+                transition={{ width: { duration: 0.5, delay: 0.1 + index * 0.03, ease: "easeOut" }, fillOpacity: { duration: 0.15 } }}
+              />
               <text x={95 + barWidth} y={y + 11} fill="var(--color-text-tertiary)" fontSize="8.5" fontWeight="700">
                 {formatter(p.total)}
               </text>
-            </g>
+            </motion.g>
           );
         })}
         {items.length === 0 && (
@@ -175,26 +184,39 @@ export function TwoBarComparison({
 }) {
   const max = Math.max(valueA, valueB, 1);
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: compact ? "0.6rem" : "0.9rem", marginTop: compact ? "0.25rem" : "0.5rem" }}>
-      <div>
+    <motion.div
+      initial="hidden"
+      animate="show"
+      variants={{ hidden: {}, show: { transition: { staggerChildren: 0.12, delayChildren: 0.05 } } }}
+      style={{ display: "flex", flexDirection: "column", gap: compact ? "0.6rem" : "0.9rem", marginTop: compact ? "0.25rem" : "0.5rem" }}
+    >
+      <motion.div variants={{ hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0 } }} transition={{ duration: 0.3 }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", color: "var(--color-text-muted)", marginBottom: 4 }}>
           <span>{labelA}</span>
           <span style={{ fontWeight: 700, color: "var(--color-text-primary)" }}>{formatter(valueA)}</span>
         </div>
         <div style={{ height: 10, borderRadius: 6, background: "var(--color-surface-subtle)", overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${(valueA / max) * 100}%`, background: "var(--color-chart-accent)", borderRadius: 6 }} />
+          <motion.div
+            style={{ height: "100%", background: "var(--color-chart-accent)", borderRadius: 6 }}
+            initial={{ width: 0 }} animate={{ width: `${(valueA / max) * 100}%` }}
+            transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+          />
         </div>
-      </div>
-      <div>
+      </motion.div>
+      <motion.div variants={{ hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0 } }} transition={{ duration: 0.3 }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", color: "var(--color-text-muted)", marginBottom: 4 }}>
           <span>{labelB}</span>
           <span style={{ fontWeight: 700, color: "var(--color-text-primary)" }}>{formatter(valueB)}</span>
         </div>
         <div style={{ height: 10, borderRadius: 6, background: "var(--color-surface-subtle)", overflow: "hidden" }}>
-          <div style={{ height: "100%", width: `${(valueB / max) * 100}%`, background: "var(--color-text-faint)", borderRadius: 6 }} />
+          <motion.div
+            style={{ height: "100%", background: "var(--color-text-faint)", borderRadius: 6 }}
+            initial={{ width: 0 }} animate={{ width: `${(valueB / max) * 100}%` }}
+            transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+          />
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 
@@ -224,6 +246,25 @@ export function StatGauge({
 
 // Pareto 80/20 generico: barras normalizadas al propio maximo + linea de %
 // acumulado real, con corte marcado donde se alcanza el 80%.
+// Curva suave (Catmull-Rom -> Bezier) para la línea acumulada del Pareto -
+// en vez de segmentos rectos entre puntos, que se ven quebrados/duros.
+function smoothPath(points: { x: number; y: number }[]): string {
+  if (points.length < 2) return points.length === 1 ? `M ${points[0].x} ${points[0].y}` : "";
+  let d = `M ${points[0].x} ${points[0].y}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i - 1] ?? points[i];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2] ?? p2;
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C ${cp1x} ${cp1y} ${cp2x} ${cp2y} ${p2.x} ${p2.y}`;
+  }
+  return d;
+}
+
 export function ParetoChart({
   items,
   formatter,
@@ -247,6 +288,11 @@ export function ParetoChart({
   const toXCenter = (i: number) => pad + (i + 0.5) * (barAreaW / (withCum.length || 1));
   const toY = (pctOfMax: number) => H - pad - (pctOfMax / 100) * (H - pad * 2 - 10);
   const cutIdx = withCum.findIndex((it) => it.cumPct >= 80);
+  const linePoints = withCum.map((it, i) => ({ x: toXCenter(i), y: toY(it.cumPct) }));
+  const linePath = smoothPath(linePoints);
+  const areaPath = linePoints.length
+    ? `${linePath} L ${linePoints[linePoints.length - 1].x} ${H - pad} L ${linePoints[0].x} ${H - pad} Z`
+    : "";
 
   return (
     <div style={{ position: "relative", width: "100%" }}>
@@ -256,36 +302,83 @@ export function ParetoChart({
           ventana es mas angosta (RankedBarChart se achica, este se queda
           igual), generando un hueco vacio dependiente del viewport. */}
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
+        <defs>
+          <linearGradient id="paretoAreaFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--color-chart-accent)" stopOpacity={0.16} />
+            <stop offset="100%" stopColor="var(--color-chart-accent)" stopOpacity={0.01} />
+          </linearGradient>
+        </defs>
+
         {[0, 25, 50, 75, 100].map((p) => (
           <line key={p} x1={pad} y1={toY(p)} x2={W - pad} y2={toY(p)} stroke="var(--color-surface-subtle)" strokeWidth="1" />
         ))}
         {cutIdx >= 0 && (
-          <line x1={toXCenter(cutIdx)} y1={pad} x2={toXCenter(cutIdx)} y2={H - pad} stroke="var(--color-warning)" strokeDasharray="4 4" strokeWidth="1.3" />
+          <motion.line
+            x1={toXCenter(cutIdx)} y1={pad} x2={toXCenter(cutIdx)} y2={H - pad}
+            stroke="var(--color-warning)" strokeDasharray="4 4" strokeWidth="1.3"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.4 }}
+          />
         )}
         <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="var(--color-border-strong)" strokeWidth="1" />
+
+        {/* Las barras ya NO disparan el hover/tooltip por sí solas - antes
+            pasar el mouse en cualquier punto de una barra alta (lejos del
+            punto real de la línea acumulada) abría el tooltip con el globo
+            desalineado del cursor. Ahora solo el punto (círculo, con un área
+            de click más grande e invisible alrededor) responde al hover. */}
         {withCum.map((it, i) => {
           const hBar = (it.value / maxVal) * 100;
           const x = toXCenter(i) - barW / 2;
           const y = toY(hBar);
           const isHovered = hovered === i;
           return (
-            <rect
-              key={it.key} x={x} y={y} width={barW} height={H - pad - y} rx="3"
-              fill="var(--color-brand-primary)" fillOpacity={isHovered ? 1 : 0.7}
-              style={{ cursor: "pointer" }}
-              onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}
+            <motion.rect
+              key={it.key} x={x} width={barW} rx="4"
+              fill="var(--color-brand-primary)"
+              initial={{ height: 0, y: H - pad, fillOpacity: 0.7 }}
+              animate={{ height: H - pad - y, y, fillOpacity: isHovered ? 1 : 0.7 }}
+              transition={{
+                height: { duration: 0.55, delay: i * 0.035, ease: "easeOut" },
+                y: { duration: 0.55, delay: i * 0.035, ease: "easeOut" },
+                fillOpacity: { duration: 0.15 },
+              }}
+              style={{ pointerEvents: "none" }}
             />
           );
         })}
-        {withCum.length > 0 && (
-          <path
-            d={`M ${withCum.map((it, i) => `${toXCenter(i)} ${toY(it.cumPct)}`).join(" L ")}`}
-            fill="none" stroke="var(--color-chart-accent)" strokeWidth="2" strokeLinecap="round"
+
+        {areaPath && (
+          <motion.path
+            d={areaPath} fill="url(#paretoAreaFill)" stroke="none"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3, duration: 0.6 }}
+          />
+        )}
+        {linePath && (
+          <motion.path
+            d={linePath} fill="none" stroke="var(--color-chart-accent)" strokeWidth="2.25" strokeLinecap="round"
+            initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.9, ease: "easeOut" }}
           />
         )}
         {withCum.map((it, i) => (
-          <circle key={`c-${it.key}`} cx={toXCenter(i)} cy={toY(it.cumPct)} r="2.5" fill="var(--color-chart-accent)" />
+          <g key={`c-${it.key}`}>
+            {/* Círculo invisible más grande, centrado exacto en el punto -
+                agranda el área clickeable sin mover el punto de disparo del
+                tooltip fuera de la línea. */}
+            <circle
+              cx={toXCenter(i)} cy={toY(it.cumPct)} r="9" fill="transparent"
+              style={{ cursor: "pointer" }}
+              onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}
+            />
+            <motion.circle
+              cx={toXCenter(i)} cy={toY(it.cumPct)}
+              r={hovered === i ? 4.5 : 2.5} fill="var(--color-chart-accent)" stroke="var(--color-surface)" strokeWidth={hovered === i ? 1.5 : 0}
+              initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.5 + i * 0.03, duration: 0.3, r: { duration: 0.12 } }}
+              style={{ pointerEvents: "none" }}
+            />
+          </g>
         ))}
+
         <text x={pad - 4} y={toY(100) + 3} textAnchor="end" fontSize="8" fill="var(--color-text-faint)">100%</text>
         <text x={pad - 4} y={toY(80) + 3} textAnchor="end" fontSize="8" fill="var(--color-warning)">80%</text>
         <text x={pad - 4} y={toY(0) + 3} textAnchor="end" fontSize="8" fill="var(--color-text-faint)">0%</text>
@@ -448,16 +541,27 @@ export function RadialGauge({
   };
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: "1.25rem", flexWrap: "wrap" }}>
+    <motion.div
+      style={{ display: "flex", alignItems: "center", gap: "1.25rem", flexWrap: "wrap" }}
+      initial={{ opacity: 0, scale: 0.92 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+    >
       <svg width="130" height="120" viewBox="0 0 130 120" style={{ flexShrink: 0 }}>
         <path d={describeArc(1)} fill="none" stroke="var(--color-surface-subtle)" strokeWidth="12" strokeLinecap="round" />
-        <path d={describeArc(Math.min(pct, 100) / 100)} fill="none" stroke={color} strokeWidth="12" strokeLinecap="round" />
-        <text x={CX} y={CY + 6} textAnchor="middle" fontSize="20" fontWeight="800" fill={color}>
+        <motion.path
+          d={describeArc(Math.min(pct, 100) / 100)} fill="none" stroke={color} strokeWidth="12" strokeLinecap="round"
+          initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.9, delay: 0.15, ease: "easeOut" }}
+        />
+        <motion.text
+          x={CX} y={CY + 6} textAnchor="middle" fontSize="20" fontWeight="800" fill={color}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.7 }}
+        >
           {pct.toFixed(1)}%
-        </text>
+        </motion.text>
       </svg>
       <div style={{ fontSize: "0.78rem", color: "var(--color-text-muted)", flex: 1, minWidth: 120 }}>{label}</div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -537,6 +641,8 @@ export function Treemap({
         {rects.map((r, i) => {
           const isHovered = hovered === r.item.key;
           const color = CATEGORY_PALETTE[i % CATEGORY_PALETTE.length];
+          const w = Math.max(r.w - 2, 0);
+          const h = Math.max(r.h - 2, 0);
           return (
             <g
               key={r.item.key}
@@ -544,9 +650,17 @@ export function Treemap({
               onMouseLeave={() => setHovered(null)}
               style={{ cursor: "pointer" }}
             >
-              <rect
-                x={r.x} y={r.y} width={Math.max(r.w - 2, 0)} height={Math.max(r.h - 2, 0)}
-                fill={color} fillOpacity={isHovered ? 1 : 0.78} stroke="var(--color-surface)" strokeWidth="2"
+              <motion.rect
+                x={r.x} y={r.y} width={w} height={h} rx="5"
+                fill={color} stroke="var(--color-surface)" strokeWidth="2"
+                initial={{ opacity: 0, scale: 0.88 }}
+                animate={{ opacity: 1, scale: isHovered ? 1.02 : 1, fillOpacity: isHovered ? 1 : 0.78 }}
+                transition={{
+                  opacity: { duration: 0.4, delay: i * 0.03, ease: "easeOut" },
+                  scale: { duration: 0.18, ease: "easeOut" },
+                  fillOpacity: { duration: 0.15 },
+                }}
+                style={{ transformOrigin: `${r.x + w / 2}px ${r.y + h / 2}px` }}
               />
               {r.w > 50 && r.h > 18 && (
                 <text x={r.x + 6} y={r.y + 16} fontSize="9" fontWeight="700" fill="#ffffff">

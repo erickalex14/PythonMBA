@@ -2,24 +2,34 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
+import { Poppins } from "next/font/google";
+import { motion } from "framer-motion";
 import styles from "../dashboard.module.css";
 import { KPICards } from "../../../components/KPICards";
 import { MovimientosCharts } from "../../../components/MovimientosCharts";
 import { ReportTable } from "../../../components/ReportTable";
 import { Button } from "../../../components/ui/Button";
+import { DatePicker } from "../../../components/ui/DatePicker";
+import { GooeySearchBar } from "../../../components/ui/GooeySearchBar";
+import { SegmentedProgressBar } from "../../../components/ui/SegmentedProgressBar";
 import { Pagination } from "../../../components/ui/Pagination";
 import { FilterBar, FilterFieldConfig } from "../../../components/ui/FilterBar";
 import { useReportQuery } from "../../../hooks/useReportQuery";
 import { usePanelReportPage } from "../../../hooks/usePanelReportPage";
+
+// Mismo tratamiento tipográfico que el título del Dashboard (Poppins 600/700)
+// - carácter propio para los encabezados de módulo sin tocar Inter en el
+// resto de la app.
+const poppins = Poppins({ weight: ["600", "700"], subsets: ["latin"] });
 
 export default function MovimientosPage() {
   const { data: session } = useSession();
   const panel = usePanelReportPage("movimientos");
   const { loading, queryProgress, estTimeRemaining, currentQueryingDate, data, error, fetchReportData, cancelQuery, setData, setError, setQueryProgress, setEstTimeRemaining } = useReportQuery();
 
-  const [selectedBrand, setSelectedBrand] = useState("");
-  const [selectedBranch, setSelectedBranch] = useState("");
-  const [selectedSalesman, setSelectedSalesman] = useState("");
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
+  const [selectedSalesmen, setSelectedSalesmen] = useState<string[]>([]);
 
   // Si venimos del click-through del Dashboard, la URL ya trae el rango de
   // fechas: se consulta automáticamente en vez de esperar al botón.
@@ -32,7 +42,7 @@ export default function MovimientosPage() {
 
   useEffect(() => {
     panel.setCurrentPage(1);
-  }, [selectedBrand, selectedBranch, selectedSalesman, panel.searchQuery]);
+  }, [selectedBrands, selectedBranches, selectedSalesmen, panel.searchQuery]);
 
   const handleQuery = () => fetchReportData("movimientos", panel.startDate, panel.endDate);
 
@@ -44,12 +54,12 @@ export default function MovimientosPage() {
         );
         if (!match) return false;
       }
-      if (selectedBrand && String(row.Codigo_Marca).trim() !== selectedBrand) return false;
-      if (selectedBranch && String(row.Codigo_Sucursal).trim() !== selectedBranch) return false;
-      if (selectedSalesman && String(row.COD_SALESMAN).trim() !== selectedSalesman) return false;
+      if (selectedBrands.length > 0 && !selectedBrands.includes(String(row.Codigo_Marca).trim())) return false;
+      if (selectedBranches.length > 0 && !selectedBranches.includes(String(row.Codigo_Sucursal).trim())) return false;
+      if (selectedSalesmen.length > 0 && !selectedSalesmen.includes(String(row.COD_SALESMAN).trim())) return false;
       return true;
     });
-  }, [data, panel.searchQuery, selectedBrand, selectedBranch, selectedSalesman]);
+  }, [data, panel.searchQuery, selectedBrands, selectedBranches, selectedSalesmen]);
 
   const paginatedData = useMemo(() => {
     const start = (panel.currentPage - 1) * panel.itemsPerPage;
@@ -73,13 +83,34 @@ export default function MovimientosPage() {
   }, [data]);
 
   const filterFields: FilterFieldConfig[] = [
-    { label: "Filtrar por Marca", value: selectedBrand, onChange: setSelectedBrand, placeholder: "Todas las Marcas...", options: filterOptions.brands },
-    { label: "Filtrar por Sucursal", value: selectedBranch, onChange: setSelectedBranch, placeholder: "Todas las Sucursales...", options: filterOptions.branches },
-    { label: "Filtrar por Vendedor", value: selectedSalesman, onChange: setSelectedSalesman, placeholder: "Todos los Vendedores...", options: filterOptions.salesmen },
+    { label: "Filtrar por Marca", value: selectedBrands, onChange: setSelectedBrands, placeholder: "Todas las Marcas...", options: filterOptions.brands, type: "multiselect" },
+    { label: "Filtrar por Sucursal", value: selectedBranches, onChange: setSelectedBranches, placeholder: "Todas las Sucursales...", options: filterOptions.branches, type: "multiselect" },
+    { label: "Filtrar por Vendedor", value: selectedSalesmen, onChange: setSelectedSalesmen, placeholder: "Todos los Vendedores...", options: filterOptions.salesmen, type: "multiselect" },
   ];
 
   const totalQty = useMemo(() => data.reduce((acc, row) => acc + (Number(row.ORIGINAL_QTY) || 0), 0), [data]);
   const totalAmount = useMemo(() => data.reduce((acc, row) => acc + (Number(row.BASE_COMISION) || 0), 0), [data]);
+
+  // Tendencia diaria real (misma fecha TRANS_DATE que usa el gráfico de
+  // tendencia) para los sparklines de las tarjetas KPI - no es data
+  // inventada, es la misma agrupación por día ya usada en MovimientosCharts.
+  const kpiSparklines = useMemo(() => {
+    const porDia: Record<string, { registros: number; cantidad: number; comision: number }> = {};
+    filteredData.forEach((row) => {
+      const fecha = String(row.TRANS_DATE || "").trim();
+      if (!fecha) return;
+      if (!porDia[fecha]) porDia[fecha] = { registros: 0, cantidad: 0, comision: 0 };
+      porDia[fecha].registros += 1;
+      porDia[fecha].cantidad += Number(row.ORIGINAL_QTY) || 0;
+      porDia[fecha].comision += Number(row.BASE_COMISION) || 0;
+    });
+    const dias = Object.keys(porDia).sort();
+    return {
+      registros: dias.map((d) => porDia[d].registros),
+      principal: dias.map((d) => porDia[d].cantidad),
+      segunda: dias.map((d) => porDia[d].comision),
+    };
+  }, [filteredData]);
 
   return (
     <>
@@ -113,36 +144,58 @@ export default function MovimientosPage() {
       </div>
 
       <header className={styles.contentHeader}>
-        <h1>Movimientos de Productos (Seriales)</h1>
-        <p className={styles.subtext}>Reporte de transacciones de inventario, seriales y comisiones</p>
+        <h1 className={`${poppins.className} ${styles.moduleTitle}`}>Movimientos de Productos (Seriales)</h1>
+        <p className={styles.moduleSubtext}>Reporte de transacciones de inventario, seriales y comisiones</p>
       </header>
 
-      <section className={styles.filterPanel}>
-        <div className={styles.filterPanelTopRow}>
-          <div className={styles.filtersRow}>
-            <div className={styles.filterGroup}>
-              <label>Fecha de Inicio</label>
-              <input type="date" value={panel.startDate} onChange={(e) => panel.setStartDate(e.target.value)} disabled={loading} />
-            </div>
-            <div className={styles.filterGroup}>
-              <label>Fecha de Fin</label>
-              <input type="date" value={panel.endDate} onChange={(e) => panel.setEndDate(e.target.value)} disabled={loading} />
-            </div>
-            <Button onClick={handleQuery} className={styles.queryBtn} loading={loading} loadingText="Consultando...">
-              Consultar Datos
-            </Button>
+      <motion.section
+        className={styles.filterPanel}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      >
+        <div className={styles.movToolbar}>
+          <div className={styles.movToolbarField}>
+            <span className={styles.movToolbarFieldLabel}>Desde</span>
+            <DatePicker value={panel.startDate} onChange={panel.setStartDate} disabled={loading} variant="plain" />
           </div>
-          <div className={styles.searchFilter}>
-            <div className={styles.filterGroup}>
-              <label>Búsqueda Global</label>
-              <input
-                type="text"
-                placeholder="Buscar en todos los campos..."
+
+          <div className={styles.movToolbarDivider} />
+
+          <div className={styles.movToolbarField}>
+            <span className={styles.movToolbarFieldLabel}>Hasta</span>
+            <DatePicker value={panel.endDate} onChange={panel.setEndDate} disabled={loading} variant="plain" />
+          </div>
+
+          {/* La búsqueda global filtra sobre los datos ya consultados - no
+              tiene sentido mostrarla antes de que exista una consulta. */}
+          {data.length > 0 && !loading && (
+            <>
+              <div className={styles.movToolbarDivider} />
+              <GooeySearchBar
                 value={panel.searchQuery}
-                onChange={(e) => panel.setSearchQuery(e.target.value)}
+                onChange={panel.setSearchQuery}
+                placeholder="Buscar en todos los campos..."
               />
-            </div>
-          </div>
+            </>
+          )}
+
+          <div className={styles.movToolbarSpacer} />
+
+          <motion.button
+            type="button"
+            onClick={handleQuery}
+            className={styles.movToolbarBtn}
+            disabled={loading}
+            whileHover={loading ? undefined : { scale: 1.03 }}
+            whileTap={loading ? undefined : { scale: 0.97 }}
+          >
+            {loading ? (
+              <span className={styles.iconBtnSpinner} />
+            ) : null}
+            {loading ? "Consultando..." : "Consultar Datos"}
+            {!loading && <span className={styles.movToolbarBtnArrow}>→</span>}
+          </motion.button>
         </div>
 
         {data.length > 0 && !loading && (
@@ -151,7 +204,7 @@ export default function MovimientosPage() {
             <FilterBar fields={filterFields} styles={styles} />
           </>
         )}
-      </section>
+      </motion.section>
 
       {loading && (
         <section className={styles.progressCard}>
@@ -162,8 +215,8 @@ export default function MovimientosPage() {
               <button type="button" className={styles.progressCancelBtn} onClick={cancelQuery}>Cancelar</button>
             </div>
           </div>
-          <div className={styles.progressBarBg}>
-            <div className={styles.progressBarFill} style={{ width: `${queryProgress}%` }}></div>
+          <div style={{ margin: "0.5rem 0" }}>
+            <SegmentedProgressBar pct={queryProgress} />
           </div>
           <div className={styles.progressMeta}>
             <p>Procesando fecha: <strong>{currentQueryingDate}</strong></p>
@@ -172,10 +225,25 @@ export default function MovimientosPage() {
         </section>
       )}
 
-      {!loading && <KPICards filteredData={filteredData} activeTab="movimientos" styles={styles} />}
-      {!loading && <MovimientosCharts data={filteredData} styles={styles} />}
+      {!loading && (
+        <motion.div
+          key="resultados-kpis-charts"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: "easeOut" }}
+        >
+          <KPICards filteredData={filteredData} activeTab="movimientos" styles={styles} sparklines={kpiSparklines} />
+          <MovimientosCharts data={filteredData} styles={styles} />
+        </motion.div>
+      )}
 
-      <section className={styles.reportSection}>
+      <motion.section
+        key="resultados-tabla"
+        className={styles.reportSection}
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.1, ease: "easeOut" }}
+      >
         <div className={styles.reportHeaderActions}>
           <h3>Detalle Consolidado de Datos</h3>
           {!loading && filteredData.length > 0 && (
@@ -211,8 +279,8 @@ export default function MovimientosPage() {
                 <button type="button" className={styles.progressCancelBtn} onClick={panel.cancelDownload}>Cancelar</button>
               </div>
             </div>
-            <div className={styles.progressBarBg}>
-              <div className={styles.progressBarFill} style={{ width: `${panel.downloadProgressPct}%` }}></div>
+            <div style={{ margin: "0.5rem 0" }}>
+              <SegmentedProgressBar pct={panel.downloadProgressPct} />
             </div>
             <div className={styles.progressMeta}>
               <p>Tiempo transcurrido: <strong>{panel.downloadElapsedSeconds}s</strong></p>
@@ -253,7 +321,7 @@ export default function MovimientosPage() {
             itemLabel="registros"
           />
         )}
-      </section>
+      </motion.section>
 
       <div className={styles.printOnlyFooter}>
         <div className={styles.printSignatureArea}>

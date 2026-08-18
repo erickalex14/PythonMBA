@@ -2,23 +2,30 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
+import { Poppins } from "next/font/google";
+import { motion } from "framer-motion";
 import styles from "../dashboard.module.css";
 import { KPICards } from "../../../components/KPICards";
 import { AtsCharts } from "../../../components/AtsCharts";
 import { ReportTable } from "../../../components/ReportTable";
 import { Button } from "../../../components/ui/Button";
+import { DatePicker } from "../../../components/ui/DatePicker";
+import { GooeySearchBar } from "../../../components/ui/GooeySearchBar";
+import { SegmentedProgressBar } from "../../../components/ui/SegmentedProgressBar";
 import { Pagination } from "../../../components/ui/Pagination";
 import { FilterBar, FilterFieldConfig } from "../../../components/ui/FilterBar";
 import { useReportQuery } from "../../../hooks/useReportQuery";
 import { usePanelReportPage } from "../../../hooks/usePanelReportPage";
+
+const poppins = Poppins({ weight: ["600", "700"], subsets: ["latin"] });
 
 export default function AtsPage() {
   const { data: session } = useSession();
   const panel = usePanelReportPage("ats");
   const { loading, queryProgress, estTimeRemaining, currentQueryingDate, data, error, fetchReportData, cancelQuery } = useReportQuery();
 
-  const [selectedVendor, setSelectedVendor] = useState("");
-  const [selectedClassif, setSelectedClassif] = useState("");
+  const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
+  const [selectedClassifs, setSelectedClassifs] = useState<string[]>([]);
   const [selectedStatus, setSelectedStatus] = useState("");
 
   useEffect(() => {
@@ -30,7 +37,7 @@ export default function AtsPage() {
 
   useEffect(() => {
     panel.setCurrentPage(1);
-  }, [selectedVendor, selectedClassif, selectedStatus, panel.searchQuery]);
+  }, [selectedVendors, selectedClassifs, selectedStatus, panel.searchQuery]);
 
   const handleQuery = () => fetchReportData("ats", panel.startDate, panel.endDate);
 
@@ -42,8 +49,8 @@ export default function AtsPage() {
         );
         if (!match) return false;
       }
-      if (selectedVendor && String(row.VENDOR_NAME).trim() !== selectedVendor) return false;
-      if (selectedClassif && String(row.MF_Lista2).trim() !== selectedClassif) return false;
+      if (selectedVendors.length > 0 && !selectedVendors.includes(String(row.VENDOR_NAME).trim())) return false;
+      if (selectedClassifs.length > 0 && !selectedClassifs.includes(String(row.MF_Lista2).trim())) return false;
       if (selectedStatus) {
         const isAnulado = row.ES_ANULADO === 1;
         if (selectedStatus === "ANULADO" && !isAnulado) return false;
@@ -51,7 +58,7 @@ export default function AtsPage() {
       }
       return true;
     });
-  }, [data, panel.searchQuery, selectedVendor, selectedClassif, selectedStatus]);
+  }, [data, panel.searchQuery, selectedVendors, selectedClassifs, selectedStatus]);
 
   const paginatedData = useMemo(() => {
     const start = (panel.currentPage - 1) * panel.itemsPerPage;
@@ -69,12 +76,33 @@ export default function AtsPage() {
   }, [data]);
 
   const filterFields: FilterFieldConfig[] = [
-    { label: "Filtrar por Proveedor", value: selectedVendor, onChange: setSelectedVendor, placeholder: "Todos los Proveedores...", options: filterOptions.vendors },
-    { label: "Filtrar por SRI Clasificación", value: selectedClassif, onChange: setSelectedClassif, placeholder: "Todas las Clasificaciones...", options: filterOptions.classifs },
+    { label: "Filtrar por Proveedor", value: selectedVendors, onChange: setSelectedVendors, placeholder: "Todos los Proveedores...", options: filterOptions.vendors, type: "multiselect" },
+    { label: "Filtrar por SRI Clasificación", value: selectedClassifs, onChange: setSelectedClassifs, placeholder: "Todas las Clasificaciones...", options: filterOptions.classifs, type: "multiselect" },
     { label: "Estado del Documento", value: selectedStatus, onChange: setSelectedStatus, placeholder: "Todos los Estados...", options: ["ACTIVO", "ANULADO"] },
   ];
 
   const totalAmount = useMemo(() => data.reduce((acc, row) => acc + (Number(row.INVOICE_TOTAL) || 0), 0), [data]);
+
+  // Tendencia diaria real (INVOICE_DATE, solo facturas activas) para los
+  // sparklines de las tarjetas KPI - misma idea que en Movimientos/Ventas.
+  const kpiSparklines = useMemo(() => {
+    const porDia: Record<string, { registros: number; facturado: number; conIva: number }> = {};
+    filteredData.forEach((row) => {
+      if (Number(row.ES_ANULADO) === 1) return;
+      const fecha = String(row.INVOICE_DATE || "").trim();
+      if (!fecha) return;
+      if (!porDia[fecha]) porDia[fecha] = { registros: 0, facturado: 0, conIva: 0 };
+      porDia[fecha].registros += 1;
+      porDia[fecha].facturado += Number(row.INVOICE_TOTAL) || 0;
+      porDia[fecha].conIva += Number(row.SUMA_CON_IVA) || 0;
+    });
+    const dias = Object.keys(porDia).sort();
+    return {
+      registros: dias.map((d) => porDia[d].registros),
+      principal: dias.map((d) => porDia[d].facturado),
+      segunda: dias.map((d) => porDia[d].conIva),
+    };
+  }, [filteredData]);
 
   return (
     <>
@@ -108,36 +136,51 @@ export default function AtsPage() {
       </div>
 
       <header className={styles.contentHeader}>
-        <h1>ATS - Facturas de Compras</h1>
-        <p className={styles.subtext}>Resumen fiscal de compras autorizadas y anulaciones</p>
+        <h1 className={`${poppins.className} ${styles.moduleTitle}`}>ATS - Facturas de Compras</h1>
+        <p className={styles.moduleSubtext}>Resumen fiscal de compras autorizadas y anulaciones</p>
       </header>
 
-      <section className={styles.filterPanel}>
-        <div className={styles.filterPanelTopRow}>
-          <div className={styles.filtersRow}>
-            <div className={styles.filterGroup}>
-              <label>Fecha de Inicio</label>
-              <input type="date" value={panel.startDate} onChange={(e) => panel.setStartDate(e.target.value)} disabled={loading} />
-            </div>
-            <div className={styles.filterGroup}>
-              <label>Fecha de Fin</label>
-              <input type="date" value={panel.endDate} onChange={(e) => panel.setEndDate(e.target.value)} disabled={loading} />
-            </div>
-            <Button onClick={handleQuery} className={styles.queryBtn} loading={loading} loadingText="Consultando...">
-              Consultar Datos
-            </Button>
+      <motion.section
+        className={styles.filterPanel}
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+      >
+        <div className={styles.movToolbar}>
+          <div className={styles.movToolbarField}>
+            <span className={styles.movToolbarFieldLabel}>Desde</span>
+            <DatePicker value={panel.startDate} onChange={panel.setStartDate} disabled={loading} variant="plain" />
           </div>
-          <div className={styles.searchFilter}>
-            <div className={styles.filterGroup}>
-              <label>Búsqueda Global</label>
-              <input
-                type="text"
-                placeholder="Buscar en todos los campos..."
+          <div className={styles.movToolbarDivider} />
+          <div className={styles.movToolbarField}>
+            <span className={styles.movToolbarFieldLabel}>Hasta</span>
+            <DatePicker value={panel.endDate} onChange={panel.setEndDate} disabled={loading} variant="plain" />
+          </div>
+
+          {data.length > 0 && !loading && (
+            <>
+              <div className={styles.movToolbarDivider} />
+              <GooeySearchBar
                 value={panel.searchQuery}
-                onChange={(e) => panel.setSearchQuery(e.target.value)}
+                onChange={panel.setSearchQuery}
+                placeholder="Buscar en todos los campos..."
               />
-            </div>
-          </div>
+            </>
+          )}
+
+          <div className={styles.movToolbarSpacer} />
+          <motion.button
+            type="button"
+            onClick={handleQuery}
+            className={styles.movToolbarBtn}
+            disabled={loading}
+            whileHover={loading ? undefined : { scale: 1.03 }}
+            whileTap={loading ? undefined : { scale: 0.97 }}
+          >
+            {loading ? <span className={styles.iconBtnSpinner} /> : null}
+            {loading ? "Consultando..." : "Consultar Datos"}
+            {!loading && <span className={styles.movToolbarBtnArrow}>→</span>}
+          </motion.button>
         </div>
 
         {data.length > 0 && !loading && (
@@ -146,7 +189,7 @@ export default function AtsPage() {
             <FilterBar fields={filterFields} styles={styles} />
           </>
         )}
-      </section>
+      </motion.section>
 
       {loading && (
         <section className={styles.progressCard}>
@@ -157,8 +200,8 @@ export default function AtsPage() {
               <button type="button" className={styles.progressCancelBtn} onClick={cancelQuery}>Cancelar</button>
             </div>
           </div>
-          <div className={styles.progressBarBg}>
-            <div className={styles.progressBarFill} style={{ width: `${queryProgress}%` }}></div>
+          <div style={{ margin: "0.5rem 0" }}>
+            <SegmentedProgressBar pct={queryProgress} />
           </div>
           <div className={styles.progressMeta}>
             <p>Procesando fecha: <strong>{currentQueryingDate}</strong></p>
@@ -167,8 +210,12 @@ export default function AtsPage() {
         </section>
       )}
 
-      {!loading && <KPICards filteredData={filteredData} activeTab="ats" styles={styles} />}
-      {!loading && <AtsCharts data={filteredData} styles={styles} />}
+      {!loading && (
+        <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.45, ease: "easeOut" }}>
+          <KPICards filteredData={filteredData} activeTab="ats" styles={styles} sparklines={kpiSparklines} />
+          <AtsCharts data={filteredData} styles={styles} />
+        </motion.div>
+      )}
 
       <section className={styles.reportSection}>
         <div className={styles.reportHeaderActions}>
@@ -206,8 +253,8 @@ export default function AtsPage() {
                 <button type="button" className={styles.progressCancelBtn} onClick={panel.cancelDownload}>Cancelar</button>
               </div>
             </div>
-            <div className={styles.progressBarBg}>
-              <div className={styles.progressBarFill} style={{ width: `${panel.downloadProgressPct}%` }}></div>
+            <div style={{ margin: "0.5rem 0" }}>
+              <SegmentedProgressBar pct={panel.downloadProgressPct} />
             </div>
             <div className={styles.progressMeta}>
               <p>Tiempo transcurrido: <strong>{panel.downloadElapsedSeconds}s</strong></p>

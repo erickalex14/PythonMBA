@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 import { Card } from "./ui/Card";
+import { Sparkline } from "./charts/Sparkline";
 
 export interface TotalesEmpresa {
   empresa: string;
@@ -40,6 +41,11 @@ interface KPICardsProps {
   /** Totales del rango calculados en el backend (incluyen devoluciones, que no
    *  vienen en las líneas del reporte). Sin esto no se muestran esas tarjetas. */
   totales?: TotalesRango | null;
+  /** Tendencia diaria real (misma agrupación por fecha que ya usan los
+   *  gráficos de la página) para dibujar un mini sparkline junto al valor de
+   *  las 3 tarjetas genéricas de arriba. Opcional - sin esto, esas tarjetas
+   *  se ven exactamente igual que antes. */
+  sparklines?: { registros?: number[]; principal?: number[]; segunda?: number[] };
 }
 
 /** Pie de tarjeta con el % real contra el período anterior del mismo largo. */
@@ -67,7 +73,7 @@ function DeltaReal({ delta, comparadoCon }: { delta: number | null; comparadoCon
   );
 }
 
-export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, styles, totales }) => {
+export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, styles, totales, sparklines }) => {
   const kpis = useMemo(() => {
     const totalRecords = filteredData.length;
     let mainMetricLabel = "Métrica Principal";
@@ -156,7 +162,12 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-chart-accent)" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
           </div>
         </div>
-        <p className={styles.kpiValue}>{kpis.totalRecords.toLocaleString()}</p>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: "0.75rem" }}>
+          <p className={styles.kpiValue} style={{ margin: 0 }}>{kpis.totalRecords.toLocaleString()}</p>
+          {sparklines?.registros && sparklines.registros.length > 1 && (
+            <Sparkline data={sparklines.registros} color="var(--color-chart-accent)" />
+          )}
+        </div>
         <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
           líneas en el rango consultado
         </div>
@@ -169,7 +180,12 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-chart-accent)" strokeWidth="2.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
           </div>
         </div>
-        <p className={styles.kpiValue}>{kpis.mainMetricValue}</p>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: "0.75rem" }}>
+          <p className={styles.kpiValue} style={{ margin: 0 }}>{kpis.mainMetricValue}</p>
+          {sparklines?.principal && sparklines.principal.length > 1 && (
+            <Sparkline data={sparklines.principal} color="var(--color-chart-accent)" />
+          )}
+        </div>
         {totales ? (
           <DeltaReal delta={totales.delta_pct} comparadoCon={totales.comparado_con} />
         ) : (
@@ -186,7 +202,12 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-violet)" strokeWidth="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
           </div>
         </div>
-        <p className={styles.kpiValue}>{kpis.secondMetricValue}</p>
+        <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: "0.75rem" }}>
+          <p className={styles.kpiValue} style={{ margin: 0 }}>{kpis.secondMetricValue}</p>
+          {sparklines?.segunda && sparklines.segunda.length > 1 && (
+            <Sparkline data={sparklines.segunda} color="var(--color-accent-violet)" />
+          )}
+        </div>
         <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
           acumulado del rango consultado
         </div>

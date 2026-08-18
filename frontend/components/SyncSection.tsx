@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "./ui/Button";
 import { Card } from "./ui/Card";
+import { DatePicker } from "./ui/DatePicker";
+import { SegmentedProgressBar } from "./ui/SegmentedProgressBar";
 
 interface SyncSectionProps {
   styles: any;
@@ -260,24 +263,12 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
 
         <div className={styles.formGroup} style={{ flex: "1 1 150px" }}>
           <label>FECHA INICIO</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            disabled={syncing}
-            className={styles.inputField}
-          />
+          <DatePicker value={startDate} onChange={setStartDate} disabled={syncing} />
         </div>
 
         <div className={styles.formGroup} style={{ flex: "1 1 150px" }}>
           <label>FECHA FIN</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            disabled={syncing}
-            className={styles.inputField}
-          />
+          <DatePicker value={endDate} onChange={setEndDate} disabled={syncing} />
         </div>
       </div>
 
@@ -301,15 +292,19 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
         )}
 
         <div style={{ display: "grid", gap: "0.5rem" }}>
-          {cobertura.map((c) => {
+          {cobertura.map((c, i) => {
             const completo = c.dias_faltantes.length === 0 && !c.error;
             // Solo las tablas diarias tienen que estar completas; en las esporadicas
             // (liquidaciones, ATS) un dia sin registros es normal y no es un hueco.
             const esAlerta = !completo && !c.error && c.frecuencia === "diaria";
             const colorBorde = c.error ? "#c0392b" : completo ? "#2e7d32" : esAlerta ? "#e67e22" : "var(--color-border)";
             return (
-              <div
+              <motion.div
                 key={c.tipo}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: i * 0.06, ease: "easeOut" }}
+                whileHover={{ x: 2 }}
                 style={{
                   display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem",
                   padding: "0.5rem 0.75rem", borderRadius: "6px",
@@ -359,7 +354,7 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
                     )}
                   </>
                 )}
-              </div>
+              </motion.div>
             );
           })}
         </div>
@@ -367,43 +362,37 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
 
       {/* Botonera de Acción */}
       <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
-        <Button
-          onClick={() => handleSync("movimientos")}
-          disabled={syncing}
-          className={styles.submitBtn}
-          style={{ background: "var(--color-brand-primary)", flex: "1 1 180px" }}
-        >
-          Sincronizar Movimientos
-        </Button>
-        <Button
-          onClick={() => handleSync("liquidaciones")}
-          disabled={syncing}
-          className={styles.submitBtn}
-          style={{ background: "var(--color-accent-violet)", flex: "1 1 180px" }}
-        >
-          Sincronizar Liquidaciones
-        </Button>
-        <Button
-          onClick={() => handleSync("ats")}
-          disabled={syncing}
-          className={styles.submitBtn}
-          style={{ background: "var(--color-warning)", flex: "1 1 180px" }}
-        >
-          Sincronizar ATS
-        </Button>
-        <Button
-          onClick={() => handleSync("ventas")}
-          disabled={syncing}
-          className={styles.submitBtn}
-          style={{ background: "var(--color-brand-accent)", flex: "1 1 180px" }}
-        >
-          Sincronizar Ventas
-        </Button>
+        {[
+          { type: "movimientos" as const, label: "Sincronizar Movimientos", color: "var(--color-brand-primary)" },
+          { type: "liquidaciones" as const, label: "Sincronizar Liquidaciones", color: "var(--color-accent-violet)" },
+          { type: "ats" as const, label: "Sincronizar ATS", color: "var(--color-warning)" },
+          { type: "ventas" as const, label: "Sincronizar Ventas", color: "var(--color-brand-accent)" },
+        ].map((b) => (
+          <motion.button
+            key={b.type}
+            type="button"
+            onClick={() => handleSync(b.type)}
+            disabled={syncing}
+            className={styles.submitBtn}
+            style={{ background: b.color, flex: "1 1 180px", border: "none" }}
+            whileHover={syncing ? undefined : { y: -2, boxShadow: "0 8px 18px rgba(0,0,0,0.18)" }}
+            whileTap={syncing ? undefined : { scale: 0.97 }}
+          >
+            {b.label}
+          </motion.button>
+        ))}
       </div>
 
       {/* Indicadores de Progreso */}
-      {(syncing || logs.length > 0) && (
-        <div style={{ background: "var(--color-surface-zebra)", border: "1px solid var(--color-border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1rem" }}>
+      <AnimatePresence>
+        {(syncing || logs.length > 0) && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            style={{ background: "var(--color-surface-zebra)", border: "1px solid var(--color-border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1rem", overflow: "hidden" }}
+          >
           {syncing && (
             <div style={{ marginBottom: "1rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.85rem", fontWeight: "600", marginBottom: "0.45rem" }}>
@@ -412,12 +401,7 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
                 </span>
                 <span style={{ color: "var(--color-brand-primary)" }}>{currentProgress}%</span>
               </div>
-              <div className={styles.branchProgressBarBg} style={{ height: "10px", borderRadius: "5px" }}>
-                <div
-                  className={styles.branchProgressBarFill}
-                  style={{ width: `${currentProgress}%`, height: "100%", borderRadius: "5px" }}
-                ></div>
-              </div>
+              <SegmentedProgressBar pct={currentProgress} color="var(--color-brand-primary)" />
               {estTimeRemaining !== null && (
                 <p style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: "0.45rem" }}>
                   Tiempo estimado restante: <strong>{estTimeRemaining} segundos</strong>
@@ -450,16 +434,23 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
                 if (l.includes("[OK]")) color = "#4ade80"; // green
                 if (l.includes(">>>")) color = "#facc15"; // yellow
                 return (
-                  <div key={index} style={{ color, marginBottom: "0.25rem" }}>
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -6 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.2 }}
+                    style={{ color, marginBottom: "0.25rem" }}
+                  >
                     {l}
-                  </div>
+                  </motion.div>
                 );
               })
             )}
             <div ref={consoleEndRef} />
           </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Card>
   );
 };

@@ -162,11 +162,11 @@ function BarrasTop({
             variants={barListVariants(reducedMotion)}
             initial="hidden"
             animate="show"
-            style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginTop: "0.9rem" }}
+            style={{ display: "flex", flexDirection: "column", gap: "var(--bar-row-gap, 0.5rem)", marginTop: "0.9rem" }}
           >
             {filas.map((p, i) => {
               const v = valor(p);
-              const pct = Math.max((v / max) * 100, 12); // piso: que el nombre siempre entre
+              const pct = Math.max((v / max) * 100, 32); // piso: que el nombre siempre entre, aun en pantallas angostas
               return (
                 // title: se conserva el tooltip al pasar el puntero, ademas del nombre visible
                 <motion.div
@@ -179,7 +179,7 @@ function BarrasTop({
                   <div
                     style={{
                       position: "relative",
-                      height: 30,
+                      height: "var(--bar-row-height, 30px)",
                       borderRadius: 6,
                       background: "var(--color-surface-subtle, rgba(0,0,0,0.05))",
                       overflow: "hidden",
@@ -210,7 +210,7 @@ function BarrasTop({
                       <span
                         style={{
                           color: "#fff",
-                          fontSize: "0.76rem",
+                          fontSize: "var(--bar-font-name, 0.76rem)",
                           fontWeight: 600,
                           whiteSpace: "nowrap",
                           overflow: "hidden",
@@ -223,7 +223,7 @@ function BarrasTop({
                       </span>
                       <span
                         style={{
-                          fontSize: "0.76rem",
+                          fontSize: "var(--bar-font-value, 0.76rem)",
                           fontWeight: 700,
                           whiteSpace: "nowrap",
                           color: "var(--color-text-primary)",
@@ -282,25 +282,25 @@ function TarjetaRango({
       )}
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0.5rem" }}>
-        <span style={{ fontSize: "0.72rem", letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--rc-text-muted)" }}>
+        <span style={{ fontSize: "var(--rc-font-eyebrow)", letterSpacing: "0.04em", textTransform: "uppercase", color: "var(--rc-text-muted)" }}>
           {rango.etiqueta}
         </span>
         {rango.periodo_en_curso ? (
           // Hoy esta cortado en el ultimo sync: un % contra un dia completo
           // siempre daria negativo, asi que se muestra la hora en su lugar.
-          <span style={{ fontSize: "0.68rem", fontWeight: 700, color: "var(--rc-text-muted)" }}>
+          <span style={{ fontSize: "var(--rc-font-subtext)", fontWeight: 700, color: "var(--rc-text-muted)" }}>
             {corte ? `hasta ${corte}` : "en curso"}
           </span>
         ) : delta === null ? (
-          <span style={{ fontSize: "0.68rem", color: "var(--rc-text-muted)" }}>sin comparativo</span>
+          <span style={{ fontSize: "var(--rc-font-subtext)", color: "var(--rc-text-muted)" }}>sin comparativo</span>
         ) : (
-          <span style={{ fontSize: "0.72rem", fontWeight: 700, color: positivo ? "var(--rc-delta-up)" : "var(--rc-delta-down)" }}>
+          <span style={{ fontSize: "var(--rc-font-badge)", fontWeight: 700, color: positivo ? "var(--rc-delta-up)" : "var(--rc-delta-down)" }}>
             {positivo ? "+" : ""}{delta}% vs. {rango.comparado_con}
           </span>
         )}
       </div>
 
-      <div style={{ fontSize: "1.45rem", fontWeight: 700, margin: "0.35rem 0 0.1rem", color: "var(--rc-text)" }}>
+      <div style={{ fontSize: "var(--rc-font-value)", fontWeight: 700, margin: "0.35rem 0 0.1rem", color: "var(--rc-text)" }}>
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.span
             key={rango.monto_neto}
@@ -314,21 +314,21 @@ function TarjetaRango({
           </motion.span>
         </AnimatePresence>
       </div>
-      <div style={{ fontSize: "0.68rem", color: "var(--rc-text-muted)", marginBottom: "0.5rem" }}>
+      <div style={{ fontSize: "var(--rc-font-subtext)", color: "var(--rc-text-muted)", marginBottom: "0.5rem" }}>
         venta sin devoluciones
       </div>
 
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", color: "var(--rc-text-muted)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--rc-font-row)", color: "var(--rc-text-muted)" }}>
         <span>Con devoluciones</span>
         <strong style={{ color: "var(--rc-text)" }}>{money0(rango.monto)}</strong>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", color: "var(--rc-text-muted)" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--rc-font-row)", color: "var(--rc-text-muted)" }}>
         <span>Devoluciones</span>
         <strong style={{ color: rango.monto_devoluciones > 0 ? "var(--rc-delta-down)" : "var(--rc-text)" }}>
           {rango.monto_devoluciones > 0 ? `- ${money0(rango.monto_devoluciones)}` : money0(0)}
         </strong>
       </div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.72rem", color: "var(--rc-text-muted)", marginTop: 2 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--rc-font-row)", color: "var(--rc-text-muted)", marginTop: 2 }}>
         <span>Unidades</span>
         <strong style={{ color: "var(--rc-text)" }}>{units(rango.cantidad)}</strong>
       </div>
@@ -353,6 +353,10 @@ export const VentasDashboard: React.FC<{
   const [empresaSel, setEmpresaSel] = useState<(typeof EMPRESA_TABS)[number]["key"]>("general");
   const [rangosPorEmpresa, setRangosPorEmpresa] = useState<Record<string, TotalesEmpresaResp> | null>(null);
   const [cargandoEmpresa, setCargandoEmpresa] = useState(false);
+  // Visibilidad de toda la grilla de tarjetas - solo tiene efecto en
+  // celular (la regla CSS que la oculta vive dentro de un media query); en
+  // desktop/tablet las tarjetas siempre se ven sin importar este estado.
+  const [tarjetasVisibles, setTarjetasVisibles] = useState(true);
   const reducedMotionRoot = useReducedMotion() ?? false;
 
   useEffect(() => {
@@ -486,9 +490,26 @@ export const VentasDashboard: React.FC<{
         transition={{ duration: reducedMotionRoot ? 0 : 0.4, ease: "easeOut" }}
         style={{ display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "0.5rem" }}
       >
-        <span style={{ fontSize: "0.85rem", color: "var(--color-text-muted)" }}>
-          Ventas al <strong style={{ color: "var(--color-text-primary)" }}>{fechaLarga(datos.fecha_ancla)}</strong>
-          {corte && <> · sincronizado hasta las <strong style={{ color: "var(--color-text-primary)" }}>{corte}</strong></>}
+        <span
+          style={{
+            fontSize: "0.85rem",
+            display: "inline-flex",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "0.3rem",
+            color: "var(--color-danger, #c0392b)",
+            fontWeight: 700,
+            textDecoration: "underline wavy",
+            textUnderlineOffset: "3px",
+          }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ flexShrink: 0 }}>
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
+          </svg>
+          Ventas al {fechaLarga(datos.fecha_ancla)}
+          {corte && <> · sincronizado hasta las {corte}</>}
         </span>
         {onNavigate && rangoSel && (
           <Button onClick={() => onNavigate(rangoSel.desde, rangoSel.hasta)} className={styles.viewDetailBtn}>
@@ -520,11 +541,29 @@ export const VentasDashboard: React.FC<{
         ))}
       </div>
 
+      <div className={styles.rangeCardsToggleRow}>
+        <button
+          type="button"
+          className={styles.rangeCardsToggleBtn}
+          onClick={() => setTarjetasVisibles((v) => !v)}
+        >
+          {tarjetasVisibles ? "Ocultar tarjetas" : "Ver tarjetas"}
+          <span
+            className={styles.rangeCardsToggleArrow}
+            style={{ transform: tarjetasVisibles ? "rotate(180deg)" : "rotate(0deg)" }}
+          >
+            ▾
+          </span>
+        </button>
+      </div>
+
       <motion.div
         variants={barListVariants(reducedMotionRoot)}
         initial="hidden"
         animate="show"
-        style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(215px, 1fr))", gap: "0.75rem", opacity: cargandoEmpresa ? 0.5 : 1, transition: "opacity 0.15s ease" }}
+        className={styles.rangeCardGrid}
+        data-visible={tarjetasVisibles}
+        style={{ opacity: cargandoEmpresa ? 0.5 : 1, transition: "opacity 0.15s ease" }}
       >
         {rangosMostrados.map((r) => (
           <TarjetaRango
