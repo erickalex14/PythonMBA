@@ -3,6 +3,7 @@ import re
 import pandas as pd
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
+from app.services.ventas_service import es_producto_ruido
 
 ILLEGAL_CHARACTERS_RE = re.compile(r'[\000-\010]|[\013-\014]|[\016-\037]')
 
@@ -328,10 +329,10 @@ class ExcelService:
 
         # El Top por unidades excluye ruido promocional y servicios (Contabilidad los
         # borra de esa hoja); el de dolares y la hoja principal los incluyen.
+        # La lista de patrones es la misma que usan los tops del dashboard.
         df_sin_ruido = df
         if "producto" in df_sin_ruido.columns:
-            ruido = df_sin_ruido["producto"].astype(str).str.upper()
-            df_sin_ruido = df_sin_ruido[~ruido.str.contains("GLOBO", na=False) & ~ruido.str.contains("FUNDA", na=False)]
+            df_sin_ruido = df_sin_ruido[~df_sin_ruido["producto"].apply(es_producto_ruido)]
         if "product_type" in df_sin_ruido.columns:
             df_sin_ruido = df_sin_ruido[df_sin_ruido["product_type"] != "Servicio"]
 

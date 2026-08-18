@@ -9,6 +9,19 @@ from app.core.database import SessionLocal
 from typing import Optional
 from app.repositories.mba3_repository import IMba3Repository
 
+# Productos que ensucian los rankings: material promocional/regalo y servicios.
+# Salen en cantidades enormes o con montos irrisorios y tapan a los productos
+# que de verdad interesan. Se compara contra el nombre en mayusculas, asi que
+# "GLOBO" tambien atrapa "PORTAGLOBOS". Para excluir otro tipo, agregarlo aqui:
+# lo usan tanto los tops del dashboard como las hojas Top del Excel.
+PATRONES_PRODUCTO_RUIDO = ("GLOBO", "FUNDA", "SERVICIO")
+
+
+def es_producto_ruido(nombre) -> bool:
+    texto = str(nombre or "").upper()
+    return any(patron in texto for patron in PATRONES_PRODUCTO_RUIDO)
+
+
 class VentasService:
     """
     Servicio de Reglas de Negocio para el Reporte de Ventas Espejo.
@@ -573,13 +586,26 @@ class VentasService:
         df["cantidad"] = pd.to_numeric(df["cantidad"], errors="coerce").fillna(0)
         df["monto"] = pd.to_numeric(df["monto"], errors="coerce").fillna(0)
 
+        # El ruido promocional se saca solo de los rankings; los totales por rango
+        # se siguen calculando sobre todo, porque esa plata si se vendio.
+        df = df[~df["producto"].apply(es_producto_ruido)]
+        if df.empty:
+            return {clave: {"cantidad": [], "dinero": []} for clave in periodos}
+
+        # El mismo producto existe con sufijo por empresa ("1CENV153-NVC01" y
+        # "-ENV01"). Sin unificarlos el ranking se llena de pares repetidos y
+        # muestra la mitad de productos distintos; el dashboard es consolidado,
+        # asi que se suman las dos empresas bajo un solo codigo.
+        df["codigo"] = df["codigo"].astype(str).str.replace(r"-(NVC01|ENV01)$", "", regex=True)
+
         tops = {}
         for clave, p in periodos.items():
             ventana = df[(df["fecha"] >= p["desde"]) & (df["fecha"] <= p["hasta"])]
             if ventana.empty:
                 tops[clave] = {"cantidad": [], "dinero": []}
                 continue
-            agrupado = ventana.groupby(["codigo", "producto"], as_index=False)[["cantidad", "monto"]].sum()
+            agrupado = ventana.groupby("codigo", as_index=False).agg(
+                producto=("producto", "first"), cantidad=("cantidad", "sum"), monto=("monto", "sum"))
             tops[clave] = {
                 "cantidad": agrupado.nlargest(limite, "cantidad").to_dict(orient="records"),
                 "dinero": agrupado.nlargest(limite, "monto").to_dict(orient="records"),
