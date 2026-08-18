@@ -1,6 +1,16 @@
 import React, { useMemo } from "react";
 import { Card } from "./ui/Card";
 
+export interface TotalesEmpresa {
+  empresa: string;
+  empresa_nombre: string;
+  monto: number;
+  monto_devoluciones: number;
+  monto_neto: number;
+  cantidad: number;
+  cantidad_devoluciones: number;
+}
+
 export interface TotalesRango {
   monto: number;
   monto_devoluciones: number;
@@ -8,6 +18,19 @@ export interface TotalesRango {
   cantidad_devoluciones: number;
   comparado_con: string;
   delta_pct: number | null;
+  por_empresa?: TotalesEmpresa[];
+}
+
+const usd = (n: number) => n.toLocaleString("es-EC", { style: "currency", currency: "USD" });
+
+/** Fila de valor dentro de una tarjeta por empresa. */
+function LineaMonto({ etiqueta, valor, color }: { etiqueta: string; valor: string; color?: string }) {
+  return (
+    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.75rem", color: "var(--color-text-muted)", marginTop: 3 }}>
+      <span>{etiqueta}</span>
+      <strong style={{ color: color || "var(--color-text-primary)" }}>{valor}</strong>
+    </div>
+  );
 }
 
 interface KPICardsProps {
@@ -211,27 +234,55 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
 
       {kpis.ventasSeg && (
         <>
-          <Card variant="kpiCard" styles={styles}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <h3>Novicompu</h3>
-              <div style={{ background: "var(--color-surface-tint-blue)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-primary)" strokeWidth="2.5"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
-              </div>
-            </div>
-            <p className={styles.kpiValue}>{kpis.ventasSeg.novicompu}</p>
-            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>Empresa NVC01</div>
-          </Card>
+          {/* Con el desglose del backend cada empresa muestra sus tres montos; si
+              no llegó, se cae al total simple que ya se calculaba en el front. */}
+          {totales?.por_empresa?.length ? (
+            totales.por_empresa.map((emp) => (
+              <Card key={emp.empresa} variant="kpiCard" styles={styles}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <h3>{emp.empresa_nombre}</h3>
+                  <div style={{ background: emp.empresa === "NVC01" ? "var(--color-surface-tint-blue)" : "var(--color-surface-tint-accent)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={emp.empresa === "NVC01" ? "var(--color-brand-primary)" : "var(--color-brand-accent)"} strokeWidth="2.5"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+                  </div>
+                </div>
+                <p className={styles.kpiValue}>{usd(emp.monto_neto)}</p>
+                <div style={{ fontSize: "0.7rem", color: "var(--color-text-muted)" }}>venta sin devoluciones</div>
+                <div style={{ borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.45rem" }}>
+                  <LineaMonto etiqueta="Con devoluciones" valor={usd(emp.monto)} />
+                  <LineaMonto
+                    etiqueta="Devoluciones"
+                    valor={emp.monto_devoluciones > 0 ? `- ${usd(emp.monto_devoluciones)}` : usd(0)}
+                    color={emp.monto_devoluciones > 0 ? "#c0392b" : undefined}
+                  />
+                  <LineaMonto etiqueta="Unidades devueltas" valor={emp.cantidad_devoluciones.toLocaleString("es-EC")} />
+                </div>
+              </Card>
+            ))
+          ) : (
+            <>
+              <Card variant="kpiCard" styles={styles}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <h3>Novicompu</h3>
+                  <div style={{ background: "var(--color-surface-tint-blue)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-primary)" strokeWidth="2.5"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+                  </div>
+                </div>
+                <p className={styles.kpiValue}>{kpis.ventasSeg.novicompu}</p>
+                <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>Empresa NVC01</div>
+              </Card>
 
-          <Card variant="kpiCard" styles={styles}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <h3>ENV</h3>
-              <div style={{ background: "var(--color-surface-tint-accent)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-accent)" strokeWidth="2.5"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
-              </div>
-            </div>
-            <p className={styles.kpiValue}>{kpis.ventasSeg.env}</p>
-            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>Empresa ENV01</div>
-          </Card>
+              <Card variant="kpiCard" styles={styles}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <h3>ENV</h3>
+                  <div style={{ background: "var(--color-surface-tint-accent)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-accent)" strokeWidth="2.5"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
+                  </div>
+                </div>
+                <p className={styles.kpiValue}>{kpis.ventasSeg.env}</p>
+                <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>Empresa ENV01</div>
+              </Card>
+            </>
+          )}
 
           {activeTab === "ventas" && (
             <Card variant="kpiCard" styles={styles}>

@@ -490,16 +490,60 @@ class VentasService:
             actual = {"inicio": inicio, "fin": fin}
             previo = {"inicio": inicio_ant.isoformat(), "fin": fin_ant.isoformat()}
 
+            # Desglose por empresa. En el kardex la empresa no es una columna: viene
+            # como sufijo del codigo de producto ("1CENV153-NVC01"), asi que se
+            # deriva de ahi para poder cruzarla con las ventas de la vista.
+            sql_venta_emp = text("""
+                SELECT empresa,
+                       COALESCE(SUM(total_linea), 0) AS monto,
+                       COALESCE(SUM(cantidad), 0) AS cantidad
+                FROM view_ventas_espejo_reporte
+                WHERE fecha BETWEEN :inicio AND :fin
+                GROUP BY empresa
+            """)
+            sql_dev_emp = text("""
+                SELECT CASE WHEN product_id_corp LIKE '%%-NVC01' THEN 'NVC01'
+                            WHEN product_id_corp LIKE '%%-ENV01' THEN 'ENV01'
+                            ELSE 'OTRO' END AS empresa,
+                       COALESCE(SUM(net_line_total), 0) AS monto,
+                       COALESCE(SUM(ROUND(quantity)::integer), 0) AS cantidad
+                FROM ventas_kardex_staging
+                WHERE trans_date BETWEEN :inicio AND :fin
+                  AND anulada = false AND origin_memo ILIKE 'Devoluci%%'
+                GROUP BY 1
+            """)
+
             with db.get_bind().connect() as conn:
                 venta = conn.execute(sql_venta, actual).mappings().first()
                 dev = conn.execute(sql_dev, actual).mappings().first()
                 venta_ant = conn.execute(sql_venta, previo).mappings().first()
                 dev_ant = conn.execute(sql_dev, previo).mappings().first()
+                ventas_emp = conn.execute(sql_venta_emp, actual).mappings().all()
+                devs_emp = conn.execute(sql_dev_emp, actual).mappings().all()
 
             monto = float(venta["monto"] or 0)
             monto_dev = float(dev["monto"] or 0)
             neto = monto - monto_dev
             neto_ant = float(venta_ant["monto"] or 0) - float(dev_ant["monto"] or 0)
+
+            nombres = {"NVC01": "NOVICOMPU", "ENV01": "ENV"}
+            ventas_por_emp = {r["empresa"]: r for r in ventas_emp}
+            devs_por_emp = {r["empresa"]: r for r in devs_emp}
+            por_empresa = []
+            for codigo in sorted(set(ventas_por_emp) | set(devs_por_emp)):
+                v = ventas_por_emp.get(codigo)
+                d = devs_por_emp.get(codigo)
+                m = float(v["monto"] or 0) if v else 0.0
+                md = float(d["monto"] or 0) if d else 0.0
+                por_empresa.append({
+                    "empresa": codigo,
+                    "empresa_nombre": nombres.get(codigo, codigo),
+                    "monto": m,
+                    "monto_devoluciones": md,
+                    "monto_neto": m - md,
+                    "cantidad": int(v["cantidad"] or 0) if v else 0,
+                    "cantidad_devoluciones": int(d["cantidad"] or 0) if d else 0,
+                })
 
             return {
                 "inicio": inicio,
@@ -514,6 +558,7 @@ class VentasService:
                 # null si no hay periodo previo con ventas: es preferible a un 0%
                 # que se leeria como "igual que antes".
                 "delta_pct": round((neto - neto_ant) / neto_ant * 100, 1) if neto_ant > 0 else None,
+                "por_empresa": por_empresa,
             }
         finally:
             if close_db_manually:
