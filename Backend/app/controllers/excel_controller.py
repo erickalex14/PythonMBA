@@ -38,7 +38,9 @@ def download_movimientos(
     return StreamingResponse(
         excel_file,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        # X-Record-Count: para que la bitacora de auditoria (frontend) sepa cuantas
+        # filas tenia el archivo sin tener que parsear el binario descargado.
+        headers={"Content-Disposition": f"attachment; filename={filename}", "X-Record-Count": str(len(df))}
     )
 
 @router.get("/liquidaciones", dependencies=[Depends(verify_api_key)])
@@ -64,7 +66,9 @@ def download_liquidaciones(
     return StreamingResponse(
         excel_file,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        # X-Record-Count: para que la bitacora de auditoria (frontend) sepa cuantas
+        # filas tenia el archivo sin tener que parsear el binario descargado.
+        headers={"Content-Disposition": f"attachment; filename={filename}", "X-Record-Count": str(len(df))}
     )
 
 @router.get("/ats", dependencies=[Depends(verify_api_key)])
@@ -89,7 +93,9 @@ def download_ats(
     return StreamingResponse(
         excel_file,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        # X-Record-Count: para que la bitacora de auditoria (frontend) sepa cuantas
+        # filas tenia el archivo sin tener que parsear el binario descargado.
+        headers={"Content-Disposition": f"attachment; filename={filename}", "X-Record-Count": str(len(df))}
     )
 
 @router.get("/ventas", dependencies=[Depends(verify_api_key)])
@@ -114,7 +120,9 @@ def download_ventas(
     return StreamingResponse(
         excel_file,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        # X-Record-Count: para que la bitacora de auditoria (frontend) sepa cuantas
+        # filas tenia el archivo sin tener que parsear el binario descargado.
+        headers={"Content-Disposition": f"attachment; filename={filename}", "X-Record-Count": str(len(df))}
     )
 
 @router.get("/estadisticas-ventas", dependencies=[Depends(verify_api_key)])
@@ -139,7 +147,9 @@ def download_estadisticas_ventas(
     return StreamingResponse(
         excel_file,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        # X-Record-Count: para que la bitacora de auditoria (frontend) sepa cuantas
+        # filas tenia el archivo sin tener que parsear el binario descargado.
+        headers={"Content-Disposition": f"attachment; filename={filename}", "X-Record-Count": str(len(df))}
     )
 
 
@@ -186,5 +196,7 @@ def export_custom_data(
     return StreamingResponse(
         excel_file,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
+        # X-Record-Count: para que la bitacora de auditoria (frontend) sepa cuantas
+        # filas tenia el archivo sin tener que parsear el binario descargado.
+        headers={"Content-Disposition": f"attachment; filename={filename}", "X-Record-Count": str(len(df))}
     )

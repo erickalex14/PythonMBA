@@ -85,7 +85,19 @@ export function usePanelReportPage(reportId: string) {
     }
   };
 
-  const handlePrintPdf = () => {
+  // recordsCount: cuantas filas tenia la tabla en pantalla al momento de
+  // imprimir - la pagina que llama ya lo sabe (filteredData.length), aqui solo
+  // se reenvia a la bitacora.
+  const handlePrintPdf = (recordsCount?: number) => {
+    // No se espera la respuesta: registrar la auditoria no debe demorar el
+    // dialogo de impresion, que el navegador abre de forma sincrona.
+    fetch("/api/data/pdf-log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: reportId, inicio: startDate, fin: endDate, recordsCount }),
+    }).catch(() => {
+      // Si falla el registro de auditoria no se bloquea la impresion.
+    });
     window.print();
   };
 

@@ -37,12 +37,13 @@ model Permission {
 }
 
 model DownloadLog {
-  id         String   @id @default(uuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  reportType String   // Tipo de reporte
-  dateRange  String   // Rango de fechas
-  timestamp  DateTime @default(now())
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reportType   String   // Tipo de reporte
+  dateRange    String   // Rango de fechas
+  recordsCount Int?     // Filas del archivo descargado; null en registros previos a este campo
+  timestamp    DateTime @default(now())
 }
 
 model MovimientoStaging {

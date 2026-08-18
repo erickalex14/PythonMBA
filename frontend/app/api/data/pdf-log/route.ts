@@ -10,13 +10,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { type, inicio, fin } = await request.json();
+    const { type, inicio, fin, recordsCount } = await request.json();
 
     await prisma.downloadLog.create({
       data: {
         userId: session.user.id,
         reportType: `${type} (PDF)`,
         dateRange: `${inicio} a ${fin}`,
+        recordsCount: Number.isFinite(recordsCount) ? recordsCount : null,
       },
     });
 

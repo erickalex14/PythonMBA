@@ -59,11 +59,16 @@ export async function GET(request: Request) {
     }
 
     // 3. Registrar la descarga en la base de datos de auditoría
+    // recordsCount sale del header que pone el backend (ya sabe len(df) antes de
+    // generar el Excel); parsear el binario descargado solo para contar filas
+    // sería mucho mas caro.
+    const recordsCount = parseInt(res.headers.get("X-Record-Count") || "", 10);
     await prisma.downloadLog.create({
       data: {
         userId: session.user.id,
         reportType: type,
         dateRange: `${inicio} a ${fin}`,
+        recordsCount: Number.isFinite(recordsCount) ? recordsCount : null,
       },
     });
 
@@ -158,11 +163,13 @@ export async function POST(request: Request) {
     }
 
     // 3. Registrar la descarga en la base de datos de auditoría
+    // Aqui el conteo es gratis: son las filas del JSON que ya se envio.
     await prisma.downloadLog.create({
       data: {
         userId: session.user.id,
         reportType: `${type} (Filtrado)`,
         dateRange: `${inicio} a ${fin}`,
+        recordsCount: data.length,
       },
     });
 

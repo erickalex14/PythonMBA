@@ -31,7 +31,21 @@ export async function GET() {
       }
     });
 
-    return NextResponse.json(logs);
+    // Prisma devuelve la relacion anidada (log.user.name, log.user.role.name) y con
+    // los nombres reales del modelo (reportType, dateRange) - se aplana aqui a lo
+    // que la tabla del front espera, para no repetir este mapeo en cada consumidor.
+    const aplanados = logs.map((log) => ({
+      id: log.id,
+      user_name: log.user?.name ?? "(usuario eliminado)",
+      user_cedula: log.user?.cedula ?? "-",
+      user_role: log.user?.role?.name ?? "-",
+      download_type: log.reportType,
+      query_period: log.dateRange,
+      records_count: log.recordsCount,
+      timestamp: log.timestamp,
+    }));
+
+    return NextResponse.json(aplanados);
   } catch (error: any) {
     return NextResponse.json({ error: `Error obteniendo logs de auditoría: ${error.message}` }, { status: 500 });
   }
