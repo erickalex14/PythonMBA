@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import styles from "../dashboard.module.css";
 import { KPICards, TotalesRango } from "../../../components/KPICards";
@@ -20,6 +20,9 @@ export default function EstadisticasVentasPage() {
   const [selectedEmpresa, setSelectedEmpresa] = useState("");
   const [selectedBranch, setSelectedBranch] = useState("");
   const [totales, setTotales] = useState<TotalesRango | null>(null);
+  // Fetch propio (no usa el day-loop de useReportQuery), asi que el
+  // AbortController tambien vive aca en vez de en el hook compartido.
+  const abortRef = useRef<AbortController | null>(null);
 
   // Mismo endpoint que el reporte de Rentabilidad: suma sobre la misma vista y
   // el mismo kardex de devoluciones, asi que los montos con/sin devoluciones
@@ -37,11 +40,17 @@ export default function EstadisticasVentasPage() {
   // rango - a diferencia de los demas reportes (linea x linea), no se puede
   // pedir dia por dia y concatenar (duplicaria cada producto por dia).
   const fetchEstadisticasVentas = async (start: string, end: string) => {
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setError(null);
     setData([]);
     try {
-      const res = await fetch(`/api/data/estadisticas-ventas?inicio=${start}&fin=${end}`);
+      const res = await fetch(`/api/data/estadisticas-ventas?inicio=${start}&fin=${end}`, {
+        signal: controller.signal,
+      });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.error || "Error consultando el reporte de ventas.");
@@ -49,10 +58,18 @@ export default function EstadisticasVentasPage() {
       const json = await res.json();
       setData(Array.isArray(json) ? json : []);
     } catch (err: any) {
-      setError(err.message || "Error al obtener el reporte de ventas.");
+      if (err.name !== "AbortError") {
+        setError(err.message || "Error al obtener el reporte de ventas.");
+      }
     } finally {
-      setLoading(false);
+      if (abortRef.current === controller) {
+        setLoading(false);
+      }
     }
+  };
+
+  const cancelQuery = () => {
+    abortRef.current?.abort();
   };
 
   useEffect(() => {
@@ -215,7 +232,10 @@ export default function EstadisticasVentasPage() {
           <section className={styles.progressCard} style={{ marginBottom: "1rem" }}>
             <div className={styles.progressHeader}>
               <span>Generando archivo Excel...</span>
-              <span className={styles.progressPercentage}>{panel.downloadProgressPct}%</span>
+              <div className={styles.progressHeaderRight}>
+                <span className={styles.progressPercentage}>{panel.downloadProgressPct}%</span>
+                <button type="button" className={styles.progressCancelBtn} onClick={panel.cancelDownload}>Cancelar</button>
+              </div>
             </div>
             <div className={styles.progressBarBg}>
               <div className={styles.progressBarFill} style={{ width: `${panel.downloadProgressPct}%` }}></div>
@@ -232,6 +252,7 @@ export default function EstadisticasVentasPage() {
           <div className={styles.loaderArea}>
             <div className={styles.spinner}></div>
             <p>Consultando base transaccional...</p>
+            <button type="button" className={styles.progressCancelBtn} onClick={cancelQuery}>Cancelar</button>
           </div>
         )}
 

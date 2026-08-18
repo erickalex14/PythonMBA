@@ -505,6 +505,31 @@
   font-weight: 700;
 }
 
+.progressHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Boton chico junto al porcentaje: para cuando el usuario puso mal el rango
+   de fechas y no quiere esperar a que termine para volver a intentar. */
+.progressCancelBtn {
+  background: none;
+  border: 1px solid var(--color-danger, #c0392b);
+  color: var(--color-danger, #c0392b);
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.15rem 0.65rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.progressCancelBtn:hover {
+  background-color: var(--color-danger, #c0392b);
+  color: #fff;
+}
+
 .progressBarBg {
   background-color: var(--color-surface-subtle);
   height: 6px;

@@ -15,7 +15,7 @@ import { usePanelReportPage } from "../../../hooks/usePanelReportPage";
 export default function VentasPage() {
   const { data: session } = useSession();
   const panel = usePanelReportPage("ventas");
-  const { loading, queryProgress, estTimeRemaining, currentQueryingDate, data, error, fetchReportData } = useReportQuery();
+  const { loading, queryProgress, estTimeRemaining, currentQueryingDate, data, error, fetchReportData, cancelQuery } = useReportQuery();
 
   const [selectedProduct, setSelectedProduct] = useState(panel.initialProductoFromUrl);
   const [selectedBranch, setSelectedBranch] = useState("");
@@ -161,7 +161,10 @@ export default function VentasPage() {
         <section className={styles.progressCard}>
           <div className={styles.progressHeader}>
             <span>Consultando ERP MBA3 por lotes diarios...</span>
-            <span className={styles.progressPercentage}>{queryProgress}%</span>
+            <div className={styles.progressHeaderRight}>
+              <span className={styles.progressPercentage}>{queryProgress}%</span>
+              <button type="button" className={styles.progressCancelBtn} onClick={cancelQuery}>Cancelar</button>
+            </div>
           </div>
           <div className={styles.progressBarBg}>
             <div className={styles.progressBarFill} style={{ width: `${queryProgress}%` }}></div>
@@ -207,7 +210,10 @@ export default function VentasPage() {
           <section className={styles.progressCard} style={{ marginBottom: "1rem" }}>
             <div className={styles.progressHeader}>
               <span>Generando archivo Excel...</span>
-              <span className={styles.progressPercentage}>{panel.downloadProgressPct}%</span>
+              <div className={styles.progressHeaderRight}>
+                <span className={styles.progressPercentage}>{panel.downloadProgressPct}%</span>
+                <button type="button" className={styles.progressCancelBtn} onClick={panel.cancelDownload}>Cancelar</button>
+              </div>
             </div>
             <div className={styles.progressBarBg}>
               <div className={styles.progressBarFill} style={{ width: `${panel.downloadProgressPct}%` }}></div>

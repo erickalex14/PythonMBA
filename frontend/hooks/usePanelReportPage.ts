@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { REPORTS_CONFIG } from "../lib/reports-config";
 
@@ -23,6 +23,7 @@ export function usePanelReportPage(reportId: string) {
   const [downloading, setDownloading] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [downloadElapsedMs, setDownloadElapsedMs] = useState(0);
+  const downloadAbortRef = useRef<AbortController | null>(null);
 
   const reportConfig = REPORTS_CONFIG[reportId];
 
@@ -47,6 +48,8 @@ export function usePanelReportPage(reportId: string) {
       alert("No hay datos para exportar. Genera primero la consulta del reporte.");
       return;
     }
+    const controller = new AbortController();
+    downloadAbortRef.current = controller;
     setDownloading(true);
     setDownloadElapsedMs(0);
     const startedAt = Date.now();
@@ -61,6 +64,7 @@ export function usePanelReportPage(reportId: string) {
           start_date: startDate,
           end_date: endDate,
         }),
+        signal: controller.signal,
       });
 
       if (!res.ok) {
@@ -78,11 +82,18 @@ export function usePanelReportPage(reportId: string) {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err: any) {
-      alert(`Error al generar Excel: ${err.message}`);
+      // Cancelado a proposito (boton "Cancelar"): no es un error del usuario.
+      if (err.name !== "AbortError") {
+        alert(`Error al generar Excel: ${err.message}`);
+      }
     } finally {
       clearInterval(ticker);
       setDownloading(false);
     }
+  };
+
+  const cancelDownload = () => {
+    downloadAbortRef.current?.abort();
   };
 
   // recordsCount: cuantas filas tenia la tabla en pantalla al momento de
@@ -110,7 +121,7 @@ export function usePanelReportPage(reportId: string) {
     downloading, downloadingPdf,
     downloadElapsedSeconds: Math.round(downloadElapsedMs / 1000),
     downloadProgressPct,
-    handleDownloadExcel, handlePrintPdf,
+    handleDownloadExcel, cancelDownload, handlePrintPdf,
     reportConfig,
     initialStartFromUrl, initialEndFromUrl, initialEmpresaFromUrl, initialProductoFromUrl,
   };
