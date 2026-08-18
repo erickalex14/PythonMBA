@@ -12,15 +12,20 @@ def limpiar_cache(
     api_key_valid: bool = Depends(verify_api_key),
 ):
     """
-    Borra el catálogo de productos cacheado para que el próximo reporte lo traiga
-    fresco del ERP, sin esperar a que venza el TTL.
+    Borra TODO el cache (catálogo de productos, dashboard, totales de ventas...)
+    para que el próximo reporte lo traiga fresco, sin esperar al TTL.
+
+    Este Redis es exclusivo de este stack (ver docker-compose.yml), asi que
+    limpiar todo el keyspace es seguro. Antes solo borraba "estadisticas:*" y
+    dejaba vivo el cache de "ventas:*" - un deploy que cambia la forma de esa
+    respuesta servia el shape viejo hasta que el TTL expiraba solo.
     """
     if not api_key_valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Credenciales de API Key no válidas para acceder a este recurso."
         )
-    borradas = cache.invalidar("estadisticas:*")
+    borradas = cache.invalidar("*")
     return {"status": "ok", "claves_borradas": borradas}
 
 

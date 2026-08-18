@@ -423,10 +423,10 @@ class VentasService:
                 # Top de productos: se agrega por producto una sola vez sobre el
                 # rango mas largo y se recorta por periodo en Python.
                 sql_top = """
-                    SELECT codigo, producto, fecha, SUM(cantidad) AS cantidad, SUM(total_linea) AS monto
+                    SELECT codigo, producto, empresa, fecha, SUM(cantidad) AS cantidad, SUM(total_linea) AS monto
                     FROM view_ventas_espejo_reporte
                     WHERE fecha BETWEEN :desde AND :hasta
-                    GROUP BY codigo, producto, fecha
+                    GROUP BY codigo, producto, empresa, fecha
                 """
                 filas_top = conn.execute(text(sql_top), {
                     "desde": periodos["anio"]["desde"].isoformat(),
@@ -622,38 +622,56 @@ class VentasService:
 
     @staticmethod
     def _calcular_tops(filas, periodos: dict, limite: int = 10) -> dict:
-        """Top de productos por cantidad y por dinero en cada rango."""
+        """
+        Top de productos por cantidad y por dinero en cada rango, consolidado
+        ("general") y por empresa. La query trae ambas empresas de una sola
+        pasada (columna `empresa`), asi que el desglose no cuesta una consulta
+        extra: es la misma tabla agrupada dos veces en pandas.
+        """
+        vacio = {"cantidad": [], "dinero": []}
+        vacio_por_clave = {clave: {"general": vacio, "por_empresa": {"NVC01": vacio, "ENV01": vacio}} for clave in periodos}
         if not filas:
-            return {clave: {"cantidad": [], "dinero": []} for clave in periodos}
+            return vacio_por_clave
 
         df = pd.DataFrame([dict(f) for f in filas])
         df["fecha"] = pd.to_datetime(df["fecha"]).dt.date
         df["cantidad"] = pd.to_numeric(df["cantidad"], errors="coerce").fillna(0)
         df["monto"] = pd.to_numeric(df["monto"], errors="coerce").fillna(0)
+        df["empresa"] = df["empresa"].astype(str).str.strip()
 
         # El ruido promocional se saca solo de los rankings; los totales por rango
         # se siguen calculando sobre todo, porque esa plata si se vendio.
         df = df[~df["producto"].apply(es_producto_ruido)]
         if df.empty:
-            return {clave: {"cantidad": [], "dinero": []} for clave in periodos}
+            return vacio_por_clave
 
         # El mismo producto existe con sufijo por empresa ("1CENV153-NVC01" y
-        # "-ENV01"). Sin unificarlos el ranking se llena de pares repetidos y
-        # muestra la mitad de productos distintos; el dashboard es consolidado,
-        # asi que se suman las dos empresas bajo un solo codigo.
+        # "-ENV01"). El "general" suma ambas bajo un solo codigo (sin unificar,
+        # el ranking consolidado se llena de pares repetidos y muestra la mitad
+        # de productos distintos); por empresa no hace falta sumar nada, cada
+        # fila ya pertenece a una sola, pero se limpia el sufijo igual para que
+        # el codigo se vea igual en ambas vistas.
         df["codigo"] = df["codigo"].astype(str).str.replace(r"-(NVC01|ENV01)$", "", regex=True)
+
+        def top_de(sub_df: pd.DataFrame) -> dict:
+            if sub_df.empty:
+                return vacio
+            agrupado = sub_df.groupby("codigo", as_index=False).agg(
+                producto=("producto", "first"), cantidad=("cantidad", "sum"), monto=("monto", "sum"))
+            return {
+                "cantidad": agrupado.nlargest(limite, "cantidad").to_dict(orient="records"),
+                "dinero": agrupado.nlargest(limite, "monto").to_dict(orient="records"),
+            }
 
         tops = {}
         for clave, p in periodos.items():
             ventana = df[(df["fecha"] >= p["desde"]) & (df["fecha"] <= p["hasta"])]
-            if ventana.empty:
-                tops[clave] = {"cantidad": [], "dinero": []}
-                continue
-            agrupado = ventana.groupby("codigo", as_index=False).agg(
-                producto=("producto", "first"), cantidad=("cantidad", "sum"), monto=("monto", "sum"))
             tops[clave] = {
-                "cantidad": agrupado.nlargest(limite, "cantidad").to_dict(orient="records"),
-                "dinero": agrupado.nlargest(limite, "monto").to_dict(orient="records"),
+                "general": top_de(ventana),
+                "por_empresa": {
+                    "NVC01": top_de(ventana[ventana["empresa"] == "NVC01"]),
+                    "ENV01": top_de(ventana[ventana["empresa"] == "ENV01"]),
+                },
             }
         return tops
 

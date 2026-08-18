@@ -31,11 +31,18 @@ interface TopProducto {
   monto: number;
 }
 
+interface TopsPorVista {
+  cantidad: TopProducto[];
+  dinero: TopProducto[];
+}
+
 interface DashboardVentas {
   fecha_ancla: string | null;
   ultima_sincronizacion: string | null;
   rangos: RangoVentas[];
-  tops: Record<string, { cantidad: TopProducto[]; dinero: TopProducto[] }>;
+  // "general" consolida NVC01+ENV01 bajo un solo codigo; por_empresa trae la
+  // misma metrica aislada por empresa - misma consulta al ERP, sin costo extra.
+  tops: Record<string, { general: TopsPorVista; por_empresa: Record<string, TopsPorVista> }>;
 }
 
 interface TotalesEmpresaResp {
@@ -341,8 +348,8 @@ export const VentasDashboard: React.FC<{
   const [cargandoDevoluciones, setCargandoDevoluciones] = useState(false);
   // Selector de empresa a nivel de todo el dashboard: "general" (mezclado,
   // vista real/actual) es el que se ve primero. Afecta las tarjetas de rango
-  // y oculta los top-productos (el backend no los expone por empresa) - la
-  // dona de devoluciones queda siempre fija en "general", sin importar esto.
+  // y los top-productos (el backend trae ambas vistas en la misma consulta) -
+  // la dona de devoluciones queda siempre fija en "general", sin importar esto.
   const [empresaSel, setEmpresaSel] = useState<(typeof EMPRESA_TABS)[number]["key"]>("general");
   const [rangosPorEmpresa, setRangosPorEmpresa] = useState<Record<string, TotalesEmpresaResp> | null>(null);
   const [cargandoEmpresa, setCargandoEmpresa] = useState(false);
@@ -369,7 +376,12 @@ export const VentasDashboard: React.FC<{
     () => datos?.rangos.find((r) => r.clave === rangoActivo) ?? datos?.rangos[0],
     [datos, rangoActivo]
   );
-  const tops = datos?.tops?.[rangoActivo] ?? { cantidad: [], dinero: [] };
+  const topsVacios: TopsPorVista = { cantidad: [], dinero: [] };
+  const topsRango = datos?.tops?.[rangoActivo];
+  const tops =
+    empresaSel === "general"
+      ? topsRango?.general ?? topsVacios
+      : topsRango?.por_empresa?.[empresaSel] ?? topsVacios;
 
   // Al elegir una empresa, se piden en paralelo los totales reales de los 6
   // rangos (mismo endpoint /ventas-totales de la dona) y se guarda el que
@@ -526,31 +538,22 @@ export const VentasDashboard: React.FC<{
         ))}
       </motion.div>
 
-      {empresaSel !== "general" ? (
-        <Card variant="chartCard" styles={styles}>
-          <p style={{ margin: 0, fontSize: "0.85rem", color: "var(--color-text-muted)" }}>
-            Los productos más vendidos no se pueden desglosar por empresa — el Backend no expone esa relación.
-            Volvé a <strong style={{ color: "var(--color-text-primary)" }}>General</strong> para verlos.
-          </p>
-        </Card>
-      ) : (
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(330px, 1fr))", gap: "1rem" }}>
         <BarrasTop
-          titulo={`Más vendidos por dinero · ${rangoSel?.etiqueta ?? ""}`}
+          titulo={`Más vendidos por dinero · ${rangoSel?.etiqueta ?? ""}${empresaSel !== "general" ? ` · ${EMPRESA_TABS.find((t) => t.key === empresaSel)?.label ?? ""}` : ""}`}
           filas={tops.dinero}
           valor={(p) => p.monto}
           formato={money}
           styles={styles}
         />
         <BarrasTop
-          titulo={`Más vendidos por cantidad · ${rangoSel?.etiqueta ?? ""}`}
+          titulo={`Más vendidos por cantidad · ${rangoSel?.etiqueta ?? ""}${empresaSel !== "general" ? ` · ${EMPRESA_TABS.find((t) => t.key === empresaSel)?.label ?? ""}` : ""}`}
           filas={tops.cantidad}
           valor={(p) => p.cantidad}
           formato={units}
           styles={styles}
         />
       </div>
-      )}
 
       <motion.div
         initial={{ opacity: 0, y: 16 }}
