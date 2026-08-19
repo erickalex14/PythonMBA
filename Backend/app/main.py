@@ -14,6 +14,7 @@ from app.models.movimiento import MovimientoStaging
 from app.models.liquidacion import LiquidacionPrincipalStaging, LiquidacionProductoStaging
 from app.models.ats import AtsFacturaStaging, AtsProveedorStaging, AtsFiscalStaging
 from app.models.ventas import VentasKardexStaging, VentasFacturaStaging
+from app.models.kpi import KpiProductoCat, KpiSucursal, KpiMeta, KpiValorManual
 from sqlalchemy import text
 from app.core.scheduler import start_scheduler, stop_scheduler
 
@@ -214,7 +215,8 @@ from app.controllers import (
     admin_controller,
     sync_controller,
     ventas_controller,
-    estadisticas_controller
+    estadisticas_controller,
+    kpi_controller
 )
 
 root_path = os.getenv("ROOT_PATH", "")
@@ -281,4 +283,5 @@ app.include_router(admin_controller.router)
 app.include_router(sync_controller.router)
 app.include_router(ventas_controller.router)
 app.include_router(estadisticas_controller.router)
+app.include_router(kpi_controller.router)
 
