@@ -58,6 +58,18 @@ KPIS = {
 
 CATS_VENTAS = {k: v["cat"] for k, v in KPIS.items() if v["origen"] == "ventas"}
 
+# Meta de venta total de la tienda. No es un KPI ponderado: es el presupuesto
+# mensual, y va en `kpi_meta` con esta llave para no inventarle otra tabla.
+KPI_VENTA_TIENDA = "venta_tienda"
+METAS_EXTRA = {KPI_VENTA_TIENDA: "META DE TIENDA"}
+
+# Nombre de la hoja de detalle por categoria en el Excel que se arma a mano.
+HOJA_POR_KPI = {
+    "tecnologia": "TCNLG", "celulares_tablets": "TAB-CEL",
+    "motorola": "RAZR-EDGE60", "sillas_gamer": "S.GAMER",
+    "hogar_gym": "HOGAR-GYM", "servicio_tecnico": "ST",
+}
+
 
 def _rango_periodo(periodo: str) -> tuple:
     anio, mes = (int(p) for p in periodo.split("-"))
@@ -195,6 +207,111 @@ class KpiService:
         except Exception as e:
             logging.error(f"Error al construir el seguimiento KPI: {e}")
             raise
+        finally:
+            if cerrar:
+                db.close()
+
+    def obtener_lineas(self, inicio: str, fin: str, solo_categorizadas: bool = True,
+                       db: Optional[Session] = None) -> list:
+        """Lineas de venta con su categoria de KPI, para las hojas de detalle.
+
+        Con `solo_categorizadas=False` devuelve tambien lo que no puntua en
+        ningun KPI (accesorios, marcas de terceros), que es lo que la hoja BASE
+        del Excel muestra con #N/A.
+        """
+        cerrar = False
+        if db is None:
+            db = SessionLocal()
+            cerrar = True
+        try:
+            join = "JOIN" if solo_categorizadas else "LEFT JOIN"
+            with db.get_bind().connect() as conn:
+                filas = conn.execute(text(f"""
+                    SELECT v.factura_final, v.fecha, v.codigo, v.producto,
+                           v.unidad, v.grupo, v.subgrupo, v.cantidad,
+                           v.precio_venta, v.total_linea,
+                           v.bodega_codigo, v.sucursal,
+                           s.nombre AS sucursal_nombre, s.supervisor,
+                           UPPER(TRIM(c.cat)) AS cat
+                    FROM view_ventas_espejo_reporte v
+                    {join} kpi_producto_cat c
+                      ON UPPER(TRIM(c.codigo)) =
+                         UPPER(regexp_replace(v.codigo, '-(NVC01|ENV01)$', ''))
+                    LEFT JOIN kpi_sucursal s ON s.codigo = v.sucursal
+                    WHERE v.fecha BETWEEN :i AND :f
+                    ORDER BY v.fecha, v.factura_final
+                """), {"i": inicio, "f": fin}).mappings().all()
+            return [dict(f) for f in filas]
+        finally:
+            if cerrar:
+                db.close()
+
+    def obtener_presupuesto(self, periodo: str, corte: Optional[str] = None,
+                            db: Optional[Session] = None) -> list:
+        """Venta total por tienda contra su meta mensual: la hoja PRESUPUESTO.
+
+        La proyeccion extrapola lo vendido hasta el corte al mes completo, igual
+        que la formula del Excel.
+        """
+        inicio, fin_mes, dias_mes = _rango_periodo(periodo)
+        cerrar = False
+        if db is None:
+            db = SessionLocal()
+            cerrar = True
+        try:
+            with db.get_bind().connect() as conn:
+                if corte:
+                    fin = datetime.date.fromisoformat(corte)
+                else:
+                    fin = conn.execute(
+                        text("SELECT MAX(fecha) FROM view_ventas_espejo_reporte "
+                             "WHERE fecha BETWEEN :i AND :f"),
+                        {"i": inicio, "f": fin_mes}).scalar() or inicio
+                fin = min(fin, fin_mes)
+
+                filas = conn.execute(text("""
+                    SELECT v.sucursal,
+                           COALESCE(SUM(v.total_linea), 0) AS venta,
+                           COUNT(DISTINCT v.factura_final) AS facturas,
+                           COALESCE(SUM(v.cantidad), 0) AS unidades
+                    FROM view_ventas_espejo_reporte v
+                    WHERE v.fecha BETWEEN :i AND :f
+                    GROUP BY 1
+                """), {"i": inicio, "f": fin}).mappings().all()
+                metas = conn.execute(text(
+                    "SELECT sucursal, meta FROM kpi_meta "
+                    "WHERE periodo = :p AND kpi = :k"),
+                    {"p": periodo, "k": KPI_VENTA_TIENDA}).mappings().all()
+                sucursales = conn.execute(text(
+                    "SELECT codigo, nombre, supervisor, marca, ciudad "
+                    "FROM kpi_sucursal WHERE activa = 'SI'")).mappings().all()
+
+            ventas = {f["sucursal"]: f for f in filas}
+            metas_map = {m["sucursal"]: float(m["meta"] or 0) for m in metas}
+            dias_corte = (fin - inicio).days + 1
+
+            out = []
+            for s in sucursales:
+                v = ventas.get(s["codigo"])
+                venta = float(v["venta"]) if v else 0.0
+                facturas = int(v["facturas"]) if v else 0
+                unidades = float(v["unidades"]) if v else 0.0
+                meta = metas_map.get(s["codigo"])
+                promedio_dia = venta / dias_corte if dias_corte else 0.0
+                out.append({
+                    "sucursal": s["codigo"], "nombre": s["nombre"],
+                    "supervisor": s["supervisor"], "marca": s["marca"],
+                    "ciudad": s["ciudad"],
+                    "meta": meta, "venta": round(venta, 2),
+                    "facturas": facturas, "unidades": unidades,
+                    "ticket_promedio": round(venta / facturas, 2) if facturas else 0.0,
+                    "unidades_por_factura": round(unidades / facturas, 2) if facturas else 0.0,
+                    "venta_promedio_dia": round(promedio_dia, 2),
+                    "proyeccion": round(promedio_dia * dias_mes, 2),
+                    "cumplimiento": round(venta / meta, 4) if meta else None,
+                })
+            out.sort(key=lambda r: r["venta"], reverse=True)
+            return out
         finally:
             if cerrar:
                 db.close()

@@ -1,13 +1,16 @@
+import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.security import verify_api_key
-from app.dependencies import get_db
-from app.services.kpi_service import KPIS, KpiService
+from app.dependencies import get_db, get_excel_service
+from app.services.excel_service import ExcelService
+from app.services.kpi_service import KPIS, METAS_EXTRA, KpiService
 
 router = APIRouter(prefix="/api/v1/kpi", tags=["Seguimiento KPI"])
 
@@ -79,10 +82,11 @@ def guardar_metas(
     Se guarda solo lo que llega: mandar una lista parcial no borra el resto del
     mes, para que la pantalla pueda ir salvando por sucursal.
     """
-    desconocidos = sorted({m.kpi for m in metas} - set(KPIS))
+    validos = set(KPIS) | set(METAS_EXTRA)
+    desconocidos = sorted({m.kpi for m in metas} - validos)
     if desconocidos:
         return {"error": f"KPI no reconocido: {', '.join(desconocidos)}",
-                "validos": sorted(KPIS)}
+                "validos": sorted(validos)}
     for m in metas:
         db.execute(text("""
             INSERT INTO kpi_meta (periodo, sucursal, kpi, meta)
@@ -115,6 +119,41 @@ def guardar_valores_manuales(
         """), {"p": periodo, "s": v.sucursal, "k": v.kpi, "v": v.valor})
     db.commit()
     return {"periodo": periodo, "guardados": len(valores)}
+
+
+@router.get("/excel", dependencies=[Depends(verify_api_key)])
+def download_kpi(
+    periodo: str = Query(..., pattern=PERIODO, description="Mes a exportar (YYYY-MM)"),
+    corte: Optional[str] = Query(None, pattern=FECHA),
+    db: Session = Depends(get_db),
+    excel_service: ExcelService = Depends(get_excel_service),
+):
+    """Libro completo del Seguimiento KPI, con la misma estructura de hojas que
+    el archivo que hoy se arma a mano: RESUMEN KPI, PRESUPUESTO, una hoja de
+    detalle por categoria y BASE.
+    """
+    service = KpiService()
+    seguimiento = service.obtener_seguimiento(periodo, corte, db)
+    if not seguimiento["sucursales"]:
+        raise HTTPException(
+            status_code=404,
+            detail="No hay sucursales cargadas. Corre primero seed_kpi_desde_excel.py.")
+
+    presupuesto = service.obtener_presupuesto(periodo, seguimiento["corte"], db)
+    # BASE incluye lo no categorizado (accesorios, marcas de terceros), igual
+    # que la hoja del Excel: ahi esas lineas salen con #N/A.
+    lineas = service.obtener_lineas(seguimiento["inicio"], seguimiento["corte"],
+                                    solo_categorizadas=False, db=db)
+
+    archivo = excel_service.generar_reporte_kpi(seguimiento, presupuesto, lineas)
+    sello = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    nombre = f"SEGUIMIENTO_KPI_{periodo}_al_{seguimiento['corte']}_{sello}.xlsx"
+    return StreamingResponse(
+        archivo,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={nombre}",
+                 "X-Record-Count": str(len(lineas))},
+    )
 
 
 @router.get("/sucursales", dependencies=[Depends(verify_api_key)])
