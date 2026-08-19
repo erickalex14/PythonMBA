@@ -219,7 +219,12 @@ from app.controllers import (
 
 root_path = os.getenv("ROOT_PATH", "")
 docs_user = os.getenv("DOCS_USER", "admin")
-docs_password = os.getenv("DOCS_PASSWORD", "CLAVE-REDACTADA")
+docs_password = os.getenv("DOCS_PASSWORD")
+if not docs_password:
+    raise RuntimeError(
+        "DOCS_PASSWORD no esta definida. La documentacion no puede quedar "
+        "protegida por una clave por defecto conocida."
+    )
 
 app = FastAPI(
     title="MBA3 BI Microservice",
