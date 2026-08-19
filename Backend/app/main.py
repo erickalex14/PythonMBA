@@ -221,12 +221,12 @@ from app.controllers import (
 
 root_path = os.getenv("ROOT_PATH", "")
 docs_user = os.getenv("DOCS_USER", "admin")
+# Sin DOCS_PASSWORD la documentacion no se publica. Antes habia una clave por
+# defecto embebida en el codigo, que quedo expuesta en un repo publico; apagar
+# /docs es mas seguro que dejarla con una clave conocida, y evita que un deploy
+# se caiga porque falto la variable. Para verla en local, definir la variable.
 docs_password = os.getenv("DOCS_PASSWORD")
-if not docs_password:
-    raise RuntimeError(
-        "DOCS_PASSWORD no esta definida. La documentacion no puede quedar "
-        "protegida por una clave por defecto conocida."
-    )
+docs_habilitados = bool(docs_password)
 
 app = FastAPI(
     title="MBA3 BI Microservice",
@@ -252,16 +252,19 @@ def authenticate_docs(credentials: HTTPBasicCredentials = Depends(security)):
         )
     return credentials.username
 
-@app.get("/docs", include_in_schema=False)
-async def get_swagger_documentation(username: str = Depends(authenticate_docs)):
-    return get_swagger_ui_html(
-        openapi_url="/openapi.json" if not root_path else f"{root_path}/openapi.json",
-        title=app.title + " - Swagger UI",
-    )
+if docs_habilitados:
+    @app.get("/docs", include_in_schema=False)
+    async def get_swagger_documentation(username: str = Depends(authenticate_docs)):
+        return get_swagger_ui_html(
+            openapi_url="/openapi.json" if not root_path else f"{root_path}/openapi.json",
+            title=app.title + " - Swagger UI",
+        )
 
-@app.get("/openapi.json", include_in_schema=False)
-async def get_open_api_endpoint(username: str = Depends(authenticate_docs)):
-    return get_openapi(title=app.title, version=app.version, routes=app.routes)
+    @app.get("/openapi.json", include_in_schema=False)
+    async def get_open_api_endpoint(username: str = Depends(authenticate_docs)):
+        return get_openapi(title=app.title, version=app.version, routes=app.routes)
+else:
+    logging.info("DOCS_PASSWORD no definida: /docs y /openapi.json quedan apagados.")
 
 # Configurar middleware CORS
 # En producción, se debe limitar allow_origins al host específico del frontend de Next.js
