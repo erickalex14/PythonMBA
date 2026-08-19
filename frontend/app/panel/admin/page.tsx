@@ -252,7 +252,7 @@ export default function AdminPage() {
                   type="text"
                   value={erpConfig.base_url_test}
                   onChange={(e) => setErpConfig({ ...erpConfig, base_url_test: e.target.value })}
-                  placeholder="http://IP-ERP-PRUEBAS-REDACTADA:8020"
+                  placeholder="http://servidor-erp-pruebas:8020"
                   className={styles.selectFilter}
                   style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)", color: "var(--color-text-primary)", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
                 />
@@ -289,7 +289,7 @@ export default function AdminPage() {
                   type="text"
                   value={erpConfig.base_url_prod}
                   onChange={(e) => setErpConfig({ ...erpConfig, base_url_prod: e.target.value })}
-                  placeholder="http://IP-ERP-PRUEBAS-REDACTADA:8081"
+                  placeholder="http://servidor-erp-produccion:8081"
                   className={styles.selectFilter}
                   style={{ width: "100%", background: "var(--color-surface)", border: "1px solid var(--color-border-strong)", color: "var(--color-text-primary)", padding: "0.55rem 0.75rem", borderRadius: "8px" }}
                 />
