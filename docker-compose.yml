@@ -9,6 +9,11 @@ services:
       POSTGRES_DB: MBAPruebas
     ports:
       - "127.0.0.1:5432:5432"
+    # Docker da 64MB de /dev/shm por defecto y Postgres usa memoria compartida
+    # para los workers paralelos: al agregar sobre view_ventas_espejo_reporte
+    # (varios meses de kardex) reventaba con "DiskFull: could not resize shared
+    # memory segment", aunque el disco del servidor estuviera al 8%.
+    shm_size: "1gb"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
