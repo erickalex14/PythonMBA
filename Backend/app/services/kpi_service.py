@@ -1,12 +1,27 @@
 import calendar
 import datetime
+import io
 import logging
+import re
 from typing import Optional
 
+import openpyxl
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
+
+# --- Importacion del Excel que hoy se arma a mano -------------------------
+# Columna de la hoja RESUMEN KPI que trae la META de cada KPI (0-indexado).
+COL_META_EXCEL = {
+    4: "rentabilidad", 6: "tecnologia", 8: "celulares_tablets", 10: "motorola",
+    12: "sillas_gamer", 14: "hogar_gym", 16: "planes_claro", 18: "review_env",
+    20: "credito_directo", 22: "servicio_tecnico",
+}
+
+# "001 RIO COCA" -> codigo + nombre. Descarta las filas sueltas de la hoja
+# ("CORTE AL ...", "SUCURSAL") que no son sucursales.
+RE_SUCURSAL_EXCEL = re.compile(r"^\s*(\d{3})\s+(.+?)\s*$")
 
 # Definicion de los KPIs del reporte de Seguimiento.
 #
@@ -210,6 +225,90 @@ class KpiService:
         finally:
             if cerrar:
                 db.close()
+
+    def importar_excel(self, contenido: bytes, periodo: str,
+                       db: Optional[Session] = None) -> dict:
+        """Carga sucursales, catalogo y metas desde el Excel armado a mano.
+
+        Es la unica via para sembrar sin entrar por SSH al servidor. Idempotente:
+        volver a subir el mismo archivo actualiza en vez de duplicar.
+
+        Lee tres hojas:
+          PRESUPUESTO -> sucursal, marca, ciudad, supervisor y meta de tienda
+          POND!J:L    -> catalogo producto -> categoria (el VLOOKUP del Excel)
+          RESUMEN KPI -> meta de cada KPI por sucursal
+        """
+        wb = openpyxl.load_workbook(io.BytesIO(contenido), data_only=True, read_only=True)
+        faltan = [h for h in ("PRESUPUESTO", "POND", "RESUMEN KPI")
+                  if h not in wb.sheetnames]
+        if faltan:
+            raise ValueError(f"Al archivo le faltan hojas: {', '.join(faltan)}")
+
+        sucursales, metas = {}, []
+        for fila in wb["PRESUPUESTO"].iter_rows(min_row=2, values_only=True):
+            m = RE_SUCURSAL_EXCEL.match(str(fila[1] or ""))
+            if not m:
+                continue
+            sucursales[m.group(1)] = {
+                "codigo": m.group(1), "nombre": m.group(2),
+                "marca": fila[2], "ciudad": fila[3], "supervisor": fila[4],
+            }
+            if isinstance(fila[5], (int, float)):      # META DE TIENDA del mes
+                metas.append((m.group(1), KPI_VENTA_TIENDA, float(fila[5])))
+
+        catalogo = {}
+        for fila in wb["POND"].iter_rows(min_row=2, min_col=10, max_col=12,
+                                         values_only=True):
+            codigo, producto, cat = fila
+            if codigo and cat:
+                catalogo[str(codigo).strip().upper()] = (
+                    str(producto or "").strip(), str(cat).strip().upper())
+
+        for fila in wb["RESUMEN KPI"].iter_rows(min_row=3, values_only=True):
+            m = RE_SUCURSAL_EXCEL.match(str(fila[1] or ""))
+            if not m:
+                continue
+            for col, kpi in COL_META_EXCEL.items():
+                if col < len(fila) and isinstance(fila[col], (int, float)):
+                    metas.append((m.group(1), kpi, float(fila[col])))
+
+        if not sucursales:
+            raise ValueError("No se reconocio ninguna sucursal en la hoja PRESUPUESTO.")
+
+        cerrar = False
+        if db is None:
+            db = SessionLocal()
+            cerrar = True
+        try:
+            for s in sucursales.values():
+                db.execute(text("""
+                    INSERT INTO kpi_sucursal (codigo, nombre, supervisor, marca, ciudad, activa)
+                    VALUES (:codigo, :nombre, :supervisor, :marca, :ciudad, 'SI')
+                    ON CONFLICT (codigo) DO UPDATE SET
+                        nombre = EXCLUDED.nombre, supervisor = EXCLUDED.supervisor,
+                        marca = EXCLUDED.marca, ciudad = EXCLUDED.ciudad
+                """), s)
+            for codigo, (producto, cat) in catalogo.items():
+                db.execute(text("""
+                    INSERT INTO kpi_producto_cat (codigo, cat, producto)
+                    VALUES (:codigo, :cat, :producto)
+                    ON CONFLICT (codigo) DO UPDATE SET
+                        cat = EXCLUDED.cat, producto = EXCLUDED.producto
+                """), {"codigo": codigo, "cat": cat, "producto": producto})
+            for sucursal, kpi, meta in metas:
+                db.execute(text("""
+                    INSERT INTO kpi_meta (periodo, sucursal, kpi, meta)
+                    VALUES (:p, :s, :k, :m)
+                    ON CONFLICT (periodo, sucursal, kpi)
+                    DO UPDATE SET meta = EXCLUDED.meta, updated_at = NOW()
+                """), {"p": periodo, "s": sucursal, "k": kpi, "m": meta})
+            db.commit()
+        finally:
+            if cerrar:
+                db.close()
+
+        return {"periodo": periodo, "sucursales": len(sucursales),
+                "productos": len(catalogo), "metas": len(metas)}
 
     def obtener_lineas(self, inicio: str, fin: str, solo_categorizadas: bool = True,
                        db: Optional[Session] = None) -> list:

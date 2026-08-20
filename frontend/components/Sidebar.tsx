@@ -118,6 +118,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         )}
 
+        {(permissions.includes("VIEW_VENTAS") || isUserAdmin) && (
+          <button
+            className={`${styles.navItem} ${isActive("kpi") ? styles.active : ""}`}
+            onClick={() => goTo("kpi")}
+          >
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><path d="M3 16V9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><path d="M7.6 16V4.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><path d="M12.3 16v-8" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/><path d="M17 16v-4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/></svg>
+            <span className="flex-1">Seguimiento KPI</span>
+          </button>
+        )}
+
         {permissions.includes("VIEW_LOGS") && (
           <button
             className={`${styles.navItem} ${isActive("logs") ? styles.active : ""}`}

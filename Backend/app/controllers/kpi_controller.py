@@ -1,7 +1,7 @@
 import datetime
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import text
@@ -119,6 +119,25 @@ def guardar_valores_manuales(
         """), {"p": periodo, "s": v.sucursal, "k": v.kpi, "v": v.valor})
     db.commit()
     return {"periodo": periodo, "guardados": len(valores)}
+
+
+@router.post("/importar", dependencies=[Depends(verify_api_key)])
+async def importar_excel(
+    periodo: str = Query(..., pattern=PERIODO),
+    archivo: UploadFile = File(..., description="El .xlsx de Seguimiento KPI"),
+    db: Session = Depends(get_db),
+):
+    """Siembra sucursales, catalogo y metas subiendo el Excel armado a mano.
+
+    Evita tener que entrar por SSH al servidor cada vez que cambian las metas.
+    """
+    if not (archivo.filename or "").lower().endswith((".xlsx", ".xlsm")):
+        raise HTTPException(status_code=400, detail="Se espera un archivo .xlsx")
+    contenido = await archivo.read()
+    try:
+        return KpiService().importar_excel(contenido, periodo, db)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
 
 
 @router.get("/excel", dependencies=[Depends(verify_api_key)])
