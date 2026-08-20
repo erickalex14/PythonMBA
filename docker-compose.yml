@@ -16,6 +16,15 @@ services:
     shm_size: "1gb"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    # Sin esto el backend arranca antes de que Postgres acepte conexiones: el
+    # create_all del startup falla, queda solo registrado en el log y la app
+    # sigue viva pero sin tablas (los reportes revientan con UndefinedTable).
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d MBAPruebas"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
 
   redis:
     image: redis:7-alpine
@@ -39,8 +48,10 @@ services:
       ROOT_PATH: "/apimbav1"
       REDIS_URL: "redis://redis:6379/0"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   frontend:
     build:
@@ -59,8 +70,10 @@ services:
       BACKEND_API_URL: "http://backend:8000"
       NEXTAUTH_URL: "https://novitec.com.ec/reportesmba/api/auth"
     depends_on:
-      - db
-      - backend
+      db:
+        condition: service_healthy
+      backend:
+        condition: service_started
 
 volumes:
   pgdata:
