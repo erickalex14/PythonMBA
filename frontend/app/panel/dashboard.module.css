@@ -2295,3 +2295,202 @@ select.selectFilter {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* ============================================================
+   TEMA OSCURO DE TODO EL PANEL (aplicado en .mainContent, layout.tsx)
+   ============================================================
+   Empezó como algo exclusivo del Dashboard ejecutivo y se extendió a todo
+   el panel (Movimientos, Ventas, Liquidaciones, ATS, Admin, Logs, Sync):
+   fondo negro, tarjetas grandes muy redondeadas, gráficos monocromáticos
+   (blanco/gris sobre negro). El Sidebar ya era oscuro desde el principio,
+   así que esto lo hace consistente con el resto de la app.
+
+   Truco: en vez de reescribir cada componente (rangeCard, BarrasTop,
+   DevolucionesDonut, tabs, KPICards, FilterBar, DatePicker...), se
+   redefinen acá las mismas variables CSS que esos componentes ya
+   consumen (var(--color-*)). Como todo el árbol ya está construido sobre
+   esas variables, todo se re-tematiza solo con este único bloque - cero
+   cambios de lógica en los componentes (salvo 2-3 colores que estaban
+   hardcodeados en vez de usar variables, corregidos aparte). */
+.dashboardDark {
+  background: #0a0a0a;
+
+  /* Texto sobre "pastillas" de acento (búsqueda gooey, badge de conteo del
+     multiselect, checkbox tildado): esos componentes tenían el texto en
+     blanco fijo porque su fondo de acento (--color-chart-accent) siempre
+     fue un azul oscuro - acá ese acento pasa a blanco/gris claro
+     (monocromo), así que el texto tiene que virar a oscuro para no
+     desaparecer. Ver GooeySearchBar/MultiSelect .module.css. */
+  --pill-text-color: #0a0a0a;
+
+  --color-surface: #161616;
+  --color-surface-subtle: #212121;
+  --color-surface-faint: #0a0a0a;
+  --color-surface-tint: #1c1c1c;
+  --color-surface-tint-accent: #1c1c1c;
+  --color-surface-tint-blue: #1c1c1c;
+  --color-surface-tint-violet: #1c1c1c;
+  --color-surface-hover: #202020;
+  --color-surface-zebra: #171717;
+
+  --color-text-primary: #f5f5f5;
+  --color-text-secondary: #d4d4d4;
+  --color-text-tertiary: #a3a3a3;
+  --color-text-muted: #8a8a8a;
+  --color-text-faint: #6b6b6b;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-border-strong: rgba(255, 255, 255, 0.18);
+
+  /* Monocromo: marca/acento pasan todos a tonos de blanco/gris - así las
+     barras (BAR_PALETTE), la dona (EMPRESA_COLOR) y los acentos de marca
+     se vuelven monocromáticos automáticamente, sin tocar los componentes. */
+  --color-brand-primary: #aaaaaa;
+  --color-brand-primary-alt: #cfcfcf;
+  --color-brand-accent: #ffffff;
+  --color-brand-accent-dark: #7d7d7d;
+  --color-chart-accent: #ffffff;
+  --color-accent-violet: #cfcfcf;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.55);
+  --shadow-brand-md: 0 4px 14px rgba(255, 255, 255, 0.08);
+}
+
+/* Tarjetas grandes y muy redondeadas, como en la referencia. */
+.dashboardDark .card {
+  border-radius: 20px;
+}
+
+.dashboardDark .rangeCard {
+  border-radius: 20px;
+}
+
+.dashboardDark .rangeCard:hover {
+  background-color: #ffffff;
+  border-color: #ffffff;
+  --rc-text: #0a0a0a;
+  --rc-text-muted: rgba(10, 10, 10, 0.65);
+  --rc-delta-up: #1a7a34;
+  --rc-delta-down: #b0261a;
+  --rc-divider: rgba(10, 10, 10, 0.15);
+}
+
+.dashboardDark .rangeCardRing {
+  border-color: #ffffff;
+}
+
+.dashboardDark .chartCard h3 {
+  color: var(--color-text-secondary);
+  border-left-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Las barras Top pasan a ser blancas/gris claro (monocromo) - el nombre del
+   producto adentro necesita texto oscuro en vez del blanco+sombra que se
+   usa en el tema claro (bg azul), si no queda invisible. */
+.dashboardDark .chartCard {
+  --bar-text-color: #0a0a0a;
+  --bar-text-shadow: none;
+}
+
+.dashboardDark .empresaTabBar {
+  background-color: #171717;
+}
+
+.dashboardDark .empresaTabIndicator {
+  background-color: #ffffff;
+  box-shadow: none;
+}
+
+.dashboardDark .empresaTabLabel[data-active="true"] {
+  color: #0a0a0a;
+}
+
+.dashboardDark .viewDetailBtn {
+  color: #f5f5f5;
+}
+
+.dashboardDark .viewDetailBtn:hover:not(:disabled) {
+  background-color: #ffffff;
+  border-color: #ffffff;
+  color: #0a0a0a;
+}
+
+/* El eyebrow/gradiente del título usan verde de marca a propósito (afuera
+   del scope monocromo de gráficos) para que el encabezado no se vea 100%
+   gris plano - sigue siendo un acento sutil, no un color nuevo inventado. */
+.dashboardDark .dashboardEyebrow {
+  color: #9ca3af;
+}
+
+.dashboardDark .contentHeader h1.dashboardTitle {
+  background: linear-gradient(120deg, #ffffff 35%, #a0a0a0 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+.dashboardDark .dashboardSubtext {
+  border-left-color: rgba(255, 255, 255, 0.35);
+}
+
+.dashboardDark .rangeCardsToggleBtn {
+  border-color: var(--color-border-strong);
+  color: var(--color-text-secondary);
+}
+
+/* --color-bg-subtle no está definida en :root (siempre cae al fallback
+   rgba(0,0,0,0.03) hardcodeado en SyncSection.tsx, pensado para fondo
+   claro) - se define acá para que esas filas de cobertura del staging
+   tengan un tinte visible en vez de fundirse con el negro de fondo. */
+.dashboardDark {
+  --color-bg-subtle: rgba(255, 255, 255, 0.045);
+}
+
+/* Tarjetas/paneles grandes muy redondeados en todo el panel, no solo en
+   el Dashboard - mismo lenguaje visual pedido para "todo lo demás". */
+.dashboardDark .filterPanel,
+.dashboardDark .progressCard,
+.dashboardDark .localFiltersCard,
+.dashboardDark .adminCard,
+.dashboardDark .tableCard,
+.dashboardDark .modalContent {
+  border-radius: 20px;
+}
+
+.dashboardDark .movToolbar {
+  border-radius: 16px;
+}
+
+.dashboardDark .table th {
+  background-color: var(--color-surface-subtle);
+}
+
+.dashboardDark .table tbody tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.03);
+}
+
+.dashboardDark .table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+/* Botones con fondo degradado de marca: en el tema oscuro ese degradé pasa
+   a ser gris claro/blanco (monocromo), así que el texto en blanco fijo que
+   tenían (pensado para el degradé azul original) queda con muy poco
+   contraste - se fuerza a negro solo dentro de este scope. */
+.dashboardDark .movToolbarBtn,
+.dashboardDark .queryBtn,
+.dashboardDark .submitBtn,
+.dashboardDark .saveConfigBtn,
+.dashboardDark .adminBtnSave,
+.dashboardDark .btnConfirm {
+  color: #0a0a0a;
+}
+
+.dashboardDark .createUserBtn {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: var(--color-text-primary);
+}
+
+.dashboardDark .createUserBtn:hover {
+  background-color: #ffffff;
+  color: #0a0a0a;
+}

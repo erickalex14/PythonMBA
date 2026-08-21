@@ -209,13 +209,13 @@ function BarrasTop({
                     >
                       <span
                         style={{
-                          color: "#fff",
+                          color: "var(--bar-text-color, #fff)",
                           fontSize: "var(--bar-font-name, 0.76rem)",
                           fontWeight: 600,
                           whiteSpace: "nowrap",
                           overflow: "hidden",
                           textOverflow: "ellipsis",
-                          textShadow: "0 1px 2px rgba(0,0,0,0.45)",
+                          textShadow: "var(--bar-text-shadow, 0 1px 2px rgba(0,0,0,0.45))",
                           maxWidth: `calc(${pct}% - 1rem)`,
                         }}
                       >

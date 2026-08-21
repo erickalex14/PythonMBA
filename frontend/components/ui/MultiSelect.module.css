@@ -51,7 +51,7 @@
   padding: 0 0.35rem;
   border-radius: var(--radius-pill);
   background-color: var(--color-chart-accent);
-  color: #ffffff;
+  color: var(--pill-text-color, #ffffff);
   font-size: 0.68rem;
   font-weight: 700;
 }
@@ -137,7 +137,7 @@
   height: 16px;
   border-radius: 4px;
   border: 1.5px solid var(--color-border-strong);
-  color: #ffffff;
+  color: var(--pill-text-color, #ffffff);
   transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 

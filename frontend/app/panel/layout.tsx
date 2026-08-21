@@ -25,7 +25,7 @@ export default function PanelLayout({ children }: { children: React.ReactNode })
   return (
     <div className={styles.container}>
       <Sidebar session={session} isUserAdmin={isUserAdmin} styles={styles} />
-      <main className={styles.mainContent}>{children}</main>
+      <main className={`${styles.mainContent} ${styles.dashboardDark}`}>{children}</main>
     </div>
   );
 }

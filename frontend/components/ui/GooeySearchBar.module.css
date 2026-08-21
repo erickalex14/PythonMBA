@@ -38,7 +38,7 @@
 .searchText {
   width: 100%;
   text-align: center;
-  color: #ffffff;
+  color: var(--pill-text-color, #ffffff);
   font-size: 0.85rem;
   font-weight: 600;
   white-space: nowrap;
@@ -98,7 +98,7 @@
   border: none;
   border-radius: 50%;
   background-color: var(--color-chart-accent);
-  color: #ffffff;
+  color: var(--pill-text-color, #ffffff);
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(28, 63, 102, 0.2);
   transition: background-color 0.15s ease, transform 0.15s ease;

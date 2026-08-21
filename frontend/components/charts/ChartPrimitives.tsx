@@ -310,7 +310,7 @@ export function ParetoChart({
         </defs>
 
         {[0, 25, 50, 75, 100].map((p) => (
-          <line key={p} x1={pad} y1={toY(p)} x2={W - pad} y2={toY(p)} stroke="var(--color-surface-subtle)" strokeWidth="1" />
+          <line key={p} x1={pad} y1={toY(p)} x2={W - pad} y2={toY(p)} stroke="var(--color-border)" strokeWidth="1" strokeDasharray="2 4" />
         ))}
         {cutIdx >= 0 && (
           <motion.line
@@ -333,7 +333,7 @@ export function ParetoChart({
           const isHovered = hovered === i;
           return (
             <motion.rect
-              key={it.key} x={x} width={barW} rx="4"
+              key={it.key} x={x} width={barW} rx={barW / 2}
               fill="var(--color-brand-primary)"
               initial={{ height: 0, y: H - pad, fillOpacity: 0.7 }}
               animate={{ height: H - pad - y, y, fillOpacity: isHovered ? 1 : 0.7 }}
@@ -565,6 +565,20 @@ export function RadialGauge({
   );
 }
 
+// Paleta monocroma del Treemap ("mono rounded treemap"): un solo tono
+// (navy/azul de marca en claro, blanco/gris en oscuro) en distintas
+// intensidades - deliberadamente NO usa CATEGORY_PALETTE (esa mezcla verde/
+// naranja/rojo/azul para categorías, acá el pedido es estrictamente
+// monocromático).
+const TREEMAP_SHADES = [
+  "var(--color-chart-accent)",
+  "var(--color-brand-primary)",
+  "var(--color-text-secondary)",
+  "var(--color-brand-primary-alt)",
+  "var(--color-text-tertiary)",
+  "var(--color-text-muted)",
+];
+
 // Treemap genérico de un solo nivel (slice-and-dice): mosaico 2D donde el
 // área de cada bloque es proporcional a su valor - da una sensación de
 // distribución muy distinta a una lista de barras horizontales.
@@ -640,9 +654,19 @@ export function Treemap({
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height, overflow: "visible" }}>
         {rects.map((r, i) => {
           const isHovered = hovered === r.item.key;
-          const color = CATEGORY_PALETTE[i % CATEGORY_PALETTE.length];
-          const w = Math.max(r.w - 2, 0);
-          const h = Math.max(r.h - 2, 0);
+          // Monocromo puro (no CATEGORY_PALETTE): del tile más grande al más
+          // chico, de blanco a gris oscuro - sin verde/naranja/rojo, ese
+          // degradé de opacidad es lo único que distingue un tile de otro.
+          const shade = TREEMAP_SHADES[i % TREEMAP_SHADES.length];
+          // Gap real entre tiles (inset a los 2 lados, no solo abajo/derecha)
+          // + esquinas bien redondeadas que se acercan a "pill" en los tiles
+          // chicos - look "mono rounded treemap".
+          const gap = 6;
+          const x = r.x + gap / 2;
+          const y = r.y + gap / 2;
+          const w = Math.max(r.w - gap, 0);
+          const h = Math.max(r.h - gap, 0);
+          const rx = Math.min(16, Math.min(w, h) / 2);
           return (
             <g
               key={r.item.key}
@@ -651,24 +675,33 @@ export function Treemap({
               style={{ cursor: "pointer" }}
             >
               <motion.rect
-                x={r.x} y={r.y} width={w} height={h} rx="5"
-                fill={color} stroke="var(--color-surface)" strokeWidth="2"
+                x={x} y={y} width={w} height={h} rx={rx}
+                fill={shade}
                 initial={{ opacity: 0, scale: 0.88 }}
-                animate={{ opacity: 1, scale: isHovered ? 1.02 : 1, fillOpacity: isHovered ? 1 : 0.78 }}
+                animate={{ opacity: 1, scale: isHovered ? 1.02 : 1 }}
                 transition={{
                   opacity: { duration: 0.4, delay: i * 0.03, ease: "easeOut" },
                   scale: { duration: 0.18, ease: "easeOut" },
-                  fillOpacity: { duration: 0.15 },
                 }}
-                style={{ transformOrigin: `${r.x + w / 2}px ${r.y + h / 2}px` }}
+                style={{ transformOrigin: `${x + w / 2}px ${y + h / 2}px` }}
               />
-              {r.w > 50 && r.h > 18 && (
-                <text x={r.x + 6} y={r.y + 16} fontSize="9" fontWeight="700" fill="#ffffff">
-                  {r.item.label.substring(0, Math.floor(r.w / 6))}
+              {/* Halo oscuro alrededor del texto blanco: en monocromo los
+                  tiles van de casi-blanco a gris oscuro, así que un texto
+                  blanco plano queda ilegible en los tiles claros. El stroke
+                  oscuro separa el texto del fondo sin importar el tono. */}
+              {w > 50 && h > 18 && (
+                <text
+                  x={x + 8} y={y + 17} fontSize="9" fontWeight="700" fill="#ffffff"
+                  stroke="rgba(0,0,0,0.55)" strokeWidth="3" paintOrder="stroke fill"
+                >
+                  {r.item.label.substring(0, Math.floor(w / 6))}
                 </text>
               )}
-              {r.w > 50 && r.h > 32 && (
-                <text x={r.x + 6} y={r.y + 29} fontSize="8" fill="rgba(255,255,255,0.85)">
+              {w > 50 && h > 32 && (
+                <text
+                  x={x + 8} y={y + 30} fontSize="8" fill="rgba(255,255,255,0.9)"
+                  stroke="rgba(0,0,0,0.55)" strokeWidth="3" paintOrder="stroke fill"
+                >
                   {formatter(r.item.value)}
                 </text>
               )}
@@ -747,11 +780,24 @@ export function ScatterXY({
         <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="var(--color-border-strong)" strokeWidth="1" />
         <text x={W / 2} y={H - 6} textAnchor="middle" fontSize="9" fill="var(--color-text-muted)">{xLabel}</text>
         <text x={12} y={H / 2} textAnchor="middle" fontSize="9" fill="var(--color-text-muted)" transform={`rotate(-90 12 ${H / 2})`}>{yLabel}</text>
-        {points.map((p) => (
-          <circle
+        {points.map((p, i) => (
+          <motion.circle
             key={p.key}
-            cx={toX(p.x)} cy={toY(p.y)} r={toR(p.size ?? 1)}
-            fill={color} fillOpacity={hovered === p.key ? 0.95 : 0.5} stroke={color} strokeWidth={hovered === p.key ? 2 : 1}
+            cx={toX(p.x)} cy={toY(p.y)}
+            fill={color} stroke={color}
+            initial={{ r: 0, opacity: 0 }}
+            animate={{
+              r: toR(p.size ?? 1),
+              opacity: 1,
+              fillOpacity: hovered === p.key ? 0.95 : 0.5,
+              strokeWidth: hovered === p.key ? 2 : 1,
+            }}
+            transition={{
+              r: { type: "spring", stiffness: 260, damping: 14, delay: i * 0.045 },
+              opacity: { duration: 0.25, delay: i * 0.045 },
+              fillOpacity: { duration: 0.15 },
+              strokeWidth: { duration: 0.15 },
+            }}
             style={{ cursor: "pointer" }}
             onMouseEnter={() => setHovered(p.key)}
             onMouseLeave={() => setHovered(null)}
