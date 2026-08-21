@@ -305,10 +305,23 @@ class KpiService:
                         updated_at = NOW()
                 """), {"c": code, "n": nombre, "l": local, "corp": corp,
                        "inact": bool(f.get("INACTIVE")), "suc": sucursal})
+            # El kardex a veces guarda un `Codigo_Local` en el campo de bodega
+            # ("POT", "QUI", "PRI"), y esos codigos NO existen en el maestro. Se
+            # registran igual, sin sucursal, para que aparezcan en la lista de
+            # pendientes en vez de desaparecer del reporte en silencio.
+            huerfanas = db.execute(text("""
+                INSERT INTO kpi_bodega (ware_code, ware_name)
+                SELECT DISTINCT v.bodega_codigo, '(no esta en el maestro)'
+                FROM view_ventas_espejo_reporte v
+                WHERE v.bodega_codigo IS NOT NULL AND v.bodega_codigo <> ''
+                  AND NOT EXISTS (
+                      SELECT 1 FROM kpi_bodega b WHERE b.ware_code = v.bodega_codigo)
+                ON CONFLICT (ware_code) DO NOTHING
+            """)).rowcount or 0
             db.commit()
-            sin_mapear = len(filas) - mapeadas
             return {"bodegas": len(filas), "mapeadas": mapeadas,
-                    "sin_mapear": sin_mapear}
+                    "sin_mapear": len(filas) - mapeadas,
+                    "fuera_del_maestro": huerfanas}
         finally:
             if cerrar:
                 db.close()
@@ -406,11 +419,17 @@ class KpiService:
             # Excel no existe en el maestro, es otro identificador y no sirve.
             aplicados = 0
             for bodega, sucursal in overrides.items():
+                # El Excel escribe la bodega sin ceros a la izquierda ("16" donde
+                # el ERP dice "016"), asi que se compara de las dos formas.
+                # Nunca se le asigna sucursal a una bodega que no es de tienda:
+                # el Excel escribe "3" y al rellenar a "003" coincide con la
+                # bodega de logistica de ENV, que reventaba la sucursal 003.
                 r = db.execute(text("""
                     UPDATE kpi_bodega SET sucursal_override = :s, updated_at = NOW()
-                    WHERE UPPER(ware_code) = :b
+                    WHERE (UPPER(ware_code) = :b OR UPPER(ware_code) = LPAD(:b, 3, '0'))
+                      AND COALESCE(corp, :corp) = :corp
                       AND COALESCE(sucursal, '') <> :s
-                """), {"b": bodega, "s": sucursal})
+                """), {"b": bodega, "s": sucursal, "corp": CORP_TIENDAS})
                 aplicados += r.rowcount or 0
             db.commit()
         finally:
