@@ -8,7 +8,8 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.security import verify_api_key
-from app.dependencies import get_db, get_excel_service
+from app.dependencies import get_db, get_excel_service, get_mba3_repository
+from app.repositories.mba3_repository import IMba3Repository
 from app.services.excel_service import ExcelService
 from app.services.kpi_service import KPIS, METAS_EXTRA, KpiService
 
@@ -22,6 +23,12 @@ class MetaIn(BaseModel):
     sucursal: str = Field(..., max_length=20)
     kpi: str = Field(..., max_length=40)
     meta: float
+
+
+class BodegaIn(BaseModel):
+    ware_code: str = Field(..., max_length=20)
+    # null quita la correccion y deja mandar a la regla derivada.
+    sucursal: Optional[str] = Field(None, max_length=20)
 
 
 class ValorManualIn(BaseModel):
@@ -119,6 +126,60 @@ def guardar_valores_manuales(
         """), {"p": periodo, "s": v.sucursal, "k": v.kpi, "v": v.valor})
     db.commit()
     return {"periodo": periodo, "guardados": len(valores)}
+
+
+@router.post("/sincronizar-bodegas", dependencies=[Depends(verify_api_key)])
+def sincronizar_bodegas(
+    env: Optional[str] = Query(None, pattern="^(TEST|PROD)$",
+                               description="Entorno del ERP. Por defecto, el del .env."),
+    db: Session = Depends(get_db),
+    repository: IMba3Repository = Depends(get_mba3_repository),
+):
+    """Trae el maestro de bodegas del ERP y recalcula a que sucursal pertenecen.
+
+    Las correcciones manuales (`sucursal_override`) no se pisan.
+    """
+    try:
+        return KpiService().sincronizar_bodegas(repository, env, db)
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
+@router.get("/bodegas", dependencies=[Depends(verify_api_key)])
+def read_bodegas(
+    sin_mapear: bool = Query(False, description="Solo las que quedaron fuera del reporte"),
+    db: Session = Depends(get_db),
+):
+    """Mapeo bodega -> sucursal, para revisarlo y corregirlo desde el panel."""
+    filtro = ("WHERE COALESCE(sucursal_override, sucursal) IS NULL"
+              if sin_mapear else "")
+    filas = db.execute(text(f"""
+        SELECT ware_code, ware_name, codigo_local, corp, inactiva,
+               sucursal, sucursal_override,
+               COALESCE(sucursal_override, sucursal) AS sucursal_efectiva
+        FROM kpi_bodega {filtro}
+        ORDER BY COALESCE(sucursal_override, sucursal) NULLS FIRST, ware_code
+    """)).mappings().all()
+    return {"bodegas": [dict(f) for f in filas]}
+
+
+@router.put("/bodegas", dependencies=[Depends(verify_api_key)])
+def guardar_bodegas(
+    asignaciones: List[BodegaIn],
+    db: Session = Depends(get_db),
+):
+    """Corrige a mano a que sucursal pertenece una bodega.
+
+    Mandar `sucursal` en null quita la correccion y vuelve a la regla derivada.
+    """
+    for a in asignaciones:
+        db.execute(text("""
+            UPDATE kpi_bodega
+            SET sucursal_override = :s, updated_at = NOW()
+            WHERE ware_code = :b
+        """), {"b": a.ware_code, "s": a.sucursal})
+    db.commit()
+    return {"actualizadas": len(asignaciones)}
 
 
 @router.post("/importar", dependencies=[Depends(verify_api_key)])

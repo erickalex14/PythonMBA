@@ -11,7 +11,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.services.kpi_service import KPIS, _cumplimiento, _rango_periodo  # noqa: E402
+from app.services.kpi_service import (KPIS, _cumplimiento, _rango_periodo,  # noqa: E402
+                                      derivar_sucursal)
 
 TOL = 1e-9
 
@@ -75,10 +76,29 @@ def test_pesos_declarados():
     print("OK los pesos suman 30%")
 
 
+def test_mapeo_bodegas():
+    """Casos reales del maestro (INVT_Bodegas_Lista, 329 bodegas)."""
+    # La bodega de tienda lleva el numero de sucursal en el nombre.
+    assert derivar_sucursal("008 CITY MALL", "008") == "008"
+    assert derivar_sucursal("164 NV BOMBOLI", "164") == "164"
+    # Sin numero en el nombre se cae al Codigo_Local si es de 3 digitos.
+    assert derivar_sucursal("IMP NOVOA CITY", "062") == "062"
+    assert derivar_sucursal("MANTA SER TEC B", "010") == "010"
+    # Las bodegas ADMIN no dicen a que tienda pertenecen en ningun campo:
+    # quedan sin mapear hasta que alguien las asigne (sucursal_override).
+    assert derivar_sucursal("ADMIN NV BOMBOL", "NVB") is None
+    assert derivar_sucursal("ADMIN NV PL LAT", "NVL") is None
+    # Bodegas sin local (transito, proveedor) tampoco entran.
+    assert derivar_sucursal("Transito", "") is None
+    assert derivar_sucursal("VENTAS PRI", "PRI") is None
+    print("OK mapeo de bodegas (tienda, fallback a local, ADMIN sin mapear)")
+
+
 if __name__ == "__main__":
     test_aportes()
     test_total()
     test_bordes()
     test_periodo()
     test_pesos_declarados()
+    test_mapeo_bodegas()
     print("\nTodo cuadra contra el Excel de Contabilidad.")

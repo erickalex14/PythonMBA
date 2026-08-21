@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Numeric, DateTime, Index
+from sqlalchemy import Boolean, Column, String, Numeric, DateTime, Index
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -32,6 +32,33 @@ class KpiSucursal(Base):
     marca = Column(String(60), nullable=True)
     ciudad = Column(String(60), nullable=True)
     activa = Column(String(2), default="SI")
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class KpiBodega(Base):
+    """Bodega del ERP -> sucursal del reporte.
+
+    El ERP no tiene un campo que diga a que tienda pertenece cada bodega:
+    `Codigo_Sucursal` viene vacio en las 329 bodegas y las bodegas ADMIN
+    ("ADMIN NV BOMBOL") no llevan el numero de su tienda en ningun lado. Por eso
+    el mapeo se deriva con una regla y queda una columna para corregir a mano lo
+    que la regla no acierta.
+
+    `sucursal_efectiva` = override si existe, si no la derivada. Una bodega sin
+    ninguna de las dos queda FUERA del reporte: es el caso de mayoristas,
+    e-commerce y ROBO/PERDIDAS, que el reporte manual tampoco incluye.
+    """
+    __tablename__ = "kpi_bodega"
+
+    ware_code = Column(String(20), primary_key=True)
+    ware_name = Column(String(120), nullable=True)
+    codigo_local = Column(String(20), nullable=True)
+    corp = Column(String(20), index=True, nullable=True)
+    inactiva = Column(Boolean, default=False)
+    # Derivada por la regla; se recalcula en cada sincronizacion.
+    sucursal = Column(String(20), index=True, nullable=True)
+    # Correccion manual: manda sobre la derivada y la sincronizacion no la pisa.
+    sucursal_override = Column(String(20), nullable=True)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 

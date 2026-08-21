@@ -86,6 +86,36 @@ HOJA_POR_KPI = {
 }
 
 
+# Empresa cuyas bodegas son tiendas. ENV01 solo tiene 6 bodegas, todas de
+# logistica y administracion ("CENTRO LOG UIO", "CENTR LOG DURAN"), y comparten
+# `Codigo_Local` con tiendas reales: sin este filtro la sucursal 004 suma 1116
+# lineas en vez de 166.
+CORP_TIENDAS = "NVC01"
+
+# El ERP devuelve 200 filas cuando no se le pasa limite, y no avisa. El maestro
+# de bodegas tiene 329.
+LIMITE_ERP = 5000
+
+_RE_PREFIJO_3 = re.compile(r"^\s*(\d{3})")
+
+
+def derivar_sucursal(ware_name: str, codigo_local: str) -> Optional[str]:
+    """Deduce a que tienda pertenece una bodega.
+
+    El nombre de la bodega de tienda ya trae el numero delante ("008 CITY MALL"),
+    que es exactamente la etiqueta que usa el reporte manual. Si no lo trae, se
+    cae al `Codigo_Local` cuando es un codigo de sucursal de 3 digitos.
+
+    Devuelve None cuando no se puede deducir: esas bodegas quedan fuera del
+    reporte hasta que alguien les asigne una tienda a mano.
+    """
+    m = _RE_PREFIJO_3.match(ware_name or "")
+    if m:
+        return m.group(1)
+    local = (codigo_local or "").strip()
+    return local if re.fullmatch(r"\d{3}", local) else None
+
+
 def _rango_periodo(periodo: str) -> tuple:
     anio, mes = (int(p) for p in periodo.split("-"))
     dias = calendar.monthrange(anio, mes)[1]
@@ -137,16 +167,23 @@ class KpiService:
                 # El codigo de la vista conserva el sufijo de empresa
                 # ("1CENV153-NVC01") pero el catalogo usa el codigo pelado, asi
                 # que se quita antes de cruzar. Sin esto el join no pega nunca.
+                # La sucursal sale del mapeo de bodegas, no de `v.sucursal`
+                # (codigo_local): ese codigo lo comparten la tienda y las
+                # bodegas de logistica de ENV, que no son venta de tienda.
+                # El JOIN deja fuera las bodegas sin mapear (mayoristas,
+                # e-commerce, ROBO/PERDIDAS), igual que el reporte manual.
                 filas = conn.execute(text("""
-                    SELECT v.sucursal AS sucursal,
+                    SELECT COALESCE(b.sucursal_override, b.sucursal) AS sucursal,
                            UPPER(TRIM(c.cat)) AS cat,
                            COALESCE(SUM(v.cantidad), 0) AS unidades,
                            COALESCE(SUM(v.total_linea), 0) AS monto
                     FROM view_ventas_espejo_reporte v
+                    JOIN kpi_bodega b ON b.ware_code = v.bodega_codigo
                     JOIN kpi_producto_cat c
                       ON UPPER(TRIM(c.codigo)) =
                          UPPER(regexp_replace(v.codigo, '-(NVC01|ENV01)$', ''))
                     WHERE v.fecha BETWEEN :i AND :f
+                      AND COALESCE(b.sucursal_override, b.sucursal) IS NOT NULL
                     GROUP BY 1, 2
                 """), params).mappings().all()
 
@@ -226,6 +263,56 @@ class KpiService:
             if cerrar:
                 db.close()
 
+    def sincronizar_bodegas(self, repository, env: Optional[str] = None,
+                            db: Optional[Session] = None) -> dict:
+        """Trae el maestro de bodegas del ERP y recalcula el mapeo a sucursal.
+
+        No pisa `sucursal_override`: las correcciones hechas a mano sobreviven a
+        cada sincronizacion.
+        """
+        filas = repository.ejecutar_consulta(
+            repository.obtener_token(env=env),
+            "WARE_CODE,WARE_NAME,Codigo_Local,INACTIVE,CORP",
+            "INVT_Bodegas_Lista", limit=LIMITE_ERP, env=env)
+        if not filas:
+            raise ValueError("El ERP no devolvio bodegas (revisar permisos del servicio).")
+
+        cerrar = False
+        if db is None:
+            db = SessionLocal()
+            cerrar = True
+        try:
+            mapeadas = 0
+            for f in filas:
+                code = str(f.get("WARE_CODE") or "").strip()
+                if not code:
+                    continue
+                nombre = str(f.get("WARE_NAME") or "").strip()
+                local = str(f.get("Codigo_Local") or "").strip()
+                corp = str(f.get("CORP") or "").strip()
+                sucursal = derivar_sucursal(nombre, local) if corp == CORP_TIENDAS else None
+                mapeadas += 1 if sucursal else 0
+                db.execute(text("""
+                    INSERT INTO kpi_bodega
+                        (ware_code, ware_name, codigo_local, corp, inactiva, sucursal)
+                    VALUES (:c, :n, :l, :corp, :inact, :suc)
+                    ON CONFLICT (ware_code) DO UPDATE SET
+                        ware_name = EXCLUDED.ware_name,
+                        codigo_local = EXCLUDED.codigo_local,
+                        corp = EXCLUDED.corp,
+                        inactiva = EXCLUDED.inactiva,
+                        sucursal = EXCLUDED.sucursal,
+                        updated_at = NOW()
+                """), {"c": code, "n": nombre, "l": local, "corp": corp,
+                       "inact": bool(f.get("INACTIVE")), "suc": sucursal})
+            db.commit()
+            sin_mapear = len(filas) - mapeadas
+            return {"bodegas": len(filas), "mapeadas": mapeadas,
+                    "sin_mapear": sin_mapear}
+        finally:
+            if cerrar:
+                db.close()
+
     def importar_excel(self, contenido: bytes, periodo: str,
                        db: Optional[Session] = None) -> dict:
         """Carga sucursales, catalogo y metas desde el Excel armado a mano.
@@ -275,6 +362,19 @@ class KpiService:
         if not sucursales:
             raise ValueError("No se reconocio ninguna sucursal en la hoja PRESUPUESTO.")
 
+        # La hoja BASE trae Bodega y SUCURSAL en la misma fila: es el unico lugar
+        # donde consta a que tienda pertenecen las bodegas ADMIN ("ADMIN NV
+        # BOMBOL" -> 164), que no se puede deducir de ningun campo del ERP.
+        overrides = {}
+        if "BASE" in wb.sheetnames:
+            for fila in wb["BASE"].iter_rows(min_row=2, values_only=True):
+                if not fila or not fila[0]:
+                    continue
+                m = RE_SUCURSAL_EXCEL.match(str(fila[6] or ""))
+                bodega = str(fila[5] or "").strip().upper()
+                if m and bodega:
+                    overrides[bodega] = m.group(1)
+
         cerrar = False
         if db is None:
             db = SessionLocal()
@@ -302,13 +402,24 @@ class KpiService:
                     ON CONFLICT (periodo, sucursal, kpi)
                     DO UPDATE SET meta = EXCLUDED.meta, updated_at = NOW()
                 """), {"p": periodo, "s": sucursal, "k": kpi, "m": meta})
+            # Solo se marcan las bodegas que el ERP ya conoce: si el codigo del
+            # Excel no existe en el maestro, es otro identificador y no sirve.
+            aplicados = 0
+            for bodega, sucursal in overrides.items():
+                r = db.execute(text("""
+                    UPDATE kpi_bodega SET sucursal_override = :s, updated_at = NOW()
+                    WHERE UPPER(ware_code) = :b
+                      AND COALESCE(sucursal, '') <> :s
+                """), {"b": bodega, "s": sucursal})
+                aplicados += r.rowcount or 0
             db.commit()
         finally:
             if cerrar:
                 db.close()
 
         return {"periodo": periodo, "sucursales": len(sucursales),
-                "productos": len(catalogo), "metas": len(metas)}
+                "productos": len(catalogo), "metas": len(metas),
+                "bodegas_corregidas": aplicados}
 
     def obtener_lineas(self, inicio: str, fin: str, solo_categorizadas: bool = True,
                        db: Optional[Session] = None) -> list:
@@ -329,15 +440,19 @@ class KpiService:
                     SELECT v.factura_final, v.fecha, v.codigo, v.producto,
                            v.unidad, v.grupo, v.subgrupo, v.cantidad,
                            v.precio_venta, v.total_linea,
-                           v.bodega_codigo, v.sucursal,
+                           v.bodega_codigo,
+                           COALESCE(b.sucursal_override, b.sucursal) AS sucursal,
                            s.nombre AS sucursal_nombre, s.supervisor,
                            UPPER(TRIM(c.cat)) AS cat
                     FROM view_ventas_espejo_reporte v
+                    JOIN kpi_bodega b ON b.ware_code = v.bodega_codigo
                     {join} kpi_producto_cat c
                       ON UPPER(TRIM(c.codigo)) =
                          UPPER(regexp_replace(v.codigo, '-(NVC01|ENV01)$', ''))
-                    LEFT JOIN kpi_sucursal s ON s.codigo = v.sucursal
+                    LEFT JOIN kpi_sucursal s
+                      ON s.codigo = COALESCE(b.sucursal_override, b.sucursal)
                     WHERE v.fecha BETWEEN :i AND :f
+                      AND COALESCE(b.sucursal_override, b.sucursal) IS NOT NULL
                     ORDER BY v.fecha, v.factura_final
                 """), {"i": inicio, "f": fin}).mappings().all()
             return [dict(f) for f in filas]
@@ -369,12 +484,14 @@ class KpiService:
                 fin = min(fin, fin_mes)
 
                 filas = conn.execute(text("""
-                    SELECT v.sucursal,
+                    SELECT COALESCE(b.sucursal_override, b.sucursal) AS sucursal,
                            COALESCE(SUM(v.total_linea), 0) AS venta,
                            COUNT(DISTINCT v.factura_final) AS facturas,
                            COALESCE(SUM(v.cantidad), 0) AS unidades
                     FROM view_ventas_espejo_reporte v
+                    JOIN kpi_bodega b ON b.ware_code = v.bodega_codigo
                     WHERE v.fecha BETWEEN :i AND :f
+                      AND COALESCE(b.sucursal_override, b.sucursal) IS NOT NULL
                     GROUP BY 1
                 """), {"i": inicio, "f": fin}).mappings().all()
                 metas = conn.execute(text(
