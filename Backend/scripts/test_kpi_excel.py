@@ -14,7 +14,8 @@ import openpyxl
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.services.excel_service import ExcelService          # noqa: E402
-from app.services.kpi_service import HOJA_POR_KPI, KPIS      # noqa: E402
+from app.services.kpi_service import (COLUMNAS_PRESUPUESTO,  # noqa: E402
+                                      COLUMNAS_RESUMEN, HOJA_POR_KPI, KPIS)
 
 SEGUIMIENTO = {
     "periodo": "2026-08", "inicio": "2026-08-01", "corte": "2026-08-16",
@@ -45,7 +46,9 @@ def _linea(codigo, cat, total):
             "producto": f"PROD {codigo}", "unidad": "UN", "grupo": "ET",
             "subgrupo": "LAPTO", "cantidad": 1, "precio_venta": total,
             "total_linea": total, "bodega_codigo": "5", "sucursal": "001",
-            "sucursal_nombre": "RIO COCA", "supervisor": "GUSTAVO ONA", "cat": cat}
+            "sucursal_nombre": "RIO COCA", "supervisor": "GUSTAVO ONA", "cat": cat,
+            "codigo_vendedor": "apjc", "nombre_cliente": "CLIENTE X",
+            "canal": "TIENDA", "sucursal_larga": "001 RIO COCA"}
 
 
 LINEAS = [
@@ -68,9 +71,9 @@ def main():
     print(f"OK {len(wb.sheetnames)} hojas: {', '.join(wb.sheetnames)}")
 
     def filas_datos(hoja):
-        """Cuenta filas de datos: la hoja trae encabezado corporativo arriba."""
+        """Filas de datos: el encabezado va en la fila 1, como en el original."""
         ws = wb[hoja]
-        return [r for r in ws.iter_rows(values_only=True)
+        return [r for r in ws.iter_rows(min_row=2, values_only=True)
                 if r and str(r[0] or "").strip() == "5001"]
 
     assert len(filas_datos("TCNLG")) == 2, "TCNLG deberia traer las 2 de TECNOLOGIA"
@@ -82,16 +85,39 @@ def main():
         "BASE debe incluir tambien las lineas sin categoria"
     print(f"OK BASE conserva las {len(LINEAS)} lineas, incluida la no categorizada")
 
-    # La fila de encabezado no esta fija: arriba va el bloque corporativo y un
-    # resumen de largo variable, asi que se busca por contenido.
-    cabeceras = [str(c or "") for fila in wb["RESUMEN KPI"].iter_rows(values_only=True)
-                 for c in (fila or ())]
-    for sufijo in ("REAL", "META", "APORTE"):
-        assert any(t.endswith(sufijo) for t in cabeceras), f"falta columna {sufijo}"
-    assert "% CUMPLIMIENTO KPI" in cabeceras, "falta el total por sucursal"
-    print("OK RESUMEN KPI trae real/meta/aporte por KPI y el total")
+    # El encabezado tiene que ser IDENTICO al del archivo que arma Contabilidad,
+    # espacios de mas incluidos: el reporte se compara mes a mes contra el suyo.
+    ws = wb["RESUMEN KPI"]
+    r1 = [str(c or "") for c in next(ws.iter_rows(min_row=1, max_row=1, values_only=True))]
+    r2 = [c for c in next(ws.iter_rows(min_row=2, max_row=2, values_only=True))]
 
-    print("\nEl libro sale completo.")
+    assert r1[1] == "CORTE AL 2026-08-16", r1[1]
+    assert r1[2] == "SUPERVISOR" and r2[1] == "SUCURSAL", (r1[2], r2[1])
+    for kpi, tit_real, tit_meta in COLUMNAS_RESUMEN:
+        assert tit_real in r1, f"falta la columna real {tit_real!r}"
+        assert tit_meta in r1, f"falta la columna meta {tit_meta!r}"
+        # El peso va justo debajo del titulo de la meta.
+        assert r2[r1.index(tit_meta)] == KPIS[kpi]["peso"], kpi
+    assert r1[-1] == "% CUMPLIMIENTO KPI" and r2[-1] == "total", (r1[-1], r2[-1])
+    print("OK RESUMEN KPI replica los encabezados del archivo manual")
+
+    # La primera sucursal arranca en la fila 3, con el codigo pegado al nombre.
+    fila3 = next(ws.iter_rows(min_row=3, max_row=3, values_only=True))
+    assert fila3[0] == 1 and fila3[1] == "001 RIO COCA", fila3[:2]
+    print("OK los datos empiezan en la fila 3, como en el original")
+
+    cab_pre = [str(c or "") for c in
+               next(wb["PRESUPUESTO"].iter_rows(min_row=1, max_row=1, values_only=True))]
+    assert cab_pre[:6] == COLUMNAS_PRESUPUESTO[:6], cab_pre[:6]
+    print("OK PRESUPUESTO replica sus encabezados")
+
+    cab_base = [str(c or "") for c in
+                next(wb["BASE"].iter_rows(min_row=1, max_row=1, values_only=True))]
+    assert cab_base[:7] == ["No. Factura", "Código", "Nombre", "CANAL", "Fecha",
+                            "Bodega", "SUCURSAL"], cab_base[:7]
+    print("OK las hojas de detalle replican sus encabezados")
+
+    print("\nEl libro sale con el formato del archivo manual.")
 
 
 if __name__ == "__main__":

@@ -239,6 +239,16 @@ def download_kpi(
             detail="No hay sucursales cargadas. Corre primero seed_kpi_desde_excel.py.")
 
     presupuesto = service.obtener_presupuesto(periodo, seguimiento["corte"], db)
+    # Las dos ultimas columnas de la hoja PRESUPUESTO (RENT y KPI) salen del
+    # seguimiento, no de las ventas: se cruzan aqui para no consultar dos veces.
+    por_sucursal = {s["sucursal"]: s for s in seguimiento["sucursales"]}
+    for p in presupuesto:
+        s = por_sucursal.get(p["sucursal"])
+        if not s:
+            continue
+        rent = next((d for d in s["detalle"] if d["kpi"] == "rentabilidad"), None)
+        p["rentabilidad"] = rent["real"] if rent else None
+        p["kpi"] = s["total_kpi"]
     # BASE incluye lo no categorizado (accesorios, marcas de terceros), igual
     # que la hoja del Excel: ahi esas lineas salen con #N/A.
     lineas = service.obtener_lineas(seguimiento["inicio"], seguimiento["corte"],

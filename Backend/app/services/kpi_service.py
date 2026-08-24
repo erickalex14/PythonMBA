@@ -83,6 +83,60 @@ HOJA_POR_KPI = {
     "hogar_gym": "HOGAR-GYM", "servicio_tecnico": "ST",
 }
 
+# Encabezados de la hoja RESUMEN KPI, copiados tal cual del archivo que se arma
+# a mano (con sus espacios de mas y su acentuacion): el reporte generado tiene
+# que poder pegarse encima del anterior sin que nadie note la diferencia.
+# (kpi, titulo de la columna del valor real, titulo de la columna de la meta)
+COLUMNAS_RESUMEN = [
+    ("rentabilidad", "RENTABILIDAD OBTENIDA", "RENTABILIDAD DE TIENDA"),
+    ("tecnologia", "VENTA  DE TECNOLOGIA ", "TECNOLOGIA"),
+    ("celulares_tablets", "VENTA CELULARES Y TABLETS ENV", "CELULARES Y TABLETS ENV"),
+    ("motorola", "VTA MOTOROLA RAZER / EDGE 60", "MOTOROLA RAZER / EDGE 60"),
+    ("sillas_gamer", "VENTA SILLAS GAMER ENV ", "SILLAS GAMER ENV "),
+    ("hogar_gym", "VENTA HOGAR Y GYM", "HOGAR Y GIMNASIO"),
+    ("planes_claro", "VTA PLANES CLARO", "PLANES CLARO"),
+    ("review_env", "REVIEW ENV REALIZADO", "REVIEW ENV"),
+    ("credito_directo", "Venta credito", "CREDITO DIRECTO"),
+    ("servicio_tecnico", "VENTA SERVICIO TECNICO", "SERVICIO TECNICO"),
+]
+
+# Titulos del bloque de aportes (columnas Y..AH). No coinciden con los de arriba:
+# el archivo original abrevia "HOGAR" y repite "VTA" en dos de ellos.
+TITULOS_APORTE = {
+    "rentabilidad": "RENTABILIDAD DE TIENDA", "tecnologia": "TECNOLOGIA",
+    "celulares_tablets": "CELULARES Y TABLETS ENV",
+    "motorola": "VTA MOTOROLA RAZER / EDGE 60", "sillas_gamer": "SILLAS GAMER ENV ",
+    "hogar_gym": "HOGAR", "planes_claro": "VTA PLANES CLARO",
+    "review_env": "REVIEW ENV", "credito_directo": "CREDITO DIRECTO",
+    "servicio_tecnico": "SERVICIO TECNICO",
+}
+
+COLUMNAS_PRESUPUESTO = [
+    "l", "SUCURSAL", "MARCA", "CIUDAD", "SUPERVISOR", "META DE TIENDA AGOSTO",
+    "VENTA TOTAL DE TIENDA", "TOTAL DE FACTURAS TIENDA ",
+    "TOTAL UNIDADES VENDIDAS X TIENDA", "Ticket promedio x factura (TIENDA)",
+    "Unidades Promedio x factura UPF (TIENDA)", "OBSERVACION",
+    "VTA PROMEDIO POR DIA", "PROYECCCION A FIN DE MES ", "CUMPLIMIENTO",
+    "RENT", "KPI",
+]
+
+COLUMNAS_DETALLE = [
+    ("factura_final", "No. Factura"), ("codigo_vendedor", "Código"),
+    ("nombre_cliente", "Nombre"), ("canal", "CANAL"), ("fecha", "Fecha"),
+    ("bodega_codigo", "Bodega"), ("sucursal_larga", "SUCURSAL"),
+    ("supervisor", "SUPERVISOR"), ("codigo", "Código"), ("producto", "Producto"),
+    ("unidad", "Unidad"), ("grupo", "Grupo"), ("subgrupo", "Subgrupo"),
+    ("cantidad", "Cantidad"), ("precio_venta", "Precio de Venta"),
+    ("total_linea", "Total Factura"), ("cat", "CAT"),
+]
+
+
+def observacion_tienda(ticket: float, upf: float) -> str:
+    """Etiqueta de la columna OBSERVACION, con los cortes del Excel original."""
+    if ticket >= 121.5:
+        return " TIENDA PREMIUM" if upf >= 1.9 else "TIENDA CON TICKET ALTO"
+    return "TIENDA DEBE MEJORAR TICKET" if upf >= 1.9 else "OPORTUNIDAD DE MEJORAR"
+
 
 # Empresa cuyas bodegas son tiendas. ENV01 solo tiene 6 bodegas, todas de
 # logistica y administracion ("CENTRO LOG UIO", "CENTR LOG DURAN"), y comparten
@@ -549,7 +603,15 @@ class KpiService:
                            v.unidad, v.grupo, v.subgrupo, v.cantidad,
                            v.precio_venta, v.total_linea,
                            v.bodega_codigo,
+                           v.codigo_cliente AS codigo_vendedor,
+                           v.nombre_cliente,
+                           -- El reporte manual trae esta columna fija en TIENDA:
+                           -- las bodegas que no son de tienda ya quedaron fuera
+                           -- por el mapeo, asi que aqui todo lo que pasa es tienda.
+                           'TIENDA' AS canal,
                            COALESCE(b.sucursal_override, b.sucursal) AS sucursal,
+                           TRIM(CONCAT(COALESCE(b.sucursal_override, b.sucursal),
+                                       ' ', COALESCE(s.nombre, ''))) AS sucursal_larga,
                            s.nombre AS sucursal_nombre, s.supervisor,
                            UPPER(TRIM(c.cat)) AS cat
                     FROM view_ventas_espejo_reporte v

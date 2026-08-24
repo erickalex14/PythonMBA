@@ -399,105 +399,101 @@ class ExcelService:
 
     def generar_reporte_kpi(self, seguimiento: dict, presupuesto: list,
                             lineas: list) -> io.BytesIO:
-        """Libro completo del Seguimiento KPI, con la misma estructura de hojas
-        que el archivo que hoy se arma a mano.
+        """Libro del Seguimiento KPI con el MISMO formato del archivo manual.
 
-        Hojas: RESUMEN KPI, PRESUPUESTO, una de detalle por categoría y BASE.
-        No se portan las hojas fósiles del archivo original (meses viejos de ST,
-        PayJoy y CLARO): son arrastre de copiar el libro del mes anterior.
+        A diferencia del resto de reportes, aquí no se usa el encabezado
+        corporativo: este archivo se compara mes a mes contra el que arma
+        Contabilidad, así que replica sus encabezados literales (con sus espacios
+        de más incluidos) y su disposición de filas.
+
+        No se portan las hojas fósiles del original (ST.JUL, PJ-JUN, CLARO,
+        Hoja1..Hoja8): traen datos de meses viejos, son arrastre de copiar el
+        libro anterior.
         """
-        from app.services.kpi_service import HOJA_POR_KPI, KPIS
+        from app.services.kpi_service import (COLUMNAS_DETALLE, COLUMNAS_PRESUPUESTO,
+                                              COLUMNAS_RESUMEN, HOJA_POR_KPI, KPIS,
+                                              TITULOS_APORTE, observacion_tienda)
 
-        inicio, corte = seguimiento["inicio"], seguimiento["corte"]
+        corte = seguimiento["corte"]
+        negrita = Font(bold=True)
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             wb = writer.book
             if "Sheet" in wb.sheetnames:
                 del wb["Sheet"]
 
-            # --- RESUMEN KPI: una fila por sucursal, real/meta/aporte por KPI ---
-            filas, columnas = [], [
-                ("sucursal", "Sucursal"), ("nombre", "Nombre"),
-                ("supervisor", "Supervisor"),
-            ]
-            money_resumen, qty_resumen = set(), set()
-            for s in seguimiento["sucursales"]:
-                fila = {"sucursal": s["sucursal"], "nombre": s["nombre"],
-                        "supervisor": s["supervisor"], "total": s["total_kpi"]}
-                for d in s["detalle"]:
-                    fila[f"{d['kpi']}_real"] = d["real"]
-                    fila[f"{d['kpi']}_meta"] = d["meta"]
-                    fila[f"{d['kpi']}_aporte"] = d["aporte"]
-                filas.append(fila)
-            for kpi, cfg in KPIS.items():
-                columnas += [(f"{kpi}_real", f"{cfg['label']} REAL"),
-                             (f"{kpi}_meta", f"{cfg['label']} META"),
-                             (f"{kpi}_aporte", f"{cfg['label']} APORTE")]
-                destino = money_resumen if cfg["medida"] == "monto" else qty_resumen
-                destino.update({f"{kpi}_real", f"{kpi}_meta"})
-            columnas.append(("total", "% CUMPLIMIENTO KPI"))
+            # ---------- RESUMEN KPI ----------
+            ws = wb.create_sheet("RESUMEN KPI")
+            fila1 = ["", f"CORTE AL {corte}", "SUPERVISOR"]
+            fila2 = ["", "SUCURSAL", "SUPERVISOR"]
+            for kpi, tit_real, tit_meta in COLUMNAS_RESUMEN:
+                fila1 += [tit_real, tit_meta]
+                # El peso va debajo del titulo de la meta, como en el original.
+                fila2 += ["", KPIS[kpi]["peso"]]
+            fila1.append("")
+            fila2.append("")
+            for kpi, _, _ in COLUMNAS_RESUMEN:
+                fila1.append(TITULOS_APORTE[kpi])
+                fila2.append(KPIS[kpi]["peso"])
+            fila1.append("% CUMPLIMIENTO KPI")
+            fila2.append("total")
+            ws.append(fila1)
+            ws.append(fila2)
+            for c in ws[1] + ws[2]:
+                c.font = negrita
 
-            df_resumen = pd.DataFrame(filas)
-            logrados = [s["total_kpi"] for s in seguimiento["sucursales"]]
-            resumen = [
-                ("Sucursales evaluadas", len(logrados)),
-                ("Cumplimiento promedio", round(sum(logrados) / len(logrados), 4)
-                 if logrados else 0),
-                ("Peso total repartido", seguimiento["peso_total"]),
-                ("Días transcurridos", f"{seguimiento['dias_corte']} de {seguimiento['dias_mes']}"),
-            ]
-            self._escribir_hoja_corporativa(
-                wb, df_resumen, "RESUMEN KPI",
-                f"Seguimiento KPI por Sucursal — {seguimiento['periodo']}",
-                inicio, corte, columnas, money_resumen, qty_resumen,
-                resumen=resumen, anchos={"nombre": 28, "supervisor": 24})
+            for i, s in enumerate(seguimiento["sucursales"], start=1):
+                por_kpi = {d["kpi"]: d for d in s["detalle"]}
+                fila = [i, f"{s['sucursal']} {s['nombre']}".strip(), s["supervisor"] or ""]
+                for kpi, _, _ in COLUMNAS_RESUMEN:
+                    d = por_kpi.get(kpi, {})
+                    fila += [d.get("real", 0), d.get("meta")]
+                fila.append("")
+                for kpi, _, _ in COLUMNAS_RESUMEN:
+                    fila.append(por_kpi.get(kpi, {}).get("aporte", 0))
+                fila.append(s["total_kpi"])
+                ws.append(fila)
+            ws.column_dimensions["B"].width = 30
+            ws.column_dimensions["C"].width = 22
 
-            # --- PRESUPUESTO ---
-            df_pre = pd.DataFrame(presupuesto)
-            cols_pre = [
-                ("sucursal", "Sucursal"), ("nombre", "Nombre"), ("marca", "Marca"),
-                ("ciudad", "Ciudad"), ("supervisor", "Supervisor"),
-                ("meta", "Meta del Mes"), ("venta", "Venta Total"),
-                ("facturas", "Facturas"), ("unidades", "Unidades"),
-                ("ticket_promedio", "Ticket Promedio"),
-                ("unidades_por_factura", "Unid. x Factura"),
-                ("venta_promedio_dia", "Venta Promedio Día"),
-                ("proyeccion", "Proyección Fin de Mes"),
-                ("cumplimiento", "Cumplimiento"),
-            ]
-            self._escribir_hoja_corporativa(
-                wb, df_pre, "PRESUPUESTO",
-                f"Presupuesto de Tiendas — {seguimiento['periodo']}", inicio, corte,
-                cols_pre, {"meta", "venta", "ticket_promedio", "venta_promedio_dia",
-                           "proyeccion"},
-                {"facturas", "unidades", "unidades_por_factura"},
-                anchos={"nombre": 28, "supervisor": 24})
+            # ---------- PRESUPUESTO ----------
+            ws = wb.create_sheet("PRESUPUESTO")
+            ws.append(COLUMNAS_PRESUPUESTO)
+            for c in ws[1]:
+                c.font = negrita
+            for i, p in enumerate(presupuesto, start=1):
+                ticket = p["ticket_promedio"]
+                upf = p["unidades_por_factura"]
+                ws.append([
+                    i, f"{p['sucursal']} {p['nombre']}".strip(), p["marca"], p["ciudad"],
+                    p["supervisor"], p["meta"], p["venta"], p["facturas"], p["unidades"],
+                    ticket, upf, observacion_tienda(ticket, upf),
+                    p["venta_promedio_dia"], p["proyeccion"], p["cumplimiento"],
+                    p.get("rentabilidad"), p.get("kpi"),
+                ])
+            ws.column_dimensions["B"].width = 30
+            ws.column_dimensions["E"].width = 22
+            ws.column_dimensions["L"].width = 30
 
-            # --- Detalle por categoría + BASE ---
-            cols_det = [
-                ("factura_final", "No. Factura"), ("fecha", "Fecha"),
-                ("bodega_codigo", "Bodega"), ("sucursal", "Sucursal"),
-                ("sucursal_nombre", "Nombre Sucursal"), ("supervisor", "Supervisor"),
-                ("codigo", "Código"), ("producto", "Producto"), ("unidad", "Unidad"),
-                ("grupo", "Grupo"), ("subgrupo", "Subgrupo"),
-                ("cantidad", "Cantidad"), ("precio_venta", "Precio de Venta"),
-                ("total_linea", "Total Factura"), ("cat", "CAT"),
-            ]
-            money_det, qty_det = {"precio_venta", "total_linea"}, {"cantidad"}
-            anchos_det = {"producto": 34, "sucursal_nombre": 26, "supervisor": 22}
+            # ---------- Detalle por categoría + BASE ----------
+            def hoja_detalle(nombre, filas):
+                hoja = wb.create_sheet(nombre)
+                hoja.append([titulo for _, titulo in COLUMNAS_DETALLE])
+                for c in hoja[1]:
+                    c.font = negrita
+                for f in filas:
+                    hoja.append([_clean(f.get(campo)) if campo in
+                                 ("producto", "nombre_cliente", "sucursal_larga")
+                                 else f.get(campo) for campo, _ in COLUMNAS_DETALLE])
+                hoja.column_dimensions["G"].width = 30
+                hoja.column_dimensions["J"].width = 34
+                return hoja
 
-            df_todo = pd.DataFrame(lineas)
-            for kpi, hoja in HOJA_POR_KPI.items():
-                cat = KPIS[kpi].get("cat", "").upper().strip()
-                sub = (df_todo[df_todo["cat"].fillna("").str.upper().str.strip() == cat]
-                       if not df_todo.empty else df_todo)
-                self._escribir_hoja_corporativa(
-                    wb, sub, hoja, f"Detalle — {KPIS[kpi]['label']}", inicio, corte,
-                    cols_det, money_det, qty_det, anchos=anchos_det)
-
-            self._escribir_hoja_corporativa(
-                wb, df_todo, "BASE", "Base de líneas de venta del período",
-                inicio, corte, cols_det, money_det, qty_det, anchos=anchos_det)
+            for kpi, nombre in HOJA_POR_KPI.items():
+                cat = (KPIS[kpi].get("cat") or "").upper().strip()
+                hoja_detalle(nombre, [f for f in lineas
+                                      if str(f.get("cat") or "").upper().strip() == cat])
+            hoja_detalle("BASE", lineas)
 
         output.seek(0)
         return output

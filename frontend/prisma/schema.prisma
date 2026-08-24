@@ -214,3 +214,83 @@ model VentasFacturaStaging {
 
 
 
+
+// --- Reporte de Seguimiento KPI -------------------------------------------
+// Estas tablas las crea el backend con SQLAlchemy, pero tienen que estar
+// declaradas aqui igual: el contenedor arranca con `prisma db push
+// --accept-data-loss` y borra de la base todo lo que no figure en este esquema.
+
+model KpiProductoCat {
+  codigo     String   @id @db.VarChar(50)
+  cat        String   @db.VarChar(60)
+  producto   String?  @db.VarChar(250)
+  updated_at DateTime @updatedAt
+
+  @@index([cat])
+  @@map("kpi_producto_cat")
+}
+
+model KpiSucursal {
+  codigo     String   @id @db.VarChar(20)
+  nombre     String   @db.VarChar(120)
+  supervisor String?  @db.VarChar(120)
+  marca      String?  @db.VarChar(60)
+  ciudad     String?  @db.VarChar(60)
+  activa     String?  @default("SI") @db.VarChar(2)
+  updated_at DateTime @updatedAt
+
+  @@index([supervisor])
+  @@map("kpi_sucursal")
+}
+
+model KpiBodega {
+  ware_code         String   @id @db.VarChar(20)
+  ware_name         String?  @db.VarChar(120)
+  codigo_local      String?  @db.VarChar(20)
+  corp              String?  @db.VarChar(20)
+  inactiva          Boolean? @default(false)
+  sucursal          String?  @db.VarChar(20)
+  sucursal_override String?  @db.VarChar(20)
+  updated_at        DateTime @updatedAt
+
+  @@index([corp])
+  @@index([sucursal])
+  @@map("kpi_bodega")
+}
+
+model KpiCobroCredito {
+  codigo_cobro String   @id @db.VarChar(50)
+  sucursal     String?  @db.VarChar(20)
+  fecha        DateTime @db.Date
+  valor        Decimal? @default(0) @db.Decimal(18, 4)
+  tipo_crudo   String?  @db.VarChar(160)
+  updated_at   DateTime @updatedAt
+
+  @@index([sucursal])
+  @@index([fecha])
+  @@map("kpi_cobro_credito")
+}
+
+model KpiMeta {
+  periodo    String   @db.VarChar(7)
+  sucursal   String   @db.VarChar(20)
+  kpi        String   @db.VarChar(40)
+  meta       Decimal  @default(0) @db.Decimal(18, 4)
+  updated_at DateTime @updatedAt
+
+  @@id([periodo, sucursal, kpi])
+  @@index([periodo])
+  @@map("kpi_meta")
+}
+
+model KpiValorManual {
+  periodo    String   @db.VarChar(7)
+  sucursal   String   @db.VarChar(20)
+  kpi        String   @db.VarChar(40)
+  valor      Decimal  @default(0) @db.Decimal(18, 4)
+  updated_at DateTime @updatedAt
+
+  @@id([periodo, sucursal, kpi])
+  @@index([periodo])
+  @@map("kpi_valor_manual")
+}
