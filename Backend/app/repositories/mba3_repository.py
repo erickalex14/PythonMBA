@@ -16,6 +16,28 @@ class IMba3Repository(ABC):
     def ejecutar_consulta(self, token: str, select: str, table: str, where: Optional[str] = None, limit: Optional[int] = None, env: Optional[str] = None) -> List[Dict]:
         pass
 
+ENTORNOS_VALIDOS = ("PRUEBAS", "PROD")
+
+
+def _resolver_env(env: Optional[str]) -> str:
+    """Normaliza el entorno del ERP.
+
+    Antes, un valor no reconocido caia a `settings.MBA3_ENV` en silencio: pasar
+    "TEST" (en vez de "PRUEBAS") consultaba PRODUCCION sin ningun aviso, con las
+    credenciales de produccion. En lecturas solo confunde; en cualquier cosa que
+    escriba seria grave. Ahora un entorno desconocido es un error.
+    """
+    if not env or not str(env).strip():
+        return settings.MBA3_ENV
+    normalizado = str(env).strip().upper()
+    if normalizado not in ENTORNOS_VALIDOS:
+        raise ValueError(
+            f"Entorno de ERP no valido: {env!r}. "
+            f"Valores aceptados: {', '.join(ENTORNOS_VALIDOS)}."
+        )
+    return normalizado
+
+
 def procesar_respuesta_erp(datos, context=""):
     """
     Parser robusto para interceptar respuestas de error o ausencia de registros
@@ -64,9 +86,7 @@ class Mba3Repository(IMba3Repository):
 
     def obtener_token(self, force_refresh: bool = False, env: Optional[str] = None) -> Optional[str]:
         #SELECCIONA CREDENCIALES DE PRODUCCION O PRUEBAS DINAMICAMENTE SEGUN SE ELIJA EN EL FRONT
-        target_env = env.strip().upper() if env else settings.MBA3_ENV
-        if target_env not in ["PRUEBAS", "PROD"]:
-            target_env = settings.MBA3_ENV
+        target_env = _resolver_env(env)
         #SE USA EL TOKEN EN CACHE PARA EL ENTORNO
         if not force_refresh and target_env in Mba3Repository._cached_tokens:
             logging.info(f"Repository: Utilizando token JWT almacenado en caché para el entorno {target_env}.")
@@ -102,9 +122,7 @@ class Mba3Repository(IMba3Repository):
 
     #EJECUTAR LA CONSULTA EXTERNA NECESARIA PARA EL REPORTE
     def ejecutar_consulta(self, token: str, select: str, table: str, where: Optional[str] = None, limit: Optional[int] = None, env: Optional[str] = None) -> List[Dict]:
-        target_env = env.strip().upper() if env else settings.MBA3_ENV
-        if target_env not in ["PRUEBAS", "PROD"]:
-            target_env = settings.MBA3_ENV
+        target_env = _resolver_env(env)
 
         logging.info(f"Repository: Ejecutando consulta sobre la tabla {table} (Entorno: {target_env})")
         

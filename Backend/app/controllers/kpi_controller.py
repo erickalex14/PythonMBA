@@ -130,7 +130,7 @@ def guardar_valores_manuales(
 
 @router.post("/sincronizar-bodegas", dependencies=[Depends(verify_api_key)])
 def sincronizar_bodegas(
-    env: Optional[str] = Query(None, pattern="^(TEST|PROD)$",
+    env: Optional[str] = Query(None, pattern="^(PRUEBAS|PROD)$",
                                description="Entorno del ERP. Por defecto, el del .env."),
     db: Session = Depends(get_db),
     repository: IMba3Repository = Depends(get_mba3_repository),
