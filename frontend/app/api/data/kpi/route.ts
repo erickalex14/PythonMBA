@@ -5,8 +5,9 @@ import { authOptions } from "../../auth/[...nextauth]/route";
 // Proxy unico para el reporte de Seguimiento KPI. Se usa `?recurso=` en vez de
 // una ruta catch-all para no depender de como esta version de Next entrega los
 // params dinamicos (ver frontend/AGENTS.md).
-const LECTURA = ["seguimiento", "definicion", "sucursales", "metas", "excel"];
-const ESCRITURA = ["metas", "valores-manuales", "importar"];
+const LECTURA = ["seguimiento", "definicion", "sucursales", "metas", "excel", "bodegas"];
+const ESCRITURA = ["metas", "valores-manuales", "bodegas"];
+const POST_PERMITIDO = ["importar", "sincronizar-bodegas", "sincronizar-cobros"];
 
 async function sesionCon(permiso: string) {
   const session = await getServerSession(authOptions);
@@ -85,27 +86,33 @@ export async function PUT(request: Request) {
 
 export async function POST(request: Request) {
   const { searchParams } = new URL(request.url);
-  if (searchParams.get("recurso") !== "importar") {
-    return NextResponse.json({ error: "Recurso no permitido." }, { status: 400 });
+  const recurso = searchParams.get("recurso") || "";
+  if (!POST_PERMITIDO.includes(recurso)) {
+    return NextResponse.json({ error: `Recurso no permitido: ${recurso}` }, { status: 400 });
   }
   if (!(await sesionCon("MANAGE_CONFIG"))) {
-    return NextResponse.json({ error: "No autorizado para importar metas." }, { status: 403 });
+    return NextResponse.json({ error: "No autorizado." }, { status: 403 });
   }
 
   try {
-    // Se reenvia el multipart sin reconstruirlo: fetch arma el boundary solo.
-    const entrada = await request.formData();
-    const salida = new FormData();
-    const archivo = entrada.get("archivo");
-    if (!archivo) {
-      return NextResponse.json({ error: "Falta el archivo." }, { status: 400 });
+    // Las sincronizaciones no llevan cuerpo; solo `importar` sube un archivo.
+    let body: BodyInit | undefined;
+    if (recurso === "importar") {
+      // Se reenvia el multipart sin reconstruirlo: fetch arma el boundary solo.
+      const entrada = await request.formData();
+      const archivo = entrada.get("archivo");
+      if (!archivo) {
+        return NextResponse.json({ error: "Falta el archivo." }, { status: 400 });
+      }
+      const salida = new FormData();
+      salida.append("archivo", archivo);
+      body = salida;
     }
-    salida.append("archivo", archivo);
 
-    const res = await fetch(urlBackend("importar", request), {
+    const res = await fetch(urlBackend(recurso, request), {
       method: "POST",
       headers: { "X-API-Key": process.env.INTERNAL_API_KEY || "" },
-      body: salida,
+      body,
     });
     return NextResponse.json(await res.json(), { status: res.status });
   } catch (error: any) {

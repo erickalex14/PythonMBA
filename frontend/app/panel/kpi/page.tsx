@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Poppins } from "next/font/google";
 import { motion } from "framer-motion";
 import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import styles from "../dashboard.module.css";
 import { GooeySearchBar } from "../../../components/ui/GooeySearchBar";
 
@@ -19,6 +20,7 @@ const pct = (v: number | null) =>
   v === null || v === undefined ? "—" : `${(v * 100).toFixed(1)}%`;
 
 export default function SeguimientoKpiPage() {
+  const router = useRouter();
   const { data: session } = useSession();
   const usuario = session?.user as any;
   const puedeCargar =
@@ -188,6 +190,15 @@ export default function SeguimientoKpiPage() {
 
           {puedeCargar && (
             <>
+              <motion.button
+                type="button"
+                onClick={() => router.push("/panel/kpi/metas")}
+                className={styles.movToolbarBtn}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                Editar metas
+              </motion.button>
               <input
                 ref={archivoRef}
                 type="file"
