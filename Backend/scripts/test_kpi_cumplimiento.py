@@ -12,7 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.services.kpi_service import (KPIS, _cumplimiento, _rango_periodo,  # noqa: E402
-                                      derivar_sucursal)
+                                      derivar_sucursal, es_credito_directo)
 
 TOL = 1e-9
 
@@ -94,6 +94,28 @@ def test_mapeo_bodegas():
     print("OK mapeo de bodegas (tienda, fallback a local, ADMIN sin mapear)")
 
 
+def test_credito_directo():
+    """Variantes reales halladas en los pagos 'Otros' de agosto."""
+    # El cajero escribe el tipo a mano: trece grafias distintas.
+    for t in ("CREDINOVI", "CREDINOV1", "CREDNOVI", "CrediNovi",
+              "CREDINOVI 1", "CREDINOVI1", "CREDITO DIRECTO"):
+        assert es_credito_directo(t, "107521"), t
+    # Banco Solidario tambien cuenta como credito directo en el reporte manual.
+    for t in ("BSOL", "BSOLIDARIO", "banco solidario", "B SOLIDARIO",
+              "BANCO SOLIDARIO", "SOLIDARIO"):
+        assert es_credito_directo(t, ""), t
+    # Los dos campos son intercambiables: a veces va en el del nombre del banco.
+    assert es_credito_directo("", "CREDITO DIRECTO")
+    # Sin etiqueta, el unico rastro es el numero de operacion CrediNovi (107xxx).
+    for n in ("107911", "107887", "107875", "107725", "107713", "107886"):
+        assert es_credito_directo("", n), n
+    # Y lo que NO debe entrar: pagos 'Otros' sin relacion con credito.
+    for tipo, nombre in (("", ""), ("", "1"), ("", "857452"), ("", "438108"),
+                         ("XXXXXXXX", ""), ("CREDITO TRIB.", "")):
+        assert not es_credito_directo(tipo, nombre), f"{tipo!r}/{nombre!r}"
+    print("OK credito directo: 13 grafias, dos campos, numero de operacion")
+
+
 if __name__ == "__main__":
     test_aportes()
     test_total()
@@ -101,4 +123,5 @@ if __name__ == "__main__":
     test_periodo()
     test_pesos_declarados()
     test_mapeo_bodegas()
+    test_credito_directo()
     print("\nTodo cuadra contra el Excel de Contabilidad.")

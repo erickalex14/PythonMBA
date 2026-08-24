@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, String, Numeric, DateTime, Index
+from sqlalchemy import Boolean, Column, Date, String, Numeric, DateTime, Index
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -59,6 +59,23 @@ class KpiBodega(Base):
     sucursal = Column(String(20), index=True, nullable=True)
     # Correccion manual: manda sobre la derivada y la sincronizacion no la pisa.
     sucursal_override = Column(String(20), nullable=True)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class KpiCobroCredito(Base):
+    """Cobros de credito directo (CrediNovi / Banco Solidario) del ERP.
+
+    `CODIGO_TIENDA` del cobro ya trae el codigo de sucursal, asi que esto NO
+    depende del mapeo de bodegas.
+    """
+    __tablename__ = "kpi_cobro_credito"
+
+    codigo_cobro = Column(String(50), primary_key=True)
+    sucursal = Column(String(20), index=True, nullable=True)
+    fecha = Column(Date, index=True, nullable=False)
+    valor = Column(Numeric(18, 4), default=0)
+    # Lo que escribio el cajero, para poder auditar por que entro al reporte.
+    tipo_crudo = Column(String(160), nullable=True)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 

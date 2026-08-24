@@ -63,12 +63,10 @@ KPIS = {
     "review_env": {
         "label": "REVIEW ENV", "peso": 0.03,
         "origen": "manual", "medida": "unidades"},
-    # El credito directo sale de los cobros del ERP (Tipo='Otros',
-    # SubTipo='CREDITO DIRECTO 1'), pero esa tabla todavia no se sincroniza al
-    # staging. Hasta entonces se captura a mano igual que los del formulario.
+    # Sale de los cobros del ERP: pagos 'Otros' de CrediNovi o Banco Solidario.
     "credito_directo": {
         "label": "CREDITO DIRECTO", "peso": 0.10,
-        "origen": "manual", "medida": "monto"},
+        "origen": "cobros", "medida": "monto"},
 }
 
 CATS_VENTAS = {k: v["cat"] for k, v in KPIS.items() if v["origen"] == "ventas"}
@@ -97,6 +95,35 @@ CORP_TIENDAS = "NVC01"
 LIMITE_ERP = 5000
 
 _RE_PREFIJO_3 = re.compile(r"^\s*(\d{3})")
+
+# --- Credito directo (CrediNovi / Banco Solidario) -------------------------
+# El tipo de pago lo teclea el cajero y sale escrito de trece formas distintas
+# ("CREDINOVI", "CREDINOV1", "CREDNOVI", "CrediNovi", "CREDINOVI 1",
+# "CREDITO DIRECTO", "BSOL", "BANCO SOLIDARIO"...). Ademas hay dos campos
+# intercambiables: unos lo escriben en BANK_O_CC_TYPE y otros en
+# NOMBRE_BANCO_O_TIPO_TC. Y algunos no escriben nada: esos solo se reconocen
+# por el numero de operacion de CrediNovi, que empieza en 107.
+_RE_OPERACION_CREDINOVI = re.compile(r"107\d{3}")
+FORMA_PAGO_CREDITO = "Otros"
+
+
+def _solo_letras(texto) -> str:
+    return re.sub(r"[^A-Z]", "", str(texto or "").upper())
+
+
+def es_credito_directo(tipo_banco, nombre_banco) -> bool:
+    """Decide si un pago 'Otros' es credito directo.
+
+    Valida contra la hoja D.CREDINOVI de agosto: 42 de 42 cobros, sin falsos
+    positivos entre los 328 pagos 'Otros' del periodo.
+    """
+    texto = _solo_letras(tipo_banco) + " " + _solo_letras(nombre_banco)
+    if "CRED" in texto and ("NOV" in texto or "DIRECTO" in texto):
+        return True
+    if "SOLIDARIO" in texto or "BSOL" in texto:
+        return True
+    # Sin etiqueta: el numero de operacion es el unico rastro.
+    return bool(_RE_OPERACION_CREDINOVI.fullmatch(str(nombre_banco or "").strip()))
 
 
 def derivar_sucursal(ware_name: str, codigo_local: str) -> Optional[str]:
@@ -193,6 +220,14 @@ class KpiService:
                 manuales = conn.execute(text(
                     "SELECT sucursal, kpi, valor FROM kpi_valor_manual "
                     "WHERE periodo = :p"), {"p": periodo}).mappings().all()
+                # El cobro ya trae su sucursal (CODIGO_TIENDA), asi que este KPI
+                # no pasa por el mapeo de bodegas.
+                cobros = conn.execute(text("""
+                    SELECT sucursal, COALESCE(SUM(valor), 0) AS monto
+                    FROM kpi_cobro_credito
+                    WHERE fecha BETWEEN :i AND :f AND sucursal IS NOT NULL
+                    GROUP BY 1
+                """), params).mappings().all()
                 sucursales = conn.execute(text(
                     "SELECT codigo, nombre, supervisor, marca, ciudad "
                     "FROM kpi_sucursal WHERE activa = 'SI'")).mappings().all()
@@ -208,6 +243,8 @@ class KpiService:
                 reales[(f["sucursal"], kpi)] = valor
             for m in manuales:
                 reales[(m["sucursal"], m["kpi"])] = float(m["valor"] or 0)
+            for c in cobros:
+                reales[(c["sucursal"], "credito_directo")] = float(c["monto"] or 0)
 
             metas_map = {(m["sucursal"], m["kpi"]): float(m["meta"] or 0)
                          for m in metas}
@@ -322,6 +359,58 @@ class KpiService:
             return {"bodegas": len(filas), "mapeadas": mapeadas,
                     "sin_mapear": len(filas) - mapeadas,
                     "fuera_del_maestro": huerfanas}
+        finally:
+            if cerrar:
+                db.close()
+
+    def sincronizar_cobros(self, repository, inicio: str, fin: str,
+                           env: Optional[str] = None,
+                           db: Optional[Session] = None) -> dict:
+        """Trae los cobros de credito directo del ERP para un rango de fechas.
+
+        El filtro de fecha NO es opcional: estas tablas devuelven 3000 filas como
+        maximo ignorando el `limit`, y sin `where` entregan las mas antiguas
+        (registros de 2018) sin ningun aviso.
+        """
+        filas = repository.ejecutar_consulta(
+            repository.obtener_token(env=env),
+            "CODIGO_COBRO,BANK_O_CC_TYPE,NOMBRE_BANCO_O_TIPO_TC,CODIGO_TIENDA,"
+            "VALOR_DE_PAGO,FECHA_PAGO",
+            "CLNT_Cobro_FormaDePago",
+            where=(f"FORMA_DE_PAGO='{FORMA_PAGO_CREDITO}' "
+                   f"AND FECHA_PAGO>='{inicio}' AND FECHA_PAGO<='{fin}'"),
+            limit=LIMITE_ERP, env=env)
+
+        cerrar = False
+        if db is None:
+            db = SessionLocal()
+            cerrar = True
+        try:
+            guardados = 0
+            for f in filas:
+                tipo, nombre = f.get("BANK_O_CC_TYPE"), f.get("NOMBRE_BANCO_O_TIPO_TC")
+                if not es_credito_directo(tipo, nombre):
+                    continue
+                codigo = str(f.get("CODIGO_COBRO") or "").strip()
+                if not codigo:
+                    continue
+                db.execute(text("""
+                    INSERT INTO kpi_cobro_credito
+                        (codigo_cobro, sucursal, fecha, valor, tipo_crudo)
+                    VALUES (:c, :s, :f, :v, :t)
+                    ON CONFLICT (codigo_cobro) DO UPDATE SET
+                        sucursal = EXCLUDED.sucursal, fecha = EXCLUDED.fecha,
+                        valor = EXCLUDED.valor, tipo_crudo = EXCLUDED.tipo_crudo,
+                        updated_at = NOW()
+                """), {"c": codigo,
+                       "s": str(f.get("CODIGO_TIENDA") or "").strip() or None,
+                       "f": str(f.get("FECHA_PAGO"))[:10],
+                       "v": float(f.get("VALOR_DE_PAGO") or 0),
+                       "t": f"{tipo or ''}|{nombre or ''}"[:160]})
+                guardados += 1
+            db.commit()
+            return {"inicio": inicio, "fin": fin, "pagos_otros": len(filas),
+                    "credito_directo": guardados}
         finally:
             if cerrar:
                 db.close()

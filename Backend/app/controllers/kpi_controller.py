@@ -182,6 +182,25 @@ def guardar_bodegas(
     return {"actualizadas": len(asignaciones)}
 
 
+@router.post("/sincronizar-cobros", dependencies=[Depends(verify_api_key)])
+def sincronizar_cobros(
+    inicio: str = Query(..., pattern=FECHA),
+    fin: str = Query(..., pattern=FECHA),
+    env: Optional[str] = Query(None, pattern="^(PRUEBAS|PROD)$"),
+    db: Session = Depends(get_db),
+    repository: IMba3Repository = Depends(get_mba3_repository),
+):
+    """Trae del ERP los cobros de credito directo del rango.
+
+    El rango es obligatorio: la tabla de cobros devuelve 3000 filas como maximo
+    y sin filtro entrega las mas antiguas (2018), sin avisar.
+    """
+    try:
+        return KpiService().sincronizar_cobros(repository, inicio, fin, env, db)
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+
 @router.post("/importar", dependencies=[Depends(verify_api_key)])
 async def importar_excel(
     periodo: str = Query(..., pattern=PERIODO),
