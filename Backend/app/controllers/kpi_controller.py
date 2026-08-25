@@ -11,7 +11,8 @@ from app.core.security import verify_api_key
 from app.dependencies import get_db, get_excel_service, get_mba3_repository
 from app.repositories.mba3_repository import IMba3Repository
 from app.services.excel_service import ExcelService
-from app.services.kpi_service import KPIS, METAS_EXTRA, KpiService
+from app.services.kpi_service import (KPIS, METAS_EXTRA, KpiService,
+                                      KpiSyncVentas)
 
 router = APIRouter(prefix="/api/v1/kpi", tags=["Seguimiento KPI"])
 
@@ -71,7 +72,7 @@ def read_metas(
     db: Session = Depends(get_db),
 ):
     filas = db.execute(text(
-        "SELECT sucursal, kpi, meta FROM kpi_meta WHERE periodo = :p "
+        "SELECT sucursal, kpi, meta FROM kpi.kpi_meta WHERE periodo = :p "
         "ORDER BY sucursal, kpi"), {"p": periodo}).mappings().all()
     return {"periodo": periodo,
             "metas": [{"sucursal": f["sucursal"], "kpi": f["kpi"],
@@ -96,7 +97,7 @@ def guardar_metas(
                 "validos": sorted(validos)}
     for m in metas:
         db.execute(text("""
-            INSERT INTO kpi_meta (periodo, sucursal, kpi, meta)
+            INSERT INTO kpi.kpi_meta (periodo, sucursal, kpi, meta)
             VALUES (:p, :s, :k, :v)
             ON CONFLICT (periodo, sucursal, kpi)
             DO UPDATE SET meta = EXCLUDED.meta, updated_at = NOW()
@@ -119,7 +120,7 @@ def guardar_valores_manuales(
                 "validos": sorted(manuales)}
     for v in valores:
         db.execute(text("""
-            INSERT INTO kpi_valor_manual (periodo, sucursal, kpi, valor)
+            INSERT INTO kpi.kpi_valor_manual (periodo, sucursal, kpi, valor)
             VALUES (:p, :s, :k, :v)
             ON CONFLICT (periodo, sucursal, kpi)
             DO UPDATE SET valor = EXCLUDED.valor, updated_at = NOW()
@@ -157,7 +158,7 @@ def read_bodegas(
         SELECT ware_code, ware_name, codigo_local, corp, inactiva,
                sucursal, sucursal_override,
                COALESCE(sucursal_override, sucursal) AS sucursal_efectiva
-        FROM kpi_bodega {filtro}
+        FROM kpi.kpi_bodega {filtro}
         ORDER BY COALESCE(sucursal_override, sucursal) NULLS FIRST, ware_code
     """)).mappings().all()
     return {"bodegas": [dict(f) for f in filas]}
@@ -174,12 +175,35 @@ def guardar_bodegas(
     """
     for a in asignaciones:
         db.execute(text("""
-            UPDATE kpi_bodega
+            UPDATE kpi.kpi_bodega
             SET sucursal_override = :s, updated_at = NOW()
             WHERE ware_code = :b
         """), {"b": a.ware_code, "s": a.sucursal})
     db.commit()
     return {"actualizadas": len(asignaciones)}
+
+
+@router.post("/sincronizar-ventas", dependencies=[Depends(verify_api_key)])
+def sincronizar_ventas(
+    inicio: str = Query(..., pattern=FECHA),
+    fin: str = Query(..., pattern=FECHA),
+    env: Optional[str] = Query(None, pattern="^(PRUEBAS|PROD)$"),
+    db: Session = Depends(get_db),
+    repository: IMba3Repository = Depends(get_mba3_repository),
+):
+    """Sincroniza el kardex y las facturas al schema propio del KPI.
+
+    No toca el staging de `public`: Ventas y Rentabilidad siguen leyendo sus
+    tablas, cuadradas contra produccion.
+
+    Pide por bodega, no por dia: el ERP de PRUEBAS corta en 3000 filas ignorando
+    el `limit` y un dia entero tiene ~8900 lineas. Si aun asi alguna consulta
+    llega al tope, vuelve listada en `truncados` y ese rango hay que partirlo.
+    """
+    try:
+        return KpiSyncVentas(repository).sincronizar(inicio, fin, env, db)
+    except ValueError as e:
+        raise HTTPException(status_code=502, detail=str(e))
 
 
 @router.post("/sincronizar-cobros", dependencies=[Depends(verify_api_key)])
@@ -256,7 +280,7 @@ def download_kpi(
 
     # Si Contabilidad ya subio su Excel, el reporte se genera ENCIMA para
     # conservar su formato exacto; si no, sale con el formato plano equivalente.
-    plantilla = db.execute(text("SELECT archivo FROM kpi_plantilla WHERE id = 1")).scalar()
+    plantilla = db.execute(text("SELECT archivo FROM kpi.kpi_plantilla WHERE id = 1")).scalar()
     if plantilla:
         archivo = excel_service.generar_reporte_kpi_sobre_plantilla(
             bytes(plantilla), seguimiento, presupuesto, lineas)

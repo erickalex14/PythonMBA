@@ -3,6 +3,16 @@ from sqlalchemy import (Boolean, Column, Date, DateTime, Index, Integer,
 from sqlalchemy.sql import func
 from app.core.database import Base
 
+# Todo el reporte KPI vive en su propio schema de Postgres.
+#
+# Dos razones:
+#  1. El sync del KPI puede apuntar a PRUEBAS sin pisar el staging de Ventas y
+#     Rentabilidad, que ya esta cuadrado contra produccion y no se toca.
+#  2. Prisma solo administra `public`. El contenedor del front arranca con
+#     `prisma db push --accept-data-loss` y borraba estas tablas en cada deploy;
+#     fuera de `public` ni las ve.
+SCHEMA_KPI = "kpi"
+
 
 class KpiProductoCat(Base):
     """Catalogo producto -> categoria de KPI.
@@ -12,6 +22,7 @@ class KpiProductoCat(Base):
     contra la vista de ventas lo quita antes de comparar.
     """
     __tablename__ = "kpi_producto_cat"
+    __table_args__ = {"schema": SCHEMA_KPI}
 
     codigo = Column(String(50), primary_key=True)
     cat = Column(String(60), index=True, nullable=False)
@@ -26,6 +37,7 @@ class KpiSucursal(Base):
     `codigo` cruza con `view_ventas_espejo_reporte.sucursal` (= codigo_local).
     """
     __tablename__ = "kpi_sucursal"
+    __table_args__ = {"schema": SCHEMA_KPI}
 
     codigo = Column(String(20), primary_key=True)
     nombre = Column(String(120), nullable=False)
@@ -50,6 +62,7 @@ class KpiBodega(Base):
     e-commerce y ROBO/PERDIDAS, que el reporte manual tampoco incluye.
     """
     __tablename__ = "kpi_bodega"
+    __table_args__ = {"schema": SCHEMA_KPI}
 
     ware_code = Column(String(20), primary_key=True)
     ware_name = Column(String(120), nullable=True)
@@ -70,6 +83,7 @@ class KpiCobroCredito(Base):
     depende del mapeo de bodegas.
     """
     __tablename__ = "kpi_cobro_credito"
+    __table_args__ = {"schema": SCHEMA_KPI}
 
     codigo_cobro = Column(String(50), primary_key=True)
     sucursal = Column(String(20), index=True, nullable=True)
@@ -89,6 +103,7 @@ class KpiPlantilla(Base):
     reescriben las filas de datos copiando el estilo de la primera.
     """
     __tablename__ = "kpi_plantilla"
+    __table_args__ = {"schema": SCHEMA_KPI}
 
     id = Column(Integer, primary_key=True, default=1)
     nombre = Column(String(250), nullable=True)
@@ -103,6 +118,7 @@ class KpiMeta(Base):
     de nada: son una decision comercial.
     """
     __tablename__ = "kpi_meta"
+    __table_args__ = {"schema": SCHEMA_KPI}
 
     periodo = Column(String(7), primary_key=True)
     sucursal = Column(String(20), primary_key=True)
@@ -118,6 +134,7 @@ class KpiValorManual(Base):
     de `KpiMeta` porque son el valor REAL, no la meta.
     """
     __tablename__ = "kpi_valor_manual"
+    __table_args__ = {"schema": SCHEMA_KPI}
 
     periodo = Column(String(7), primary_key=True)
     sucursal = Column(String(20), primary_key=True)
@@ -128,3 +145,48 @@ class KpiValorManual(Base):
 
 Index("ix_kpi_meta_periodo", KpiMeta.periodo)
 Index("ix_kpi_valor_manual_periodo", KpiValorManual.periodo)
+
+
+class KpiVentasKardex(Base):
+    """Copia del kardex SOLO para el reporte KPI.
+
+    Espeja `ventas_kardex_staging` de `public`, pero se sincroniza aparte y
+    puede apuntar a otro entorno del ERP sin afectar a Ventas ni Rentabilidad.
+    """
+    __tablename__ = "ventas_kardex"
+    __table_args__ = {"schema": SCHEMA_KPI}
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    doc_id_corp = Column(String(50), index=True, nullable=False)
+    trans_date = Column(Date, index=True, nullable=False)
+    product_id_corp = Column(String(50), index=True, nullable=False)
+    product_name = Column(String(250), nullable=True)
+    quantity = Column(Numeric(18, 4), default=0.0)
+    discount_amount = Column(Numeric(18, 4), default=0.0)
+    net_line_total = Column(Numeric(18, 4), default=0.0)
+    um = Column(String(20), nullable=True)
+    anulada = Column(Boolean, default=False)
+    codigo_grupo = Column(String(50), nullable=True)
+    codigo_subgrupo = Column(String(50), nullable=True)
+    trans_cost = Column(Numeric(18, 4), default=0.0)
+    war_code = Column(String(20), index=True, nullable=True)
+    code_salesman = Column(String(20), nullable=True)
+    codigo_cliente = Column(String(20), nullable=True)
+    nombre_cliente = Column(String(150), nullable=True)
+    origin_memo = Column(String(50), index=True, nullable=True)
+    origin_ref = Column(String(50), index=True, nullable=True)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class KpiVentasFactura(Base):
+    """Cabecera de factura para el reporte KPI. Espeja `ventas_facturas_staging`."""
+    __tablename__ = "ventas_facturas"
+    __table_args__ = {"schema": SCHEMA_KPI}
+
+    doc_id_corp = Column(String(50), primary_key=True)
+    numero_factura = Column(String(50), index=True, nullable=True)
+    invoice_date = Column(Date, index=True, nullable=False)
+    empresa = Column(String(20), index=True, nullable=True)
+    codigo_local = Column(String(20), index=True, nullable=True)
+    anulada = Column(Boolean, default=False)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())

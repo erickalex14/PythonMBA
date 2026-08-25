@@ -10,6 +10,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
+from app.models.kpi import SCHEMA_KPI
 
 # --- Importacion del Excel que hoy se arma a mano -------------------------
 # Columna de la hoja RESUMEN KPI que trae la META de cada KPI (0-indexado).
@@ -32,7 +33,7 @@ RE_SUCURSAL_EXCEL = re.compile(r"^\s*(\d{3})\s+(.+?)\s*$")
 # la oficial; mientras tanto manda la que se usaba para calcular.
 #
 # `origen`:
-#   ventas  -> se agrega desde view_ventas_espejo_reporte cruzando el catalogo
+#   ventas  -> se agrega desde kpi.view_ventas cruzando el catalogo
 #   manual  -> lo captura una persona (hoy llega por un Google Form)
 #   externo -> lo entrega otro proceso y este servicio solo lo recibe
 KPIS = {
@@ -75,7 +76,7 @@ KPIS = {
 CATS_VENTAS = {k: v["cat"] for k, v in KPIS.items() if v["origen"] == "ventas"}
 
 # Meta de venta total de la tienda. No es un KPI ponderado: es el presupuesto
-# mensual, y va en `kpi_meta` con esta llave para no inventarle otra tabla.
+# mensual, y va en `kpi.kpi_meta` con esta llave para no inventarle otra tabla.
 KPI_VENTA_TIENDA = "venta_tienda"
 METAS_EXTRA = {KPI_VENTA_TIENDA: "META DE TIENDA"}
 
@@ -222,7 +223,7 @@ class KpiService:
     """Reporte de Seguimiento KPI por sucursal.
 
     Sustituye el armado manual del Excel: las categorias salen de cruzar la
-    vista de ventas contra `kpi_producto_cat`, y las metas de `kpi_meta`.
+    vista de ventas contra `kpi.kpi_producto_cat`, y las metas de `kpi.kpi_meta`.
     """
 
     def obtener_seguimiento(self, periodo: str, corte: Optional[str] = None,
@@ -242,7 +243,7 @@ class KpiService:
                     # sync es manual 4 veces al dia y el mes casi nunca esta
                     # completo cuando se corre el reporte.
                     fin = conn.execute(
-                        text("SELECT MAX(fecha) FROM view_ventas_espejo_reporte "
+                        text("SELECT MAX(fecha) FROM kpi.view_ventas "
                              "WHERE fecha BETWEEN :i AND :f"),
                         {"i": inicio, "f": fin_mes}).scalar() or inicio
                 fin = min(fin, fin_mes)
@@ -261,9 +262,9 @@ class KpiService:
                            UPPER(TRIM(c.cat)) AS cat,
                            COALESCE(SUM(v.cantidad), 0) AS unidades,
                            COALESCE(SUM(v.total_linea), 0) AS monto
-                    FROM view_ventas_espejo_reporte v
-                    JOIN kpi_bodega b ON b.ware_code = v.bodega_codigo
-                    JOIN kpi_producto_cat c
+                    FROM kpi.view_ventas v
+                    JOIN kpi.kpi_bodega b ON b.ware_code = v.bodega_codigo
+                    JOIN kpi.kpi_producto_cat c
                       ON UPPER(TRIM(c.codigo)) =
                          UPPER(regexp_replace(v.codigo, '-(NVC01|ENV01)$', ''))
                     WHERE v.fecha BETWEEN :i AND :f
@@ -272,16 +273,16 @@ class KpiService:
                 """), params).mappings().all()
 
                 metas = conn.execute(text(
-                    "SELECT sucursal, kpi, meta FROM kpi_meta WHERE periodo = :p"),
+                    "SELECT sucursal, kpi, meta FROM kpi.kpi_meta WHERE periodo = :p"),
                     {"p": periodo}).mappings().all()
                 manuales = conn.execute(text(
-                    "SELECT sucursal, kpi, valor FROM kpi_valor_manual "
+                    "SELECT sucursal, kpi, valor FROM kpi.kpi_valor_manual "
                     "WHERE periodo = :p"), {"p": periodo}).mappings().all()
                 # El cobro ya trae su sucursal (CODIGO_TIENDA), asi que este KPI
                 # no pasa por el mapeo de bodegas.
                 cobros = conn.execute(text("""
                     SELECT sucursal, COALESCE(SUM(valor), 0) AS monto
-                    FROM kpi_cobro_credito
+                    FROM kpi.kpi_cobro_credito
                     WHERE fecha BETWEEN :i AND :f AND sucursal IS NOT NULL
                     GROUP BY 1
                 """), params).mappings().all()
@@ -291,15 +292,15 @@ class KpiService:
                     SELECT COALESCE(b.sucursal_override, b.sucursal) AS sucursal,
                            COALESCE(SUM(v.total_linea), 0) AS venta,
                            COALESCE(SUM(v.costo_total), 0) AS costo
-                    FROM view_ventas_espejo_reporte v
-                    JOIN kpi_bodega b ON b.ware_code = v.bodega_codigo
+                    FROM kpi.view_ventas v
+                    JOIN kpi.kpi_bodega b ON b.ware_code = v.bodega_codigo
                     WHERE v.fecha BETWEEN :i AND :f
                       AND COALESCE(b.sucursal_override, b.sucursal) IS NOT NULL
                     GROUP BY 1
                 """), params).mappings().all()
                 sucursales = conn.execute(text(
                     "SELECT codigo, nombre, supervisor, marca, ciudad "
-                    "FROM kpi_sucursal WHERE activa = 'SI'")).mappings().all()
+                    "FROM kpi.kpi_sucursal WHERE activa = 'SI'")).mappings().all()
 
             reales = {}
             cat_a_kpi = {v.upper().strip(): k for k, v in CATS_VENTAS.items()}
@@ -404,7 +405,7 @@ class KpiService:
                 sucursal = derivar_sucursal(nombre, local) if corp == CORP_TIENDAS else None
                 mapeadas += 1 if sucursal else 0
                 db.execute(text("""
-                    INSERT INTO kpi_bodega
+                    INSERT INTO kpi.kpi_bodega
                         (ware_code, ware_name, codigo_local, corp, inactiva, sucursal)
                     VALUES (:c, :n, :l, :corp, :inact, :suc)
                     ON CONFLICT (ware_code) DO UPDATE SET
@@ -421,12 +422,12 @@ class KpiService:
             # registran igual, sin sucursal, para que aparezcan en la lista de
             # pendientes en vez de desaparecer del reporte en silencio.
             huerfanas = db.execute(text("""
-                INSERT INTO kpi_bodega (ware_code, ware_name)
+                INSERT INTO kpi.kpi_bodega (ware_code, ware_name)
                 SELECT DISTINCT v.bodega_codigo, '(no esta en el maestro)'
-                FROM view_ventas_espejo_reporte v
+                FROM kpi.view_ventas v
                 WHERE v.bodega_codigo IS NOT NULL AND v.bodega_codigo <> ''
                   AND NOT EXISTS (
-                      SELECT 1 FROM kpi_bodega b WHERE b.ware_code = v.bodega_codigo)
+                      SELECT 1 FROM kpi.kpi_bodega b WHERE b.ware_code = v.bodega_codigo)
                 ON CONFLICT (ware_code) DO NOTHING
             """)).rowcount or 0
             db.commit()
@@ -469,7 +470,7 @@ class KpiService:
                 if not codigo:
                     continue
                 db.execute(text("""
-                    INSERT INTO kpi_cobro_credito
+                    INSERT INTO kpi.kpi_cobro_credito
                         (codigo_cobro, sucursal, fecha, valor, tipo_crudo)
                     VALUES (:c, :s, :f, :v, :t)
                     ON CONFLICT (codigo_cobro) DO UPDATE SET
@@ -559,7 +560,7 @@ class KpiService:
         try:
             for s in sucursales.values():
                 db.execute(text("""
-                    INSERT INTO kpi_sucursal (codigo, nombre, supervisor, marca, ciudad, activa)
+                    INSERT INTO kpi.kpi_sucursal (codigo, nombre, supervisor, marca, ciudad, activa)
                     VALUES (:codigo, :nombre, :supervisor, :marca, :ciudad, 'SI')
                     ON CONFLICT (codigo) DO UPDATE SET
                         nombre = EXCLUDED.nombre, supervisor = EXCLUDED.supervisor,
@@ -567,14 +568,14 @@ class KpiService:
                 """), s)
             for codigo, (producto, cat) in catalogo.items():
                 db.execute(text("""
-                    INSERT INTO kpi_producto_cat (codigo, cat, producto)
+                    INSERT INTO kpi.kpi_producto_cat (codigo, cat, producto)
                     VALUES (:codigo, :cat, :producto)
                     ON CONFLICT (codigo) DO UPDATE SET
                         cat = EXCLUDED.cat, producto = EXCLUDED.producto
                 """), {"codigo": codigo, "cat": cat, "producto": producto})
             for sucursal, kpi, meta in metas:
                 db.execute(text("""
-                    INSERT INTO kpi_meta (periodo, sucursal, kpi, meta)
+                    INSERT INTO kpi.kpi_meta (periodo, sucursal, kpi, meta)
                     VALUES (:p, :s, :k, :m)
                     ON CONFLICT (periodo, sucursal, kpi)
                     DO UPDATE SET meta = EXCLUDED.meta, updated_at = NOW()
@@ -584,7 +585,7 @@ class KpiService:
             # El mismo archivo sirve de plantilla para generar el reporte con su
             # formato exacto (colores, fuentes, anchos), en vez de replicarlo.
             db.execute(text("""
-                INSERT INTO kpi_plantilla (id, nombre, archivo)
+                INSERT INTO kpi.kpi_plantilla (id, nombre, archivo)
                 VALUES (1, :n, :a)
                 ON CONFLICT (id) DO UPDATE SET
                     nombre = EXCLUDED.nombre, archivo = EXCLUDED.archivo,
@@ -605,7 +606,7 @@ class KpiService:
                 # (sucursal 016). Asi se le cargaban al Puyo las ventas del
                 # Portal.
                 r = db.execute(text("""
-                    UPDATE kpi_bodega SET sucursal_override = :s, updated_at = NOW()
+                    UPDATE kpi.kpi_bodega SET sucursal_override = :s, updated_at = NOW()
                     WHERE (UPPER(TRIM(codigo_local)) = :b
                            OR UPPER(TRIM(codigo_local)) = LPAD(:b, 3, '0'))
                       AND COALESCE(corp, :corp) = :corp
@@ -652,15 +653,15 @@ class KpiService:
                                        ' ', COALESCE(s.nombre, ''))) AS sucursal_larga,
                            s.nombre AS sucursal_nombre, s.supervisor,
                            UPPER(TRIM(c.cat)) AS cat
-                    FROM view_ventas_espejo_reporte v
-                    JOIN kpi_bodega b ON b.ware_code = v.bodega_codigo
-                    {join} kpi_producto_cat c
+                    FROM kpi.view_ventas v
+                    JOIN kpi.kpi_bodega b ON b.ware_code = v.bodega_codigo
+                    {join} kpi.kpi_producto_cat c
                       ON UPPER(TRIM(c.codigo)) =
                          UPPER(regexp_replace(v.codigo, '-(NVC01|ENV01)$', ''))
                     -- INNER, no LEFT: una bodega puede mapear a un local que no
                     -- es tienda del reporte (025 e-commerce, 026/027 mayoristas,
                     -- 031). El reporte manual no los incluye y aqui tampoco.
-                    JOIN kpi_sucursal s
+                    JOIN kpi.kpi_sucursal s
                       ON s.codigo = COALESCE(b.sucursal_override, b.sucursal)
                     WHERE v.fecha BETWEEN :i AND :f
                       AND COALESCE(b.sucursal_override, b.sucursal) IS NOT NULL
@@ -689,7 +690,7 @@ class KpiService:
                     fin = datetime.date.fromisoformat(corte)
                 else:
                     fin = conn.execute(
-                        text("SELECT MAX(fecha) FROM view_ventas_espejo_reporte "
+                        text("SELECT MAX(fecha) FROM kpi.view_ventas "
                              "WHERE fecha BETWEEN :i AND :f"),
                         {"i": inicio, "f": fin_mes}).scalar() or inicio
                 fin = min(fin, fin_mes)
@@ -699,19 +700,19 @@ class KpiService:
                            COALESCE(SUM(v.total_linea), 0) AS venta,
                            COUNT(DISTINCT v.factura_final) AS facturas,
                            COALESCE(SUM(v.cantidad), 0) AS unidades
-                    FROM view_ventas_espejo_reporte v
-                    JOIN kpi_bodega b ON b.ware_code = v.bodega_codigo
+                    FROM kpi.view_ventas v
+                    JOIN kpi.kpi_bodega b ON b.ware_code = v.bodega_codigo
                     WHERE v.fecha BETWEEN :i AND :f
                       AND COALESCE(b.sucursal_override, b.sucursal) IS NOT NULL
                     GROUP BY 1
                 """), {"i": inicio, "f": fin}).mappings().all()
                 metas = conn.execute(text(
-                    "SELECT sucursal, meta FROM kpi_meta "
+                    "SELECT sucursal, meta FROM kpi.kpi_meta "
                     "WHERE periodo = :p AND kpi = :k"),
                     {"p": periodo, "k": KPI_VENTA_TIENDA}).mappings().all()
                 sucursales = conn.execute(text(
                     "SELECT codigo, nombre, supervisor, marca, ciudad "
-                    "FROM kpi_sucursal WHERE activa = 'SI'")).mappings().all()
+                    "FROM kpi.kpi_sucursal WHERE activa = 'SI'")).mappings().all()
 
             ventas = {f["sucursal"]: f for f in filas}
             metas_map = {m["sucursal"]: float(m["meta"] or 0) for m in metas}
@@ -742,3 +743,160 @@ class KpiService:
         finally:
             if cerrar:
                 db.close()
+
+
+# El ERP de PRUEBAS corta en 3000 filas e ignora el `limit`. Un dia normal tiene
+# ~8900 lineas de kardex, asi que pedir por dia completo perderia dos tercios
+# sin ningun error. Se pide por bodega, que baja cada consulta muy por debajo
+# del tope, y se avisa si alguna igual lo roza.
+TOPE_FILAS_ERP = 3000
+
+
+class KpiSyncVentas:
+    """Sincroniza el kardex y las facturas al schema propio del KPI.
+
+    Deliberadamente separado del sync de `public`: ese alimenta Ventas y
+    Rentabilidad, que ya estan cuadrados contra produccion y no se tocan.
+    """
+
+    COLS_KARDEX = ("DOC_ID_CORP,TRANS_DATE,PRODUCT_ID_CORP,PRODUCT_NAME,QUANTITY,"
+                   "DISCOUNT_AMOUNT,NET_LINE_TOTAL,UM,Anulada,Codigo_grupo,"
+                   "Codigo_subgrupo,ORIGIN_MEMO,ORIGIN_REF,TRANS_COST,WAR_CODE,"
+                   "CODE_SALESMAN,COD_CLIENTE")
+    COLS_FACTURAS = "CODIGO_FACTURA,NUMERO_FACTURA,FECHA_FACTURA,EMPRESA,CODIGO_LOCAL,ANULADA"
+
+    def __init__(self, repository):
+        self.repo = repository
+
+    @staticmethod
+    def _txt(v):
+        return str(v).strip() if v is not None else ""
+
+    @staticmethod
+    def _num(v):
+        try:
+            return float(str(v).replace(",", "")) if v not in (None, "") else 0.0
+        except (TypeError, ValueError):
+            return 0.0
+
+    def sincronizar(self, inicio: str, fin: str, env: Optional[str] = None,
+                    db: Optional[Session] = None) -> dict:
+        token = self.repo.obtener_token(env=env)
+        bodegas = [b for b in self._bodegas(db) if b]
+
+        cerrar = False
+        if db is None:
+            db = SessionLocal()
+            cerrar = True
+        try:
+            db.execute(text(f"DELETE FROM {SCHEMA_KPI}.ventas_kardex "
+                            "WHERE trans_date BETWEEN :i AND :f"),
+                       {"i": inicio, "f": fin})
+            db.execute(text(f"DELETE FROM {SCHEMA_KPI}.ventas_facturas "
+                            "WHERE invoice_date BETWEEN :i AND :f"),
+                       {"i": inicio, "f": fin})
+
+            truncados, kardex = [], 0
+            for bodega in bodegas:
+                filas = self.repo.ejecutar_consulta(
+                    token, self.COLS_KARDEX, "INVT_Producto_Movimientos",
+                    where=(f"TRANS_DATE>='{inicio}' AND TRANS_DATE<='{fin}' "
+                           f"AND WAR_CODE='{bodega}'"),
+                    limit=LIMITE_ERP, env=env)
+                if len(filas) >= TOPE_FILAS_ERP:
+                    truncados.append(bodega)
+                kardex += self._guardar_kardex(db, filas)
+
+            facturas = self.repo.ejecutar_consulta(
+                token, self.COLS_FACTURAS, "CLNT_Factura_Principal",
+                where=f"FECHA_FACTURA>='{inicio}' AND FECHA_FACTURA<='{fin}'",
+                limit=LIMITE_ERP, env=env)
+            if len(facturas) >= TOPE_FILAS_ERP:
+                truncados.append("CLNT_Factura_Principal")
+            n_fact = self._guardar_facturas(db, facturas)
+
+            db.commit()
+            return {"inicio": inicio, "fin": fin, "bodegas": len(bodegas),
+                    "kardex": kardex, "facturas": n_fact,
+                    # Si algo llego al tope, el dato esta incompleto y hay que
+                    # partir el rango: mejor decirlo que servir numeros bajos.
+                    "truncados": truncados}
+        finally:
+            if cerrar:
+                db.close()
+
+    def _bodegas(self, db):
+        propio = db is None
+        if propio:
+            db = SessionLocal()
+        try:
+            filas = db.execute(text(
+                f"SELECT ware_code FROM {SCHEMA_KPI}.kpi_bodega "
+                "WHERE COALESCE(sucursal_override, sucursal) IS NOT NULL"
+            )).scalars().all()
+            return [str(f).strip() for f in filas]
+        finally:
+            if propio:
+                db.close()
+
+    def _guardar_kardex(self, db, filas) -> int:
+        n = 0
+        for f in filas:
+            ref = "".join(c for c in self._txt(f.get("ORIGIN_REF")) if c.isdigit())
+            db.execute(text(f"""
+                INSERT INTO {SCHEMA_KPI}.ventas_kardex
+                    (doc_id_corp, trans_date, product_id_corp, product_name, quantity,
+                     discount_amount, net_line_total, um, anulada, codigo_grupo,
+                     codigo_subgrupo, trans_cost, war_code, code_salesman,
+                     codigo_cliente, origin_memo, origin_ref)
+                VALUES (:doc, :fecha, :prod, :nombre, :cant, :desc, :total, :um,
+                        :anul, :grupo, :subgrupo, :costo, :bodega, :vend, :cli,
+                        :memo, :ref)
+            """), {
+                "doc": self._txt(f.get("DOC_ID_CORP")),
+                "fecha": self._txt(f.get("TRANS_DATE"))[:10],
+                "prod": self._txt(f.get("PRODUCT_ID_CORP")),
+                "nombre": self._txt(f.get("PRODUCT_NAME"))[:250],
+                "cant": self._num(f.get("QUANTITY")),
+                "desc": self._num(f.get("DISCOUNT_AMOUNT")),
+                "total": self._num(f.get("NET_LINE_TOTAL")),
+                "um": self._txt(f.get("UM"))[:20],
+                "anul": str(f.get("Anulada")).lower() in ("true", "1", "si"),
+                "grupo": self._txt(f.get("Codigo_grupo"))[:50] or "GENERAL",
+                "subgrupo": self._txt(f.get("Codigo_subgrupo"))[:50] or "GENERAL",
+                "costo": self._num(f.get("TRANS_COST")),
+                "bodega": self._txt(f.get("WAR_CODE"))[:20],
+                "vend": self._txt(f.get("CODE_SALESMAN"))[:20],
+                "cli": self._txt(f.get("COD_CLIENTE"))[:20],
+                "memo": self._txt(f.get("ORIGIN_MEMO"))[:50],
+                "ref": ref[:50],
+            })
+            n += 1
+        return n
+
+    def _guardar_facturas(self, db, filas) -> int:
+        n = 0
+        for f in filas:
+            numero = "".join(c for c in self._txt(f.get("NUMERO_FACTURA")) if c.isdigit())
+            db.execute(text(f"""
+                INSERT INTO {SCHEMA_KPI}.ventas_facturas
+                    (doc_id_corp, numero_factura, invoice_date, empresa,
+                     codigo_local, anulada)
+                VALUES (:doc, :num, :fecha, :emp, :local, :anul)
+                ON CONFLICT (doc_id_corp) DO UPDATE SET
+                    numero_factura = EXCLUDED.numero_factura,
+                    invoice_date = EXCLUDED.invoice_date,
+                    empresa = EXCLUDED.empresa,
+                    codigo_local = EXCLUDED.codigo_local,
+                    anulada = EXCLUDED.anulada,
+                    updated_at = NOW()
+            """), {
+                "doc": self._txt(f.get("CODIGO_FACTURA")),
+                "num": numero[:50],
+                "fecha": self._txt(f.get("FECHA_FACTURA"))[:10],
+                "emp": self._txt(f.get("EMPRESA"))[:20],
+                "local": self._txt(f.get("CODIGO_LOCAL"))[:20],
+                "anul": str(f.get("ANULADA")).lower() in ("true", "1", "si"),
+            })
+            n += 1
+        return n

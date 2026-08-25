@@ -14,7 +14,8 @@ from app.models.movimiento import MovimientoStaging
 from app.models.liquidacion import LiquidacionPrincipalStaging, LiquidacionProductoStaging
 from app.models.ats import AtsFacturaStaging, AtsProveedorStaging, AtsFiscalStaging
 from app.models.ventas import VentasKardexStaging, VentasFacturaStaging
-from app.models.kpi import KpiProductoCat, KpiSucursal, KpiMeta, KpiValorManual
+from app.models.kpi import (SCHEMA_KPI, KpiProductoCat, KpiSucursal, KpiMeta,
+                            KpiValorManual, KpiVentasKardex, KpiVentasFactura)
 from sqlalchemy import text
 from app.core.scheduler import start_scheduler, stop_scheduler
 
@@ -22,6 +23,11 @@ from app.core.scheduler import start_scheduler, stop_scheduler
 async def lifespan(app: FastAPI):
     logging.info("Arrancando aplicación: Inicializando base de datos...")
     try:
+        # 0. El reporte KPI vive en su propio schema: tiene que existir antes
+        #    del create_all o sus tablas no se pueden crear.
+        with engine.begin() as connection:
+            connection.execute(text(f'CREATE SCHEMA IF NOT EXISTS {SCHEMA_KPI};'))
+
         # 1. Crear tablas físicas
         Base.metadata.create_all(bind=engine)
         logging.info("Base de datos inicializada: tablas creadas correctamente.")
@@ -199,6 +205,38 @@ async def lifespan(app: FastAPI):
             """
             connection.execute(text(sql_view_ventas))
             logging.info("Vista relacional SQL 'view_ventas_espejo_reporte' creada o actualizada.")
+
+            # Vista propia del KPI sobre SU schema: los reportes de Ventas y
+            # Rentabilidad siguen leyendo la de `public`, que no se toca.
+            connection.execute(text(f"DROP VIEW IF EXISTS {SCHEMA_KPI}.view_ventas CASCADE;"))
+            connection.execute(text(f"""
+            CREATE VIEW {SCHEMA_KPI}.view_ventas AS
+            SELECT
+                f.numero_factura AS factura_final,
+                k.trans_date AS fecha,
+                regexp_replace(k.product_id_corp, '\.0$', '') AS codigo,
+                UPPER(TRIM(k.product_name)) AS producto,
+                COALESCE(k.codigo_grupo, 'GENERAL') AS grupo,
+                COALESCE(k.codigo_subgrupo, 'GENERAL') AS subgrupo,
+                UPPER(TRIM(k.um)) AS unidad,
+                ROUND(k.quantity)::integer AS cantidad,
+                ROUND((k.net_line_total + k.discount_amount) /
+                      NULLIF(ROUND(k.quantity)::integer, 0), 4) AS precio_venta,
+                ROUND(k.net_line_total, 4) AS total_linea,
+                ROUND(k.trans_cost * ROUND(k.quantity)::integer, 4) AS costo_total,
+                k.war_code AS bodega_codigo,
+                k.code_salesman AS codigo_vendedor,
+                COALESCE(k.nombre_cliente, '') AS nombre_cliente,
+                f.empresa AS empresa,
+                f.codigo_local AS sucursal
+            FROM {SCHEMA_KPI}.ventas_kardex k
+            INNER JOIN {SCHEMA_KPI}.ventas_facturas f
+                ON k.origin_ref = f.numero_factura
+            WHERE k.anulada = false AND f.anulada = false
+              AND k.origin_memo = 'CLIENTES';
+            """))
+            logging.info("Vista 'kpi.view_ventas' creada o actualizada.")
+
             
     except Exception as e:
         logging.error(f"Error al inicializar la base de datos PostgreSQL: {e}")
