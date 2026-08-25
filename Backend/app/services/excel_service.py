@@ -454,39 +454,68 @@ class ExcelService:
         # del corte y los dias del mes, y de ahi salen por formula el % de mes
         # transcurrido y la ponderacion esperada. Si no se actualizan, el archivo
         # dice una fecha y calcula con otra.
-        etiqueta_corte = f"CORTE AL {d}-{m}-{a}"
+        # Las diez bandas "CORTE AL" de RESUMEN KPI son una cadena de formulas
+        # (B1=+B135, B78=+B120, B106=+B126, B120=+B130, B126=+POND!B1): el texto
+        # nace en POND!B1 y se propaga. Escribirlo literal en B1 rompe la cadena
+        # y las otras nueve bandas quedan con la fecha del mes anterior.
+        if "POND" in wb.sheetnames:
+            wb["POND"].cell(row=1, column=2, value=f"CORTE AL {d}-{m}-{a}")
         if "RESUMEN KPI" in wb.sheetnames:
             ws_r = wb["RESUMEN KPI"]
-            ws_r.cell(row=1, column=2, value=etiqueta_corte)
             ws_r["AK6"] = int(d)                       # dia del corte
             ws_r["AL6"] = seguimiento["dias_mes"]      # dias del mes
-        if "POND" in wb.sheetnames:
-            wb["POND"].cell(row=1, column=2, value=etiqueta_corte)
-        filas = []
-        for i, s in enumerate(seguimiento["sucursales"], start=1):
+        def actualizar_en_sitio(hoja: str, desde_col: int, valores: dict) -> int:
+            """Actualiza cada sucursal en la fila donde ya estaba.
+
+            Las hojas de resumen NO son tablas planas: el original agrupa las
+            sucursales en diez bloques, cada uno con su banda "CORTE AL" y su
+            cabecera repetida, y la hoja POND apunta a una fila concreta.
+            Reescribir de corrido pisa esas bandas y descoloca a POND. Por eso
+            se busca cada sucursal por su codigo y se escriben solo las columnas
+            de datos, dejando intactas las de la izquierda (numero, nombre,
+            supervisor) y las bandas.
+            """
+            if hoja not in wb.sheetnames:
+                return 0
+            ws = wb[hoja]
+            tocadas = 0
+            for fila in range(1, ws.max_row + 1):
+                m = re.match(r"^\s*(\d{3})", str(ws.cell(row=fila, column=2).value or ""))
+                if not m:
+                    continue
+                datos = valores.get(m.group(1))
+                if datos is None:
+                    continue
+                for j, valor in enumerate(datos, start=desde_col):
+                    ws.cell(row=fila, column=j, value=valor)
+                tocadas += 1
+            return tocadas
+
+        # ---------- RESUMEN KPI: columnas D..AI ----------
+        por_suc = {}
+        for s in seguimiento["sucursales"]:
             por_kpi = {x["kpi"]: x for x in s["detalle"]}
-            fila = [i, f"{s['sucursal']} {s['nombre']}".strip(), s["supervisor"] or ""]
+            fila = []
             for kpi, _, _ in COLUMNAS_RESUMEN:
                 x = por_kpi.get(kpi, {})
                 fila += [x.get("real", 0), x.get("meta")]
-            fila.append(None)
+            fila.append(None)                        # columna X, separadora
             for kpi, _, _ in COLUMNAS_RESUMEN:
                 fila.append(por_kpi.get(kpi, {}).get("aporte", 0))
             fila.append(s["total_kpi"])
-            filas.append(fila)
-        reescribir("RESUMEN KPI", 3, filas)
+            por_suc[s["sucursal"]] = fila
+        actualizar_en_sitio("RESUMEN KPI", 4, por_suc)
 
-        # ---------- PRESUPUESTO ----------
-        filas = []
-        for i, p in enumerate(presupuesto, start=1):
+        # ---------- PRESUPUESTO: columnas F..Q ----------
+        por_suc = {}
+        for p in presupuesto:
             ticket, upf = p["ticket_promedio"], p["unidades_por_factura"]
-            filas.append([
-                i, f"{p['sucursal']} {p['nombre']}".strip(), p["marca"], p["ciudad"],
-                p["supervisor"], p["meta"], p["venta"], p["facturas"], p["unidades"],
-                ticket, upf, observacion_tienda(ticket, upf), p["venta_promedio_dia"],
+            por_suc[p["sucursal"]] = [
+                p["meta"], p["venta"], p["facturas"], p["unidades"], ticket, upf,
+                observacion_tienda(ticket, upf), p["venta_promedio_dia"],
                 p["proyeccion"], p["cumplimiento"], p.get("rentabilidad"), p.get("kpi"),
-            ])
-        reescribir("PRESUPUESTO", 2, filas)
+            ]
+        actualizar_en_sitio("PRESUPUESTO", 6, por_suc)
 
         # ---------- Detalle por categoria + BASE ----------
         def filas_detalle(sub):
