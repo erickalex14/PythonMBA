@@ -598,9 +598,16 @@ class KpiService:
                 # Nunca se le asigna sucursal a una bodega que no es de tienda:
                 # el Excel escribe "3" y al rellenar a "003" coincide con la
                 # bodega de logistica de ENV, que reventaba la sucursal 003.
+                # La columna "Bodega" del Excel es el Codigo_Local, NO el codigo
+                # de bodega. Cruzarla contra `ware_code` colisiona: el Excel
+                # escribe "98" por el local 098 (NV EL PUYO), pero existe una
+                # bodega con ware_code "98" que es ADMIN PORTAL, del local POT
+                # (sucursal 016). Asi se le cargaban al Puyo las ventas del
+                # Portal.
                 r = db.execute(text("""
                     UPDATE kpi_bodega SET sucursal_override = :s, updated_at = NOW()
-                    WHERE (UPPER(ware_code) = :b OR UPPER(ware_code) = LPAD(:b, 3, '0'))
+                    WHERE (UPPER(TRIM(codigo_local)) = :b
+                           OR UPPER(TRIM(codigo_local)) = LPAD(:b, 3, '0'))
                       AND COALESCE(corp, :corp) = :corp
                       AND COALESCE(sucursal, '') <> :s
                 """), {"b": bodega, "s": sucursal, "corp": CORP_TIENDAS})
@@ -650,7 +657,10 @@ class KpiService:
                     {join} kpi_producto_cat c
                       ON UPPER(TRIM(c.codigo)) =
                          UPPER(regexp_replace(v.codigo, '-(NVC01|ENV01)$', ''))
-                    LEFT JOIN kpi_sucursal s
+                    -- INNER, no LEFT: una bodega puede mapear a un local que no
+                    -- es tienda del reporte (025 e-commerce, 026/027 mayoristas,
+                    -- 031). El reporte manual no los incluye y aqui tampoco.
+                    JOIN kpi_sucursal s
                       ON s.codigo = COALESCE(b.sucursal_override, b.sucursal)
                     WHERE v.fecha BETWEEN :i AND :f
                       AND COALESCE(b.sucursal_override, b.sucursal) IS NOT NULL
