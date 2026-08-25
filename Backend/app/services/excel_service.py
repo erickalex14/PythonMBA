@@ -424,7 +424,9 @@ class ExcelService:
 
             # ---------- RESUMEN KPI ----------
             ws = wb.create_sheet("RESUMEN KPI")
-            fila1 = ["", f"CORTE AL {corte}", "SUPERVISOR"]
+            # El original escribe la fecha como DD-MM-AAAA, no ISO.
+            a, m, d = corte.split("-")
+            fila1 = ["", f"CORTE AL {d}-{m}-{a}", "SUPERVISOR"]
             fila2 = ["", "SUCURSAL", "SUPERVISOR"]
             for kpi, tit_real, tit_meta in COLUMNAS_RESUMEN:
                 fila1 += [tit_real, tit_meta]

@@ -224,7 +224,7 @@ model KpiProductoCat {
   codigo     String   @id @db.VarChar(50)
   cat        String   @db.VarChar(60)
   producto   String?  @db.VarChar(250)
-  updated_at DateTime @updatedAt
+  updated_at DateTime @default(now()) @updatedAt
 
   @@index([cat])
   @@map("kpi_producto_cat")
@@ -237,7 +237,7 @@ model KpiSucursal {
   marca      String?  @db.VarChar(60)
   ciudad     String?  @db.VarChar(60)
   activa     String?  @default("SI") @db.VarChar(2)
-  updated_at DateTime @updatedAt
+  updated_at DateTime @default(now()) @updatedAt
 
   @@index([supervisor])
   @@map("kpi_sucursal")
@@ -251,7 +251,7 @@ model KpiBodega {
   inactiva          Boolean? @default(false)
   sucursal          String?  @db.VarChar(20)
   sucursal_override String?  @db.VarChar(20)
-  updated_at        DateTime @updatedAt
+  updated_at        DateTime @default(now()) @updatedAt
 
   @@index([corp])
   @@index([sucursal])
@@ -264,7 +264,7 @@ model KpiCobroCredito {
   fecha        DateTime @db.Date
   valor        Decimal? @default(0) @db.Decimal(18, 4)
   tipo_crudo   String?  @db.VarChar(160)
-  updated_at   DateTime @updatedAt
+  updated_at   DateTime @default(now()) @updatedAt
 
   @@index([sucursal])
   @@index([fecha])
@@ -276,7 +276,7 @@ model KpiMeta {
   sucursal   String   @db.VarChar(20)
   kpi        String   @db.VarChar(40)
   meta       Decimal  @default(0) @db.Decimal(18, 4)
-  updated_at DateTime @updatedAt
+  updated_at DateTime @default(now()) @updatedAt
 
   @@id([periodo, sucursal, kpi])
   @@index([periodo])
@@ -288,7 +288,7 @@ model KpiValorManual {
   sucursal   String   @db.VarChar(20)
   kpi        String   @db.VarChar(40)
   valor      Decimal  @default(0) @db.Decimal(18, 4)
-  updated_at DateTime @updatedAt
+  updated_at DateTime @default(now()) @updatedAt
 
   @@id([periodo, sucursal, kpi])
   @@index([periodo])

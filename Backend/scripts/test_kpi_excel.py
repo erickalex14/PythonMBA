@@ -91,7 +91,8 @@ def main():
     r1 = [str(c or "") for c in next(ws.iter_rows(min_row=1, max_row=1, values_only=True))]
     r2 = [c for c in next(ws.iter_rows(min_row=2, max_row=2, values_only=True))]
 
-    assert r1[1] == "CORTE AL 2026-08-16", r1[1]
+    # El original escribe la fecha en DD-MM-AAAA.
+    assert r1[1] == "CORTE AL 16-08-2026", r1[1]
     assert r1[2] == "SUPERVISOR" and r2[1] == "SUCURSAL", (r1[2], r2[1])
     for kpi, tit_real, tit_meta in COLUMNAS_RESUMEN:
         assert tit_real in r1, f"falta la columna real {tit_real!r}"
