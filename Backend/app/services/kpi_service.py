@@ -36,9 +36,12 @@ RE_SUCURSAL_EXCEL = re.compile(r"^\s*(\d{3})\s+(.+?)\s*$")
 #   manual  -> lo captura una persona (hoy llega por un Google Form)
 #   externo -> lo entrega otro proceso y este servicio solo lo recibe
 KPIS = {
+    # (venta - costo) / venta sobre TODA la venta de la tienda, no solo las
+    # categorias que puntuan: verificado contra el archivo manual (002 da
+    # 0.273749 contra 0.273751, 021 da 0.473613 contra 0.473622).
     "rentabilidad": {
         "label": "RENTABILIDAD DE TIENDA", "peso": 0.04,
-        "origen": "externo", "medida": "ratio"},
+        "origen": "margen", "medida": "ratio"},
     "tecnologia": {
         "label": "TECNOLOGIA / PROYECTORES", "peso": 0.04,
         "origen": "ventas", "cat": "TECNOLOGIA", "medida": "unidades"},
@@ -282,6 +285,18 @@ class KpiService:
                     WHERE fecha BETWEEN :i AND :f AND sucursal IS NOT NULL
                     GROUP BY 1
                 """), params).mappings().all()
+                # Rentabilidad: margen sobre TODA la venta de la tienda, sin
+                # filtrar por categoria (a diferencia del resto de KPIs).
+                margenes = conn.execute(text("""
+                    SELECT COALESCE(b.sucursal_override, b.sucursal) AS sucursal,
+                           COALESCE(SUM(v.total_linea), 0) AS venta,
+                           COALESCE(SUM(v.costo_total), 0) AS costo
+                    FROM view_ventas_espejo_reporte v
+                    JOIN kpi_bodega b ON b.ware_code = v.bodega_codigo
+                    WHERE v.fecha BETWEEN :i AND :f
+                      AND COALESCE(b.sucursal_override, b.sucursal) IS NOT NULL
+                    GROUP BY 1
+                """), params).mappings().all()
                 sucursales = conn.execute(text(
                     "SELECT codigo, nombre, supervisor, marca, ciudad "
                     "FROM kpi_sucursal WHERE activa = 'SI'")).mappings().all()
@@ -299,6 +314,11 @@ class KpiService:
                 reales[(m["sucursal"], m["kpi"])] = float(m["valor"] or 0)
             for c in cobros:
                 reales[(c["sucursal"], "credito_directo")] = float(c["monto"] or 0)
+            for r in margenes:
+                venta = float(r["venta"] or 0)
+                if venta:
+                    reales[(r["sucursal"], "rentabilidad")] = (
+                        venta - float(r["costo"] or 0)) / venta
 
             metas_map = {(m["sucursal"], m["kpi"]): float(m["meta"] or 0)
                          for m in metas}
