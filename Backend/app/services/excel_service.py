@@ -449,9 +449,19 @@ class ExcelService:
                 for j in range(1, ancho + 1):
                     ws.cell(row=fila, column=j).value = None
 
-        # ---------- RESUMEN KPI ----------
+        # ---------- Corte, en los tres sitios donde aparece ----------
+        # No basta con el titulo: el bloque AK5:AN6 de RESUMEN KPI guarda el dia
+        # del corte y los dias del mes, y de ahi salen por formula el % de mes
+        # transcurrido y la ponderacion esperada. Si no se actualizan, el archivo
+        # dice una fecha y calcula con otra.
+        etiqueta_corte = f"CORTE AL {d}-{m}-{a}"
         if "RESUMEN KPI" in wb.sheetnames:
-            wb["RESUMEN KPI"].cell(row=1, column=2, value=f"CORTE AL {d}-{m}-{a}")
+            ws_r = wb["RESUMEN KPI"]
+            ws_r.cell(row=1, column=2, value=etiqueta_corte)
+            ws_r["AK6"] = int(d)                       # dia del corte
+            ws_r["AL6"] = seguimiento["dias_mes"]      # dias del mes
+        if "POND" in wb.sheetnames:
+            wb["POND"].cell(row=1, column=2, value=etiqueta_corte)
         filas = []
         for i, s in enumerate(seguimiento["sucursales"], start=1):
             por_kpi = {x["kpi"]: x for x in s["detalle"]}

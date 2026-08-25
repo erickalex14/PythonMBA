@@ -27,6 +27,10 @@ export default function SeguimientoKpiPage() {
     usuario?.role === "Admin" || (usuario?.permissions || []).includes("MANAGE_CONFIG");
 
   const [periodo, setPeriodo] = useState(periodoActual());
+  // Corte manual: el KPI se mide "hasta tal dia", y para comparar contra el
+  // archivo de Contabilidad hay que poder fijar el mismo dia que usaron ellos.
+  // Vacio = ultimo dia sincronizado del mes.
+  const [corte, setCorte] = useState("");
   const [datos, setDatos] = useState<any | null>(null);
   const [definicion, setDefinicion] = useState<any[]>([]);
   const [busqueda, setBusqueda] = useState("");
@@ -50,7 +54,8 @@ export default function SeguimientoKpiPage() {
     setAviso(null);
     setDatos(null);
     try {
-      const res = await fetch(`/api/data/kpi?recurso=seguimiento&periodo=${periodo}`);
+      const q = corte ? `&corte=${corte}` : "";
+      const res = await fetch(`/api/data/kpi?recurso=seguimiento&periodo=${periodo}${q}`);
       if (!res.ok) throw new Error(await res.text());
       const json = await res.json();
       setDatos(json);
@@ -68,8 +73,11 @@ export default function SeguimientoKpiPage() {
     setDescargando(true);
     setError(null);
     try {
-      const corte = datos?.corte ? `&corte=${datos.corte}` : "";
-      const res = await fetch(`/api/data/kpi?recurso=excel&periodo=${periodo}${corte}`);
+      // Se manda el corte que se está viendo, para que el Excel coincida
+      // exactamente con la tabla en pantalla.
+      const usado = corte || datos?.corte;
+      const q = usado ? `&corte=${usado}` : "";
+      const res = await fetch(`/api/data/kpi?recurso=excel&periodo=${periodo}${q}`);
       if (!res.ok) throw new Error(await res.text());
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -150,6 +158,16 @@ export default function SeguimientoKpiPage() {
             className={styles.selectFilter}
             style={{ padding: "0.55rem 0.75rem", borderRadius: 8 }}
             aria-label="Mes a consultar"
+          />
+          <input
+            type="date"
+            value={corte}
+            onChange={(e) => setCorte(e.target.value)}
+            min={`${periodo}-01`}
+            className={styles.selectFilter}
+            style={{ padding: "0.55rem 0.75rem", borderRadius: 8 }}
+            title="Medir hasta este día. Vacío = último día sincronizado."
+            aria-label="Corte"
           />
           <motion.button
             type="button"
