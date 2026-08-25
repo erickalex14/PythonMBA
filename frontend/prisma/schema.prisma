@@ -294,3 +294,12 @@ model KpiValorManual {
   @@index([periodo])
   @@map("kpi_valor_manual")
 }
+
+model KpiPlantilla {
+  id         Int      @id @default(1)
+  nombre     String?  @db.VarChar(250)
+  archivo    Bytes
+  updated_at DateTime @default(now()) @updatedAt
+
+  @@map("kpi_plantilla")
+}

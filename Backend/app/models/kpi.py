@@ -1,4 +1,5 @@
-from sqlalchemy import Boolean, Column, Date, String, Numeric, DateTime, Index
+from sqlalchemy import (Boolean, Column, Date, DateTime, Index, Integer,
+                        LargeBinary, Numeric, String)
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -76,6 +77,22 @@ class KpiCobroCredito(Base):
     valor = Column(Numeric(18, 4), default=0)
     # Lo que escribio el cajero, para poder auditar por que entro al reporte.
     tipo_crudo = Column(String(160), nullable=True)
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+
+class KpiPlantilla(Base):
+    """El .xlsx que sube Contabilidad, guardado para usarlo como plantilla.
+
+    Replicar a mano los colores, fuentes y anchos del archivo original seria
+    frágil y largo. En vez de eso el reporte se genera ENCIMA del ultimo archivo
+    subido: se conservan sus dos filas de encabezado con su formato y se
+    reescriben las filas de datos copiando el estilo de la primera.
+    """
+    __tablename__ = "kpi_plantilla"
+
+    id = Column(Integer, primary_key=True, default=1)
+    nombre = Column(String(250), nullable=True)
+    archivo = Column(LargeBinary, nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 

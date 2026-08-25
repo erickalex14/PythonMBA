@@ -470,7 +470,8 @@ class KpiService:
                 db.close()
 
     def importar_excel(self, contenido: bytes, periodo: str,
-                       db: Optional[Session] = None) -> dict:
+                       db: Optional[Session] = None,
+                       nombre_archivo: Optional[str] = None) -> dict:
         """Carga sucursales, catalogo y metas desde el Excel armado a mano.
 
         Es la unica via para sembrar sin entrar por SSH al servidor. Idempotente:
@@ -560,6 +561,16 @@ class KpiService:
                 """), {"p": periodo, "s": sucursal, "k": kpi, "m": meta})
             # Solo se marcan las bodegas que el ERP ya conoce: si el codigo del
             # Excel no existe en el maestro, es otro identificador y no sirve.
+            # El mismo archivo sirve de plantilla para generar el reporte con su
+            # formato exacto (colores, fuentes, anchos), en vez de replicarlo.
+            db.execute(text("""
+                INSERT INTO kpi_plantilla (id, nombre, archivo)
+                VALUES (1, :n, :a)
+                ON CONFLICT (id) DO UPDATE SET
+                    nombre = EXCLUDED.nombre, archivo = EXCLUDED.archivo,
+                    updated_at = NOW()
+            """), {"n": nombre_archivo, "a": contenido})
+
             aplicados = 0
             for bodega, sucursal in overrides.items():
                 # El Excel escribe la bodega sin ceros a la izquierda ("16" donde

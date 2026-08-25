@@ -1,5 +1,6 @@
 import io
 import re
+import openpyxl
 import pandas as pd
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
@@ -396,6 +397,103 @@ class ExcelService:
             df, "Consolidado", "Reporte de Facturación Fiscal (ATS)",
             inicio, fin, columnas, money_cols, bool_cols=bool_cols, resumen=resumen, anchos=anchos
         )
+
+    def generar_reporte_kpi_sobre_plantilla(self, plantilla: bytes, seguimiento: dict,
+                                            presupuesto: list, lineas: list) -> io.BytesIO:
+        """Escribe el reporte ENCIMA del ultimo archivo que subio Contabilidad.
+
+        Replicar a mano los colores, fuentes y anchos de ese libro seria frágil:
+        usa Agency FB en unos encabezados y Calibri en otros, amarillo en unas
+        celdas y azul marino en el resto, con formatos de porcentaje por columna.
+        En vez de copiar todo eso, se reutiliza su propio archivo: se conservan
+        las filas de encabezado tal cual y se reescriben las de datos clonando el
+        estilo de la primera fila de datos.
+
+        Las hojas que el reporte no genera (ST.JUL, PJ-JUN, CLARO...) se dejan
+        intactas: son del mes anterior y no nos corresponde tocarlas.
+        """
+        from copy import copy
+
+        from app.services.kpi_service import (COLUMNAS_DETALLE, COLUMNAS_RESUMEN,
+                                              HOJA_POR_KPI, KPIS, observacion_tienda)
+
+        wb = openpyxl.load_workbook(io.BytesIO(plantilla))
+        corte = seguimiento["corte"]
+        a, m, d = corte.split("-")
+
+        def reescribir(hoja: str, primera_fila: int, filas: list) -> None:
+            """Reescribe los datos conservando el estilo de la primera fila.
+
+            No usa `delete_rows`: varias hojas del original tienen bloques
+            auxiliares a la derecha de la tabla (en PRESUPUESTO, el corte y los
+            dias del mes) y borrar filas enteras se los lleva por delante. Solo
+            se limpian las columnas que este reporte escribe.
+            """
+            if hoja not in wb.sheetnames:
+                return
+            ws = wb[hoja]
+            ancho = max((len(f) for f in filas), default=0)
+            if ws.max_row < primera_fila or not ancho:
+                return
+            estilos = [copy(c._style) for c in ws[primera_fila][:ancho]]
+
+            for i, valores in enumerate(filas):
+                fila = primera_fila + i
+                for j, valor in enumerate(valores, start=1):
+                    celda = ws.cell(row=fila, column=j, value=valor)
+                    if j - 1 < len(estilos):
+                        celda._style = copy(estilos[j - 1])
+
+            # Sobrantes del mes anterior: se vacian sin tocar el resto de la fila.
+            for fila in range(primera_fila + len(filas), ws.max_row + 1):
+                for j in range(1, ancho + 1):
+                    ws.cell(row=fila, column=j).value = None
+
+        # ---------- RESUMEN KPI ----------
+        if "RESUMEN KPI" in wb.sheetnames:
+            wb["RESUMEN KPI"].cell(row=1, column=2, value=f"CORTE AL {d}-{m}-{a}")
+        filas = []
+        for i, s in enumerate(seguimiento["sucursales"], start=1):
+            por_kpi = {x["kpi"]: x for x in s["detalle"]}
+            fila = [i, f"{s['sucursal']} {s['nombre']}".strip(), s["supervisor"] or ""]
+            for kpi, _, _ in COLUMNAS_RESUMEN:
+                x = por_kpi.get(kpi, {})
+                fila += [x.get("real", 0), x.get("meta")]
+            fila.append(None)
+            for kpi, _, _ in COLUMNAS_RESUMEN:
+                fila.append(por_kpi.get(kpi, {}).get("aporte", 0))
+            fila.append(s["total_kpi"])
+            filas.append(fila)
+        reescribir("RESUMEN KPI", 3, filas)
+
+        # ---------- PRESUPUESTO ----------
+        filas = []
+        for i, p in enumerate(presupuesto, start=1):
+            ticket, upf = p["ticket_promedio"], p["unidades_por_factura"]
+            filas.append([
+                i, f"{p['sucursal']} {p['nombre']}".strip(), p["marca"], p["ciudad"],
+                p["supervisor"], p["meta"], p["venta"], p["facturas"], p["unidades"],
+                ticket, upf, observacion_tienda(ticket, upf), p["venta_promedio_dia"],
+                p["proyeccion"], p["cumplimiento"], p.get("rentabilidad"), p.get("kpi"),
+            ])
+        reescribir("PRESUPUESTO", 2, filas)
+
+        # ---------- Detalle por categoria + BASE ----------
+        def filas_detalle(sub):
+            return [[_clean(f.get(campo)) if campo in
+                     ("producto", "nombre_cliente", "sucursal_larga") else f.get(campo)
+                     for campo, _ in COLUMNAS_DETALLE] for f in sub]
+
+        for kpi, hoja in HOJA_POR_KPI.items():
+            cat = (KPIS[kpi].get("cat") or "").upper().strip()
+            reescribir(hoja, 2, filas_detalle(
+                [f for f in lineas if str(f.get("cat") or "").upper().strip() == cat]))
+        reescribir("BASE", 2, filas_detalle(lineas))
+
+        salida = io.BytesIO()
+        wb.save(salida)
+        salida.seek(0)
+        return salida
 
     def generar_reporte_kpi(self, seguimiento: dict, presupuesto: list,
                             lineas: list) -> io.BytesIO:

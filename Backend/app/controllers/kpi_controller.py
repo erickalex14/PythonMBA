@@ -215,7 +215,7 @@ async def importar_excel(
         raise HTTPException(status_code=400, detail="Se espera un archivo .xlsx")
     contenido = await archivo.read()
     try:
-        return KpiService().importar_excel(contenido, periodo, db)
+        return KpiService().importar_excel(contenido, periodo, db, archivo.filename)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
 
@@ -254,7 +254,14 @@ def download_kpi(
     lineas = service.obtener_lineas(seguimiento["inicio"], seguimiento["corte"],
                                     solo_categorizadas=False, db=db)
 
-    archivo = excel_service.generar_reporte_kpi(seguimiento, presupuesto, lineas)
+    # Si Contabilidad ya subio su Excel, el reporte se genera ENCIMA para
+    # conservar su formato exacto; si no, sale con el formato plano equivalente.
+    plantilla = db.execute(text("SELECT archivo FROM kpi_plantilla WHERE id = 1")).scalar()
+    if plantilla:
+        archivo = excel_service.generar_reporte_kpi_sobre_plantilla(
+            bytes(plantilla), seguimiento, presupuesto, lineas)
+    else:
+        archivo = excel_service.generar_reporte_kpi(seguimiento, presupuesto, lineas)
     sello = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     nombre = f"SEGUIMIENTO_KPI_{periodo}_al_{seguimiento['corte']}_{sello}.xlsx"
     return StreamingResponse(
