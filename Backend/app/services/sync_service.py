@@ -705,7 +705,7 @@ class SyncService:
             "DOC_ID_CORP,TRANS_DATE,PRODUCT_ID_CORP,PRODUCT_NAME,QUANTITY,ORIGINAL_QTY,"
             "UNIT_COST,DISCOUNT_AMOUNT,NET_LINE_TOTAL,UM,Anulada,IN_OUT,"
             "\"Codigo grupo\",\"Codigo subgrupo\",Codigo_grupo,Codigo_subgrupo,"
-            "ORIGIN_MEMO,ORIGIN_REF,TRANS_COST,WAR_CODE,COD_CLIENTE,Info_Seriales"
+            "ORIGIN_MEMO,ORIGIN_REF,TRANS_COST,WAR_CODE,COD_CLIENTE,CODE_SALESMAN,Info_Seriales"
         )
         # EMPRESA (NVC01/ENV01) y CODIGO_LOCAL (sucursal) para segmentar; ANULADA para excluir.
         cols_facturas = "CODIGO_FACTURA,NUMERO_FACTURA,FECHA_FACTURA,EMPRESA,CODIGO_LOCAL,ANULADA"
@@ -877,6 +877,7 @@ class SyncService:
                         col_trans_cost = mapeo_item.get("TRANSCOST")
                         col_war = mapeo_item.get("WARCODE")
                         col_cliente = mapeo_item.get("CODCLIENTE")
+                        col_vendedor = mapeo_item.get("CODESALESMAN")
                         col_seriales = mapeo_item.get("INFOSERIALES")
 
                         # origin_ref normalizado a solo dígitos = llave de cruce con la factura
@@ -906,6 +907,7 @@ class SyncService:
                             trans_cost=parse_float(item.get(col_trans_cost)) if col_trans_cost else 0.0,
                             war_code=war_code_val,
                             bodega_nombre=bodegas_dict.get(war_code_val, ""),
+                            code_salesman=clean_str(item.get(col_vendedor)) if col_vendedor else "",
                             codigo_cliente=codigo_cliente_val,
                             nombre_cliente=clientes_dict.get(codigo_cliente_val, ""),
                             info_seriales=(clean_str(item.get(col_seriales)) or "")[:2000] if col_seriales else ""

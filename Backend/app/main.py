@@ -37,7 +37,8 @@ async def lifespan(app: FastAPI):
                     ADD COLUMN IF NOT EXISTS bodega_nombre VARCHAR(100),
                     ADD COLUMN IF NOT EXISTS codigo_cliente VARCHAR(20),
                     ADD COLUMN IF NOT EXISTS nombre_cliente VARCHAR(150),
-                    ADD COLUMN IF NOT EXISTS info_seriales VARCHAR(2000);
+                    ADD COLUMN IF NOT EXISTS info_seriales VARCHAR(2000),
+                    ADD COLUMN IF NOT EXISTS code_salesman VARCHAR(20);
             """))
             connection.execute(text("""
                 CREATE INDEX IF NOT EXISTS ix_ventas_kardex_staging_war_code ON ventas_kardex_staging (war_code);
@@ -161,6 +162,7 @@ async def lifespan(app: FastAPI):
                 ROUND(k.net_line_total, 4) AS total_linea,
                 k.war_code AS bodega_codigo,
                 COALESCE(k.bodega_nombre, '') AS bodega_nombre,
+                k.code_salesman AS codigo_vendedor,
                 k.codigo_cliente AS codigo_cliente,
                 COALESCE(k.nombre_cliente, '') AS nombre_cliente,
                 ROUND(k.trans_cost, 4) AS costo_unitario,

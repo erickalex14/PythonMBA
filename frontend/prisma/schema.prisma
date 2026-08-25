@@ -163,6 +163,7 @@ model AtsFiscalStaging {
 }
 
 model VentasKardexStaging {
+  code_salesman   String?  @db.VarChar(20)
   id              Int      @id @default(autoincrement())
   doc_id_corp     String   @db.VarChar(50)
   trans_date      DateTime @db.Date

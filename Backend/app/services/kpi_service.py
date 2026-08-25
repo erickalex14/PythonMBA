@@ -641,7 +641,7 @@ class KpiService:
                            v.unidad, v.grupo, v.subgrupo, v.cantidad,
                            v.precio_venta, v.total_linea,
                            v.bodega_codigo,
-                           v.codigo_cliente AS codigo_vendedor,
+                           v.codigo_vendedor,
                            v.nombre_cliente,
                            -- El reporte manual trae esta columna fija en TIENDA:
                            -- las bodegas que no son de tienda ya quedaron fuera

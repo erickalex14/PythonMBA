@@ -39,10 +39,11 @@ export default function MetasKpiPage() {
 
   const clave = (s: string, k: string) => `${s}|${k}`;
 
-  const columnas = useMemo(
-    () => [VENTA_TIENDA, ...kpis.filter((k) => k.origen !== "externo")],
-    [kpis]
-  );
+  // Lo unico que se carga a mano cada mes es la meta de venta de la tienda.
+  // Las metas por KPI vienen del Excel al importarlo y no se editan aqui: son
+  // decision comercial y meterlas en esta tabla la volvia ilegible (11 columnas
+  // por sucursal, 126 filas).
+  const columnas = useMemo(() => [VENTA_TIENDA], []);
 
   const cargar = async () => {
     setLoading(true);

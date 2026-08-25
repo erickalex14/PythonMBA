@@ -27,6 +27,10 @@ class VentasKardexStaging(Base):
     trans_cost = Column(Numeric(18, 4), default=0.0)
     war_code = Column(String(20), nullable=True, index=True)
     bodega_nombre = Column(String(100), nullable=True)
+    # CODE_SALESMAN: el vendedor que hizo la venta. El reporte de KPI lo
+    # muestra en su columna "Codigo" (CE004, apjc); antes se llenaba por
+    # error con el codigo del cliente.
+    code_salesman = Column(String(20), nullable=True)
     codigo_cliente = Column(String(20), nullable=True, index=True)
     nombre_cliente = Column(String(150), nullable=True)
     # ORIGIN_MEMO = tipo de movimiento (CLIENTES = venta real, resto se excluye).
