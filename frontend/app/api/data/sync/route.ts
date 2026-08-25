@@ -53,12 +53,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Parámetros 'type', 'inicio' y 'fin' son obligatorios." }, { status: 400 });
   }
 
-  const validTypes = ["movimientos", "liquidaciones", "ats", "ventas"];
+  const validTypes = ["movimientos", "liquidaciones", "ats", "ventas", "kpi"];
   if (!validTypes.includes(type)) {
     return NextResponse.json({ error: `Tipo de sincronización inválido: ${type}` }, { status: 400 });
   }
 
-  let backendUrl = `${process.env.BACKEND_API_URL}/api/v1/sync/${type}?inicio=${inicio}&fin=${fin}`;
+  // El KPI sincroniza a su propio schema con un endpoint aparte: no comparte
+  // tablas con Ventas ni Rentabilidad.
+  let backendUrl =
+    type === "kpi"
+      ? `${process.env.BACKEND_API_URL}/api/v1/kpi/sincronizar-ventas?inicio=${inicio}&fin=${fin}`
+      : `${process.env.BACKEND_API_URL}/api/v1/sync/${type}?inicio=${inicio}&fin=${fin}`;
   if (env) {
     backendUrl += `&env=${env.toUpperCase()}`;
   }

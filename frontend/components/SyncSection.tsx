@@ -26,6 +26,7 @@ const ETIQUETAS_TIPO: Record<string, string> = {
   ventas: "Ventas",
   liquidaciones: "Liquidaciones",
   ats: "ATS",
+  kpi: "KPI",
 };
 
 // Agrupa dias consecutivos en rangos ("2026-07-28 a 2026-07-30") para no listar
@@ -120,7 +121,7 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleSync = async (type: "movimientos" | "liquidaciones" | "ats" | "ventas") => {
+  const handleSync = async (type: "movimientos" | "liquidaciones" | "ats" | "ventas" | "kpi") => {
     if (syncing) return;
     
     // Validar rango de fechas
@@ -145,7 +146,8 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
       movimientos: "Movimientos de Inventario (Kardex)",
       liquidaciones: "Liquidaciones de Importación",
       ats: "Reporte ATS (Compras/Facturación)",
-      ventas: "Reporte de Ventas"
+      ventas: "Reporte de Ventas",
+      kpi: "Seguimiento KPI (schema propio)"
     };
 
     addLog(`>>> INICIANDO SINCRONIZACIÓN MANUAL: ${labelMap[type].toUpperCase()} <<<`);
@@ -367,6 +369,8 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
           { type: "liquidaciones" as const, label: "Sincronizar Liquidaciones", color: "var(--color-accent-violet)" },
           { type: "ats" as const, label: "Sincronizar ATS", color: "var(--color-warning)" },
           { type: "ventas" as const, label: "Sincronizar Ventas", color: "var(--color-brand-accent)" },
+          // Escribe en el schema `kpi`, no en el staging de Ventas/Rentabilidad.
+          { type: "kpi" as const, label: "Sincronizar KPI", color: "var(--color-accent-violet)" },
         ].map((b) => (
           <motion.button
             key={b.type}
