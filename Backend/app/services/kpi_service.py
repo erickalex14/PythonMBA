@@ -3,6 +3,7 @@ import datetime
 import io
 import logging
 import re
+import time
 from typing import Optional
 
 import openpyxl
@@ -150,7 +151,9 @@ CORP_TIENDAS = "NVC01"
 
 # El ERP devuelve 200 filas cuando no se le pasa limite, y no avisa. El maestro
 # de bodegas tiene 329.
-LIMITE_ERP = 5000
+# El ERP acepta lotes grandes si se los pides explicito: el sync de Ventas lleva
+# anios pidiendo 50000 por dia contra estas mismas tablas.
+LIMITE_ERP = 50000
 
 _RE_PREFIJO_3 = re.compile(r"^\s*(\d{3})")
 
@@ -745,12 +748,6 @@ class KpiService:
                 db.close()
 
 
-# El ERP de PRUEBAS corta en 3000 filas e ignora el `limit`. Un dia normal tiene
-# ~8900 lineas de kardex, asi que pedir por dia completo perderia dos tercios
-# sin ningun error. Se pide por bodega, que baja cada consulta muy por debajo
-# del tope, y se avisa si alguna igual lo roza.
-TOPE_FILAS_ERP = 3000
-
 
 class KpiSyncVentas:
     """Sincroniza el kardex y las facturas al schema propio del KPI.
@@ -779,64 +776,78 @@ class KpiSyncVentas:
         except (TypeError, ValueError):
             return 0.0
 
+    def _consultar(self, token, columnas, tabla, where, env):
+        """Consulta al ERP reintentando con token fresco.
+
+        Un backfill de meses tarda lo suficiente como para que el token venza a
+        medias; sin esto el rango entero se cae por un 401 pasajero. El ERP
+        contesta None en vez de fallar, asi que el None tambien es un reintento.
+        """
+        for intento in range(1, 4):
+            try:
+                filas = self.repo.ejecutar_consulta(
+                    token, columnas, tabla, where=where, limit=LIMITE_ERP, env=env)
+                if filas is not None:
+                    return filas, token
+                logging.warning("KPI sync: %s devolvio None (%s), intento %s",
+                                tabla, where, intento)
+            except Exception as e:
+                logging.warning("KPI sync: fallo %s (%s): %s", tabla, where, e)
+            time.sleep(2)
+            token = self.repo.obtener_token(force_refresh=True, env=env) or token
+        raise ValueError(f"El ERP no respondio para {tabla} en {where}")
+
     def sincronizar(self, inicio: str, fin: str, env: Optional[str] = None,
                     db: Optional[Session] = None) -> dict:
-        token = self.repo.obtener_token(env=env)
-        bodegas = [b for b in self._bodegas(db) if b]
+        d0 = datetime.date.fromisoformat(inicio)
+        d1 = datetime.date.fromisoformat(fin)
+        if d1 < d0:
+            raise ValueError("El rango termina antes de empezar.")
+        dias = [d0 + datetime.timedelta(days=i) for i in range((d1 - d0).days + 1)]
 
+        token = self.repo.obtener_token(env=env)
         cerrar = False
         if db is None:
             db = SessionLocal()
             cerrar = True
         try:
-            db.execute(text(f"DELETE FROM {SCHEMA_KPI}.ventas_kardex "
-                            "WHERE trans_date BETWEEN :i AND :f"),
-                       {"i": inicio, "f": fin})
-            db.execute(text(f"DELETE FROM {SCHEMA_KPI}.ventas_facturas "
-                            "WHERE invoice_date BETWEEN :i AND :f"),
-                       {"i": inicio, "f": fin})
+            truncados, kardex, n_fact = [], 0, 0
+            # Un dia por peticion, como el sync de Ventas. Antes esto iba bodega
+            # por bodega para esquivar un tope que en realidad no existe cuando
+            # el limit va explicito: eran 330 peticiones por dia en vez de 2.
+            for dia in dias:
+                f = dia.isoformat()
+                # El borrado va por dia dentro del bucle: si el rango se corta a
+                # la mitad, los dias ya hechos quedan completos y reejecutar el
+                # mismo dia no duplica.
+                db.execute(text(f"DELETE FROM {SCHEMA_KPI}.ventas_kardex "
+                                "WHERE trans_date = :d"), {"d": f})
+                db.execute(text(f"DELETE FROM {SCHEMA_KPI}.ventas_facturas "
+                                "WHERE invoice_date = :d"), {"d": f})
 
-            truncados, kardex = [], 0
-            for bodega in bodegas:
-                filas = self.repo.ejecutar_consulta(
+                filas, token = self._consultar(
                     token, self.COLS_KARDEX, "INVT_Producto_Movimientos",
-                    where=(f"TRANS_DATE>='{inicio}' AND TRANS_DATE<='{fin}' "
-                           f"AND WAR_CODE='{bodega}'"),
-                    limit=LIMITE_ERP, env=env)
-                if len(filas) >= TOPE_FILAS_ERP:
-                    truncados.append(bodega)
+                    f"TRANS_DATE = '{f}'", env)
+                if len(filas) >= LIMITE_ERP:
+                    truncados.append(f"kardex {f}")
                 kardex += self._guardar_kardex(db, filas)
 
-            facturas = self.repo.ejecutar_consulta(
-                token, self.COLS_FACTURAS, "CLNT_Factura_Principal",
-                where=f"FECHA_FACTURA>='{inicio}' AND FECHA_FACTURA<='{fin}'",
-                limit=LIMITE_ERP, env=env)
-            if len(facturas) >= TOPE_FILAS_ERP:
-                truncados.append("CLNT_Factura_Principal")
-            n_fact = self._guardar_facturas(db, facturas)
+                facturas, token = self._consultar(
+                    token, self.COLS_FACTURAS, "CLNT_Factura_Principal",
+                    f"FECHA_FACTURA = '{f}'", env)
+                if len(facturas) >= LIMITE_ERP:
+                    truncados.append(f"facturas {f}")
+                n_fact += self._guardar_facturas(db, facturas)
 
-            db.commit()
-            return {"inicio": inicio, "fin": fin, "bodegas": len(bodegas),
+                db.commit()
+
+            return {"inicio": inicio, "fin": fin, "dias": len(dias),
                     "kardex": kardex, "facturas": n_fact,
                     # Si algo llego al tope, el dato esta incompleto y hay que
                     # partir el rango: mejor decirlo que servir numeros bajos.
                     "truncados": truncados}
         finally:
             if cerrar:
-                db.close()
-
-    def _bodegas(self, db):
-        propio = db is None
-        if propio:
-            db = SessionLocal()
-        try:
-            filas = db.execute(text(
-                f"SELECT ware_code FROM {SCHEMA_KPI}.kpi_bodega "
-                "WHERE COALESCE(sucursal_override, sucursal) IS NOT NULL"
-            )).scalars().all()
-            return [str(f).strip() for f in filas]
-        finally:
-            if propio:
                 db.close()
 
     def _guardar_kardex(self, db, filas) -> int:

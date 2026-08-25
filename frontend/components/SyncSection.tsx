@@ -208,6 +208,12 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
           // El backend de ventas devuelve kardex_count / facturas_count
           registros = (result.kardex_count || 0) + (result.facturas_count || 0);
           details = `${result.kardex_count || 0} movimientos, ${result.facturas_count || 0} facturas`;
+        } else if (type === "kpi") {
+          registros = (result.kardex || 0) + (result.facturas || 0);
+          details = `${result.kardex || 0} movimientos, ${result.facturas || 0} facturas`;
+          if (result.truncados?.length) {
+            addLog(`[AVISO] Se alcanzo el tope del ERP en: ${result.truncados.join(", ")}`);
+          }
         }
 
         // Un dia con 0 registros casi nunca es correcto en estas tablas: suele ser un
