@@ -776,6 +776,26 @@ class KpiSyncVentas:
         except (TypeError, ValueError):
             return 0.0
 
+    @staticmethod
+    def _topado(filas) -> bool:
+        """PRUEBAS corta en 3000 filas aunque el `limit` pida mas; PROD lo respeta.
+
+        Caer justo en un tope no prueba que se recorto, pero el precio de
+        equivocarse es repetir el dia partido: lento, nunca incorrecto.
+        """
+        return len(filas) in (3000, LIMITE_ERP)
+
+    def _por_partes(self, token, columnas, tabla, where, campo, valores, env):
+        """Repite una consulta topada, partida por `campo`, y suma los pedazos."""
+        filas, topados = [], []
+        for v in valores:
+            parte, token = self._consultar(
+                token, columnas, tabla, f"{where} AND {campo}='{v}'", env)
+            if self._topado(parte):
+                topados.append(f"{campo}={v}")
+            filas.extend(parte)
+        return filas, token, topados
+
     def _consultar(self, token, columnas, tabla, where, env):
         """Consulta al ERP reintentando con token fresco.
 
@@ -825,18 +845,24 @@ class KpiSyncVentas:
                 db.execute(text(f"DELETE FROM {SCHEMA_KPI}.ventas_facturas "
                                 "WHERE invoice_date = :d"), {"d": f})
 
+                w_k = f"TRANS_DATE = '{f}'"
                 filas, token = self._consultar(
-                    token, self.COLS_KARDEX, "INVT_Producto_Movimientos",
-                    f"TRANS_DATE = '{f}'", env)
-                if len(filas) >= LIMITE_ERP:
-                    truncados.append(f"kardex {f}")
+                    token, self.COLS_KARDEX, "INVT_Producto_Movimientos", w_k, env)
+                if self._topado(filas):
+                    filas, token, topados = self._por_partes(
+                        token, self.COLS_KARDEX, "INVT_Producto_Movimientos",
+                        w_k, "WAR_CODE", self._bodegas(db), env)
+                    truncados += [f"kardex {f} {t}" for t in topados]
                 kardex += self._guardar_kardex(db, filas)
 
+                w_f = f"FECHA_FACTURA = '{f}'"
                 facturas, token = self._consultar(
-                    token, self.COLS_FACTURAS, "CLNT_Factura_Principal",
-                    f"FECHA_FACTURA = '{f}'", env)
-                if len(facturas) >= LIMITE_ERP:
-                    truncados.append(f"facturas {f}")
+                    token, self.COLS_FACTURAS, "CLNT_Factura_Principal", w_f, env)
+                if self._topado(facturas):
+                    facturas, token, topados = self._por_partes(
+                        token, self.COLS_FACTURAS, "CLNT_Factura_Principal",
+                        w_f, "CODIGO_LOCAL", self._locales(db), env)
+                    truncados += [f"facturas {f} {t}" for t in topados]
                 n_fact += self._guardar_facturas(db, facturas)
 
                 db.commit()
@@ -849,6 +875,23 @@ class KpiSyncVentas:
         finally:
             if cerrar:
                 db.close()
+
+    @staticmethod
+    def _valores(db, columna):
+        """Valores del maestro de bodegas por los que se puede partir un dia."""
+        filas = db.execute(text(
+            f"SELECT DISTINCT {columna} FROM {SCHEMA_KPI}.kpi_bodega "
+            f"WHERE {columna} IS NOT NULL AND {columna} <> ''"
+        )).scalars().all()
+        return [str(f).strip() for f in filas if str(f).strip()]
+
+    def _bodegas(self, db):
+        # Sin filtrar por sucursal: partir el dia tiene que cubrir todas las
+        # bodegas, o las filas de las no mapeadas se pierden al recomponerlo.
+        return self._valores(db, "ware_code")
+
+    def _locales(self, db):
+        return self._valores(db, "codigo_local")
 
     def _guardar_kardex(self, db, filas) -> int:
         n = 0
