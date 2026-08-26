@@ -785,16 +785,38 @@ class KpiSyncVentas:
         """
         return len(filas) in (3000, LIMITE_ERP)
 
-    def _por_partes(self, token, columnas, tabla, where, campo, valores, env):
-        """Repite una consulta topada, partida por `campo`, y suma los pedazos."""
-        filas, topados = [], []
-        for v in valores:
-            parte, token = self._consultar(
-                token, columnas, tabla, f"{where} AND {campo}='{v}'", env)
-            if self._topado(parte):
-                topados.append(f"{campo}={v}")
-            filas.extend(parte)
-        return filas, token, topados
+    def _por_partes(self, token, columnas, tabla, where, campo, codigos, env,
+                    lo=None, hi=None):
+        """Parte un dia topado cortando el rango de `campo` a la mitad.
+
+        El ERP no acepta `IN` (responde 500 y ademas invalida el token), pero si
+        acepta comparaciones. Pedir bodega por bodega serian 325 peticiones por
+        dia; bajando solo por la mitad que se topa salen ~12.
+
+        Los cortes son semiabiertos (`>= lo`, `< hi`) para que las dos mitades
+        cubran exactamente lo mismo que el padre: con `<=` se perderia cualquier
+        codigo que exista en el kardex pero no en el maestro de bodegas.
+        """
+        cond = where
+        if lo is not None:
+            cond += f" AND {campo} >= '{lo}'"
+        if hi is not None:
+            cond += f" AND {campo} < '{hi}'"
+
+        filas, token = self._consultar(token, columnas, tabla, cond, env)
+        if not self._topado(filas):
+            return filas, token, []
+        if len(codigos) <= 1:
+            # Un solo codigo ya no se puede partir: el dia queda corto y se avisa.
+            return filas, token, [f"{campo}[{lo}..{hi})"]
+
+        m = len(codigos) // 2
+        pivote = codigos[m]
+        izq, token, t1 = self._por_partes(token, columnas, tabla, where, campo,
+                                          codigos[:m], env, lo, pivote)
+        der, token, t2 = self._por_partes(token, columnas, tabla, where, campo,
+                                          codigos[m:], env, pivote, hi)
+        return izq + der, token, t1 + t2
 
     def _consultar(self, token, columnas, tabla, where, env):
         """Consulta al ERP reintentando con token fresco.
@@ -883,7 +905,9 @@ class KpiSyncVentas:
             f"SELECT DISTINCT {columna} FROM {SCHEMA_KPI}.kpi_bodega "
             f"WHERE {columna} IS NOT NULL AND {columna} <> ''"
         )).scalars().all()
-        return [str(f).strip() for f in filas if str(f).strip()]
+        # Ordenados: los cortes por mitades asumen la lista en el mismo orden
+        # que usa el ERP al comparar.
+        return sorted(str(f).strip() for f in filas if str(f).strip())
 
     def _bodegas(self, db):
         # Sin filtrar por sucursal: partir el dia tiene que cubrir todas las
