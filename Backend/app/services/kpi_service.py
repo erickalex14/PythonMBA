@@ -918,19 +918,12 @@ class KpiSyncVentas:
         return self._valores(db, "codigo_local")
 
     def _guardar_kardex(self, db, filas) -> int:
-        n = 0
+        # Un execute por fila eran ~9000 viajes al Postgres por dia y se comia
+        # casi todo el tiempo del sync. En lote es un solo viaje.
+        lote = []
         for f in filas:
             ref = "".join(c for c in self._txt(f.get("ORIGIN_REF")) if c.isdigit())
-            db.execute(text(f"""
-                INSERT INTO {SCHEMA_KPI}.ventas_kardex
-                    (doc_id_corp, trans_date, product_id_corp, product_name, quantity,
-                     discount_amount, net_line_total, um, anulada, codigo_grupo,
-                     codigo_subgrupo, trans_cost, war_code, code_salesman,
-                     codigo_cliente, origin_memo, origin_ref)
-                VALUES (:doc, :fecha, :prod, :nombre, :cant, :desc, :total, :um,
-                        :anul, :grupo, :subgrupo, :costo, :bodega, :vend, :cli,
-                        :memo, :ref)
-            """), {
+            lote.append({
                 "doc": self._txt(f.get("DOC_ID_CORP")),
                 "fecha": self._txt(f.get("TRANS_DATE"))[:10],
                 "prod": self._txt(f.get("PRODUCT_ID_CORP")),
@@ -949,32 +942,50 @@ class KpiSyncVentas:
                 "memo": self._txt(f.get("ORIGIN_MEMO"))[:50],
                 "ref": ref[:50],
             })
-            n += 1
-        return n
+        if not lote:
+            return 0
+        db.execute(text(f"""
+            INSERT INTO {SCHEMA_KPI}.ventas_kardex
+                (doc_id_corp, trans_date, product_id_corp, product_name, quantity,
+                 discount_amount, net_line_total, um, anulada, codigo_grupo,
+                 codigo_subgrupo, trans_cost, war_code, code_salesman,
+                 codigo_cliente, origin_memo, origin_ref)
+            VALUES (:doc, :fecha, :prod, :nombre, :cant, :desc, :total, :um,
+                    :anul, :grupo, :subgrupo, :costo, :bodega, :vend, :cli,
+                    :memo, :ref)
+        """), lote)
+        return len(lote)
 
     def _guardar_facturas(self, db, filas) -> int:
-        n = 0
+        # Por doc_id_corp y no en una lista: con ON CONFLICT DO UPDATE, dos filas
+        # con la misma clave en el mismo lote hacen fallar el INSERT entero
+        # ("cannot affect row a second time"). Partir el dia por rangos puede
+        # traer la misma factura en dos pedazos, asi que la ultima gana.
+        lote = {}
         for f in filas:
             numero = "".join(c for c in self._txt(f.get("NUMERO_FACTURA")) if c.isdigit())
-            db.execute(text(f"""
-                INSERT INTO {SCHEMA_KPI}.ventas_facturas
-                    (doc_id_corp, numero_factura, invoice_date, empresa,
-                     codigo_local, anulada)
-                VALUES (:doc, :num, :fecha, :emp, :local, :anul)
-                ON CONFLICT (doc_id_corp) DO UPDATE SET
-                    numero_factura = EXCLUDED.numero_factura,
-                    invoice_date = EXCLUDED.invoice_date,
-                    empresa = EXCLUDED.empresa,
-                    codigo_local = EXCLUDED.codigo_local,
-                    anulada = EXCLUDED.anulada,
-                    updated_at = NOW()
-            """), {
-                "doc": self._txt(f.get("CODIGO_FACTURA")),
+            doc = self._txt(f.get("CODIGO_FACTURA"))
+            lote[doc] = {
+                "doc": doc,
                 "num": numero[:50],
                 "fecha": self._txt(f.get("FECHA_FACTURA"))[:10],
                 "emp": self._txt(f.get("EMPRESA"))[:20],
                 "local": self._txt(f.get("CODIGO_LOCAL"))[:20],
                 "anul": str(f.get("ANULADA")).lower() in ("true", "1", "si"),
-            })
-            n += 1
-        return n
+            }
+        if not lote:
+            return 0
+        db.execute(text(f"""
+            INSERT INTO {SCHEMA_KPI}.ventas_facturas
+                (doc_id_corp, numero_factura, invoice_date, empresa,
+                 codigo_local, anulada)
+            VALUES (:doc, :num, :fecha, :emp, :local, :anul)
+            ON CONFLICT (doc_id_corp) DO UPDATE SET
+                numero_factura = EXCLUDED.numero_factura,
+                invoice_date = EXCLUDED.invoice_date,
+                empresa = EXCLUDED.empresa,
+                codigo_local = EXCLUDED.codigo_local,
+                anulada = EXCLUDED.anulada,
+                updated_at = NOW()
+        """), list(lote.values()))
+        return len(lote)
