@@ -10,6 +10,9 @@ export interface TotalesEmpresa {
   monto_neto: number;
   cantidad: number;
   cantidad_devoluciones: number;
+  // Ya viene dentro de `monto`: es consumo interno, no se resta.
+  monto_autoconsumos?: number;
+  cantidad_autoconsumos?: number;
 }
 
 export interface TotalesRango {
@@ -17,6 +20,8 @@ export interface TotalesRango {
   monto_devoluciones: number;
   monto_neto: number;
   cantidad_devoluciones: number;
+  monto_autoconsumos?: number;
+  cantidad_autoconsumos?: number;
   comparado_con: string;
   delta_pct: number | null;
   por_empresa?: TotalesEmpresa[];
@@ -241,6 +246,21 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
             </div>
           </Card>
 
+          {/* Autoconsumo (bodega 31A): la tienda se consume el producto. El ERP lo
+              marca como venta a cliente, asi que ya esta sumado arriba. Se muestra
+              para poder leerlo, no se descuenta: por eso no va en rojo. */}
+          <Card variant="kpiCard" styles={styles}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <h3>Autoconsumos</h3>
+            </div>
+            <p className={styles.kpiValue} style={{ color: (totales.monto_autoconsumos ?? 0) > 0 ? "#b7791f" : undefined }}>
+              {(totales.monto_autoconsumos ?? 0).toLocaleString("es-EC", { style: "currency", currency: "USD" })}
+            </p>
+            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
+              {(totales.cantidad_autoconsumos ?? 0).toLocaleString("es-EC")} unidades · incluido en las ventas
+            </div>
+          </Card>
+
           <Card variant="kpiCard" styles={styles}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <h3>Ventas sin devoluciones</h3>
@@ -276,6 +296,11 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
                     color={emp.monto_devoluciones > 0 ? "#c0392b" : undefined}
                   />
                   <LineaMonto etiqueta="Unidades devueltas" valor={emp.cantidad_devoluciones.toLocaleString("es-EC")} />
+                  <LineaMonto
+                    etiqueta="Autoconsumos (incluidos)"
+                    valor={usd(emp.monto_autoconsumos ?? 0)}
+                    color={(emp.monto_autoconsumos ?? 0) > 0 ? "#b7791f" : undefined}
+                  />
                 </div>
               </Card>
             ))

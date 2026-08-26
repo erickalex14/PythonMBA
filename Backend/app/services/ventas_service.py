@@ -16,6 +16,12 @@ from app.repositories.mba3_repository import IMba3Repository
 # lo usan tanto los tops del dashboard como las hojas Top del Excel.
 PATRONES_PRODUCTO_RUIDO = ("GLOBO", "FUNDA", "SERVICIO")
 
+# Bodega de consumo interno: lo que sale por aqui se lo consume la propia tienda
+# (globos, portaglobos, material de local), no un cliente. El ERP igual lo marca
+# origin_memo='CLIENTES', asi que suma como venta. No se descuenta -- se reporta
+# aparte, igual que las devoluciones, para poder leerlo.
+BODEGA_AUTOCONSUMO = "31A"
+
 
 def es_producto_ruido(nombre) -> bool:
     texto = str(nombre or "").upper()
@@ -487,8 +493,20 @@ class VentasService:
                 WHERE trans_date BETWEEN :inicio AND :fin
                   AND anulada = false AND origin_memo ILIKE 'Devoluci%'
             """)
+            # Autoconsumo: la bodega 31A es consumo interno (globos, portaglobos,
+            # material de tienda). Entra como origin_memo='CLIENTES', asi que ya
+            # esta sumado dentro de `monto`; NO se resta, se expone aparte para
+            # poder leer cuanto de la venta no salio a un cliente real.
+            sql_auto = text("""
+                SELECT COALESCE(SUM(total_linea), 0) AS monto,
+                       COALESCE(SUM(cantidad), 0) AS cantidad
+                FROM view_ventas_espejo_reporte
+                WHERE fecha BETWEEN :inicio AND :fin
+                  AND bodega_codigo = :bodega
+            """)
             actual = {"inicio": inicio, "fin": fin}
             previo = {"inicio": inicio_ant.isoformat(), "fin": fin_ant.isoformat()}
+            actual_auto = {**actual, "bodega": BODEGA_AUTOCONSUMO}
 
             # Desglose por empresa. En el kardex la empresa no es una columna: viene
             # como sufijo del codigo de producto ("1CENV153-NVC01"), asi que se
@@ -512,14 +530,25 @@ class VentasService:
                   AND anulada = false AND origin_memo ILIKE 'Devoluci%%'
                 GROUP BY 1
             """)
+            sql_auto_emp = text("""
+                SELECT empresa,
+                       COALESCE(SUM(total_linea), 0) AS monto,
+                       COALESCE(SUM(cantidad), 0) AS cantidad
+                FROM view_ventas_espejo_reporte
+                WHERE fecha BETWEEN :inicio AND :fin
+                  AND bodega_codigo = :bodega
+                GROUP BY empresa
+            """)
 
             with db.get_bind().connect() as conn:
                 venta = conn.execute(sql_venta, actual).mappings().first()
                 dev = conn.execute(sql_dev, actual).mappings().first()
+                auto = conn.execute(sql_auto, actual_auto).mappings().first()
                 venta_ant = conn.execute(sql_venta, previo).mappings().first()
                 dev_ant = conn.execute(sql_dev, previo).mappings().first()
                 ventas_emp = conn.execute(sql_venta_emp, actual).mappings().all()
                 devs_emp = conn.execute(sql_dev_emp, actual).mappings().all()
+                autos_emp = conn.execute(sql_auto_emp, actual_auto).mappings().all()
 
             monto = float(venta["monto"] or 0)
             monto_dev = float(dev["monto"] or 0)
@@ -529,10 +558,12 @@ class VentasService:
             nombres = {"NVC01": "NOVICOMPU", "ENV01": "ENV"}
             ventas_por_emp = {r["empresa"]: r for r in ventas_emp}
             devs_por_emp = {r["empresa"]: r for r in devs_emp}
+            autos_por_emp = {r["empresa"]: r for r in autos_emp}
             por_empresa = []
             for codigo in sorted(set(ventas_por_emp) | set(devs_por_emp)):
                 v = ventas_por_emp.get(codigo)
                 d = devs_por_emp.get(codigo)
+                a = autos_por_emp.get(codigo)
                 m = float(v["monto"] or 0) if v else 0.0
                 md = float(d["monto"] or 0) if d else 0.0
                 por_empresa.append({
@@ -543,6 +574,9 @@ class VentasService:
                     "monto_neto": m - md,
                     "cantidad": int(v["cantidad"] or 0) if v else 0,
                     "cantidad_devoluciones": int(d["cantidad"] or 0) if d else 0,
+                    # Ya incluido en `monto`, no se resta de `monto_neto`.
+                    "monto_autoconsumos": float(a["monto"] or 0) if a else 0.0,
+                    "cantidad_autoconsumos": int(a["cantidad"] or 0) if a else 0,
                 })
 
             return {
@@ -553,6 +587,10 @@ class VentasService:
                 "monto_neto": neto,
                 "cantidad": int(venta["cantidad"] or 0),
                 "cantidad_devoluciones": int(dev["cantidad"] or 0),
+                # Dentro de `monto`, no restado: es venta que se consumio la propia
+                # tienda (bodega 31A), no una devolucion.
+                "monto_autoconsumos": float(auto["monto"] or 0),
+                "cantidad_autoconsumos": int(auto["cantidad"] or 0),
                 "comparado_con": f"{inicio_ant.isoformat()} a {fin_ant.isoformat()}",
                 "monto_neto_anterior": neto_ant,
                 # null si no hay periodo previo con ventas: es preferible a un 0%
