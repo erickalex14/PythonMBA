@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dropshipping-frontend",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--dir", "C:\\Users\\USER\\Desktop\\Proyectosy Folders\\dropshipping\\frontend", "dev"],
+      "port": 3000
+    }
+  ]
+}

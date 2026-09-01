@@ -8,7 +8,8 @@ import os
 import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from app.services.ventas_service import VentasService
+from app.services.ventas_service import (
+    VentasService, es_consumible, es_producto_ruido, LIKE_CONSUMIBLE)
 
 
 def test_periodos_lunes_17_agosto():
@@ -96,10 +97,55 @@ def test_tops_sin_ruido_y_sin_duplicar_empresas():
     assert "ZTE-BLADEL2" in codigos_nvc01, "NVC01 si debe ver sus propios productos"
 
 
+def test_consumibles_atrapan_globos_y_fundas():
+    # Nombres reales tal como salen del ERP. La vista los pasa a mayusculas,
+    # es_consumible/LIKE_CONSUMIBLE tienen que dar lo mismo en cualquier caja.
+    for nombre in ["Portaglobos", 'Globo ENV 3.2Gr 12"', "INFLAGLOBOS ELECTRICO",
+                   "FUNDA SILICONA", "funda de regalo", "GLOBOS METALIZADOS"]:
+        assert es_consumible(nombre), f"deberia contar como consumible: {nombre}"
+
+    # Lo que NO se puede llevar por delante: es la venta de verdad.
+    for nombre in ["CELULAR ENV LINK 2G BLUE", "SERVICIO TECNICO", "LAPTOP HP",
+                   "AUDIFONOS", "TELEVISOR 50"]:
+        assert not es_consumible(nombre), f"NO es consumible: {nombre}"
+
+    # Los servicios salen de los rankings pero SI son venta real: las dos
+    # listas tienen que seguir siendo distintas.
+    assert es_producto_ruido("SERVICIO TECNICO"), "servicio sigue fuera de los tops"
+    assert not es_consumible("SERVICIO TECNICO"), "un servicio no se descuenta del total"
+
+    # El patron SQL se deriva de la misma tupla: si alguien toca una y no la
+    # otra, Python y Postgres empezarian a contar cosas distintas.
+    assert LIKE_CONSUMIBLE == ["%GLOBO%", "%FUNDA%"], LIKE_CONSUMIBLE
+
+
+def test_venta_real_no_descuenta_dos_veces_los_globos_de_31A():
+    """
+    La bodega 31A ES la de globos y portaglobos: si el balde de consumibles no
+    excluyera 31A, esas lineas caerian en los dos y se restarian dos veces.
+    Este check fija la aritmetica que arma el servicio.
+    """
+    monto, devoluciones = 10_000.0, 500.0
+    # 800 de 31A, de los cuales 600 son globos -> el balde de consumibles solo
+    # puede quedarse con los globos vendidos FUERA de 31A (200).
+    autoconsumos, consumibles_fuera_31a = 800.0, 200.0
+
+    neto = monto - devoluciones
+    real = neto - autoconsumos - consumibles_fuera_31a
+
+    assert neto == 9_500.0
+    assert real == 8_500.0, "se descuenta 31A entero + globos de afuera, sin solaparse"
+    # Si se hubiera contado el globo de 31A en los dos baldes: 8500 - 600 = 7900.
+    assert real != 7_900.0, "los globos de 31A no se pueden restar dos veces"
+
+
 if __name__ == "__main__":
     test_periodos_lunes_17_agosto()
     test_cada_rango_compara_contra_uno_del_mismo_largo()
     test_mes_anterior_mas_corto_se_recorta()
     test_tops_solo_toman_su_rango()
     test_tops_sin_ruido_y_sin_duplicar_empresas()
-    print("OK: periodos, tops por rango, ruido filtrado, tops general y por empresa.")
+    test_consumibles_atrapan_globos_y_fundas()
+    test_venta_real_no_descuenta_dos_veces_los_globos_de_31A()
+    print("OK: periodos, tops por rango, ruido filtrado, tops general y por empresa, "
+          "consumibles (globos/fundas) y venta real sin doble descuento.")

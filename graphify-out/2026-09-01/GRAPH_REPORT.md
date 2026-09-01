@@ -1,16 +1,16 @@
-# Graph Report - Python MBA  (2026-08-25)
+# Graph Report - Python MBA  (2026-08-26)
 
 ## Corpus Check
-- 140 files · ~93,726 words
+- 141 files · ~95,055 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 959 nodes · 1628 edges · 70 communities (55 shown, 15 thin omitted)
+- 980 nodes · 1666 edges · 72 communities (56 shown, 16 thin omitted)
 - Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 52 edges (avg confidence: 0.65)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `5ccf974a`
+- Built from commit: `e6f5eb67`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -24,7 +24,7 @@
 - KpiSyncVentas
 - Frontend TypeScript Config
 - RentabilidadCharts.tsx
-- Daily Sales Dashboard
+- DailySalesDashboard.tsx
 - dashboard_server.py
 - Excel Export Controller
 - ExcelService
@@ -44,7 +44,6 @@
 - AtsDTO
 - EstadisticasVentasDTO
 - Liquidaciones DTOs
-- Movimientos DTOs
 - Auth Proxy Middleware
 - Logo Asset (logo.svg)
 - NOVBI Brand Logo (SVG)
@@ -56,8 +55,8 @@
 - pnpm unrs-resolver Allowlist
 - kpi_controller.py
 - test_kpi_cumplimiento.py
-- ._calcular_periodos
-- app/main.py
+- DataFrame
+- scheduler.py
 - SyncService
 - ClienteFalso
 - BaseModel
@@ -72,28 +71,31 @@
 - test_kpi_agregacion.py
 - AGENTS.md
 - CLAUDE.md
-- KpiService
 - post
 - Base
 - config.py
-- importar_excel
 - Mba3Repository
 - get
 - _resolver_env
 - reporte_conciliacion_proveedores.py
 - Session
+- EstadisticasVentasCharts.tsx
+- MovimientosCharts.tsx
+- LiquidacionesCharts.tsx
+- AtsCharts.tsx
+- TrendLineAdvanced.tsx
 
 ## God Nodes (most connected - your core abstractions)
-1. `IMba3Repository` - 29 edges
+1. `IMba3Repository` - 26 edges
 2. `ExcelService` - 24 edges
-3. `VentasService` - 22 edges
-4. `KpiService` - 19 edges
-5. `SyncService` - 19 edges
-6. `Mba3Repository` - 17 edges
-7. `authOptions` - 17 edges
-8. `EstadisticasVentasService` - 16 edges
-9. `compilerOptions` - 16 edges
-10. `KpiSyncVentas` - 14 edges
+3. `KpiSyncVentas` - 23 edges
+4. `VentasService` - 21 edges
+5. `KpiService` - 19 edges
+6. `SyncService` - 19 edges
+7. `Mba3Repository` - 17 edges
+8. `authOptions` - 17 edges
+9. `EstadisticasVentasService` - 16 edges
+10. `compilerOptions` - 16 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Next.js 16 breaking-changes warning (AGENTS.md)` --semantically_similar_to--> `middleware.ts to proxy.ts migration (Next.js 16)`  [INFERRED] [semantically similar]
@@ -115,11 +117,11 @@
 - **Shared Postgres database access across backend and frontend** — docker_compose_db, docker_compose_backend, docker_compose_frontend [INFERRED 0.85]
 - **Deployment and git workflow for MBA3 BI** — contexto_sesion_resumen_deploy_script, contexto_sesion_resumen_github_repo, contexto_sesion_resumen_git_dev_branch_issue [INFERRED 0.75]
 
-## Communities (70 total, 15 thin omitted)
+## Communities (72 total, 16 thin omitted)
 
 ### Community 0 - "ChartPrimitives.tsx"
-Cohesion: 0.05
-Nodes (46): poppins, AtsCharts(), AtsChartsProps, IVA_COLOR, num(), CATEGORY_PALETTE, ChartTooltip(), ExpandableChartCard() (+38 more)
+Cohesion: 0.17
+Nodes (10): CATEGORY_PALETTE, ParetoChart(), sliceTreemap(), smoothPath(), Treemap(), TREEMAP_SHADES, TreemapItem, useMeasuredWidth() (+2 more)
 
 ### Community 1 - "liquidacion.py"
 Cohesion: 0.67
@@ -134,16 +136,16 @@ Cohesion: 0.06
 Nodes (26): checkAuth(), GET(), POST(), checkAuth(), DELETE(), GET(), POST(), PUT() (+18 more)
 
 ### Community 4 - "estadisticas-ventas/page.tsx"
-Cohesion: 0.06
-Nodes (61): AtsPage(), poppins, EstadisticasVentasPage(), poppins, LiquidacionesPage(), poppins, LogsPage(), poppins (+53 more)
+Cohesion: 0.05
+Nodes (62): poppins, AtsPage(), poppins, EstadisticasVentasPage(), poppins, LiquidacionesPage(), poppins, LogsPage() (+54 more)
 
 ### Community 5 - "Project Docs & Infra Config"
 Cohesion: 0.07
 Nodes (35): Backend Python Dependencies, apscheduler, fastapi, openpyxl, pandas, psycopg2-binary, python-multipart, requests (+27 more)
 
 ### Community 6 - "KpiSyncVentas"
-Cohesion: 0.33
-Nodes (3): KpiSyncVentas, Sincroniza el kardex y las facturas al schema propio del KPI.      Deliberadam, Consulta al ERP reintentando con token fresco.          Un backfill de meses t
+Cohesion: 0.12
+Nodes (14): KpiSyncVentas, Sincroniza el kardex y las facturas al schema propio del KPI.      Deliberadam, PRUEBAS corta en 3000 filas aunque el `limit` pida mas; PROD lo respeta., Parte un dia topado cortando el rango de `campo` a la mitad.          El ERP n, Consulta al ERP reintentando con token fresco.          Un backfill de meses t, Valores del maestro de bodegas por los que se puede partir un dia., ErpFalso, partir() (+6 more)
 
 ### Community 7 - "Frontend TypeScript Config"
 Cohesion: 0.07
@@ -153,7 +155,7 @@ Nodes (28): compilerOptions, allowJs, esModuleInterop, incremental, isolatedModu
 Cohesion: 0.15
 Nodes (23): pct(), periodoActual(), poppins, SeguimientoKpiPage(), Agg, aggregate(), BodegaMargen(), DescuentoPorGrupo() (+15 more)
 
-### Community 9 - "Daily Sales Dashboard"
+### Community 9 - "DailySalesDashboard.tsx"
 Cohesion: 0.17
 Nodes (17): ComparisonMiniCard(), DailySalesDashboard(), DailySalesDashboardProps, dateNDaysAgo(), daysBefore(), deltaPct(), fetchRange(), fetchVentasAdaptive() (+9 more)
 
@@ -166,16 +168,16 @@ Cohesion: 0.14
 Nodes (18): CustomExportRequest, download_ats(), download_estadisticas_ventas(), download_liquidaciones(), download_movimientos(), download_ventas(), export_custom_data(), BaseModel (+10 more)
 
 ### Community 12 - "ExcelService"
-Cohesion: 0.14
+Cohesion: 0.13
 Nodes (18): _clean(), ExcelService, DataFrame, Servicio de Utilidad para la Generación de Archivos Excel.     Todos los report, Fallback genérico (sin encabezado/resumen/totales) para datos ad-hoc que no, Replica el reporte nativo "Estadisticas de Inventarios" del ERP: hoja principal, Escribe el reporte ENCIMA del ultimo archivo que subio Contabilidad., Libro del Seguimiento KPI con el MISMO formato del archivo manual.          A (+10 more)
 
 ### Community 13 - "IMba3Repository"
-Cohesion: 0.11
+Cohesion: 0.14
 Nodes (12): get, Obtiene el consolidado de liquidaciones y detalles de productos importados., read_liquidaciones(), get_liquidaciones_service(), get_mba3_repository(), Provee la implementación por defecto del Repositorio de MBA3., Provee el Servicio de Liquidaciones inyectando su dependencia del Repositorio., IMba3Repository (+4 more)
 
 ### Community 14 - "dependencies.py"
-Cohesion: 0.23
-Nodes (9): Inyección de Dependencia de FastAPI para validar el API Key de Next.js.     Aseg, verify_api_key(), get_ats_service(), get_movimientos_service(), get_sync_service(), Provee el Servicio de Movimientos inyectando su dependencia del Repositorio., Provee el Servicio de ATS inyectando su dependencia del Repositorio., Provee el Servicio de Sincronización inyectando su dependencia del Repositorio. (+1 more)
+Cohesion: 0.21
+Nodes (10): Inyección de Dependencia de FastAPI para validar el API Key de Next.js.     Aseg, verify_api_key(), get_ats_service(), get_estadisticas_service(), get_sync_service(), Provee el Servicio de ATS inyectando su dependencia del Repositorio., Provee el Servicio de Sincronización inyectando su dependencia del Repositorio., Provee el Servicio de Estadisticas de Ventas por producto. (+2 more)
 
 ### Community 15 - "VentasService"
 Cohesion: 0.23
@@ -186,16 +188,16 @@ Cohesion: 0.08
 Nodes (26): poppins, clamp01(), Easing, NovbiSplash(), NovbiSplashProps, tRange(), Sidebar(), SidebarProps (+18 more)
 
 ### Community 17 - "EstadisticasVentasService"
-Cohesion: 0.20
-Nodes (10): get, Reporte de Ventas: una fila por producto con unidades/total vendido en el     ra, read_estadisticas(), get_estadisticas_service(), Provee el Servicio de Estadisticas de Ventas por producto., EstadisticasVentasService, DataFrame, Por producto en el rango: unidades devueltas (UNID DEV) y ventas anuladas. (+2 more)
+Cohesion: 0.23
+Nodes (7): get, Reporte de Ventas: una fila por producto con unidades/total vendido en el     ra, read_estadisticas(), EstadisticasVentasService, DataFrame, Por producto en el rango: unidades devueltas (UNID DEV) y ventas anuladas., Servicio para el Reporte de Ventas (Estadísticas de Inventario): una fila     po
 
 ### Community 18 - "AtsService"
 Cohesion: 0.25
 Nodes (7): get, Obtiene la lista de transacciones del reporte de facturación fiscal ATS.     Req, read_ats(), AtsService, DataFrame, Servicio de Reglas de Negocio para el Reporte Fiscal ATS.     Cruza Facturas con, _to_bool()
 
 ### Community 19 - "MovimientosService"
-Cohesion: 0.18
-Nodes (8): get, Obtiene la lista de movimientos de productos filtrados por rango de fechas., read_movimientos(), MovimientoStaging, Base, MovimientosService, DataFrame, Servicio de Reglas de Negocio para Movimientos de Productos.     Depende de la a
+Cohesion: 0.12
+Nodes (13): get, Obtiene la lista de movimientos de productos filtrados por rango de fechas., read_movimientos(), get_movimientos_service(), Provee el Servicio de Movimientos inyectando su dependencia del Repositorio., Config, MovimientoDTO, BaseModel (+5 more)
 
 ### Community 20 - "Login Page (NovBILogin)"
 Cohesion: 0.28
@@ -233,10 +235,6 @@ Nodes (3): Config, EstadisticasVentasDTO, BaseModel
 Cohesion: 0.50
 Nodes (3): Config, LiquidacionDTO, BaseModel
 
-### Community 29 - "Movimientos DTOs"
-Cohesion: 0.50
-Nodes (3): Config, MovimientoDTO, BaseModel
-
 ### Community 30 - "Auth Proxy Middleware"
 Cohesion: 0.67
 Nodes (3): authMiddleware, config, proxy()
@@ -250,24 +248,20 @@ Cohesion: 0.67
 Nodes (3): NOVBI Logo, NOVBI (Brand/Wordmark), NOVBI.svg (Logo Image)
 
 ### Community 41 - "kpi_controller.py"
-Cohesion: 0.14
-Nodes (24): BodegaIn, download_kpi(), guardar_bodegas(), guardar_metas(), guardar_valores_manuales(), MetaIn, get, Session (+16 more)
+Cohesion: 0.09
+Nodes (39): BodegaIn, download_kpi(), guardar_bodegas(), guardar_metas(), guardar_valores_manuales(), importar_excel(), MetaIn, get (+31 more)
 
 ### Community 42 - "test_kpi_cumplimiento.py"
-Cohesion: 0.15
-Nodes (17): _cumplimiento(), derivar_sucursal(), es_credito_directo(), _rango_periodo(), Decide si un pago 'Otros' es credito directo.      Valida contra la hoja D.CRE, Deduce a que tienda pertenece una bodega.      El nombre de la bodega de tiend, Ratio topado al peso.      Replica el IFS del Excel: por debajo de la meta pag, _solo_letras() (+9 more)
+Cohesion: 0.05
+Nodes (37): _cumplimiento(), derivar_sucursal(), es_credito_directo(), _rango_periodo(), Decide si un pago 'Otros' es credito directo.      Valida contra la hoja D.CRE, Deduce a que tienda pertenece una bodega.      El nombre de la bodega de tiend, Ratio topado al peso.      Replica el IFS del Excel: por debajo de la meta pag, Trae el maestro de bodegas del ERP y recalcula el mapeo a sucursal.          N (+29 more)
 
-### Community 43 - "._calcular_periodos"
-Cohesion: 0.13
-Nodes (14): DataFrame, Todo lo que necesita el dashboard de ventas en UNA llamada: totales por, Totales de un rango cualquiera con las devoluciones desglosadas, para los, Pasa el updated_at del staging a hora de Ecuador.          Los contenedores co, Cada rango del dashboard con el periodo anterior equivalente para comparar., Top de productos por cantidad y por dinero en cada rango, consolidado         (, Resumen agregado para las cards del dashboard (hoy/ayer/semana/mes/año,, Check de los periodos del dashboard de ventas: que cada rango compare contra un (+6 more)
-
-### Community 44 - "app/main.py"
-Cohesion: 0.11
-Nodes (25): authenticate_docs(), get_open_api_endpoint(), get_swagger_documentation(), lifespan(), get, KpiBodega, KpiCobroCredito, KpiMeta (+17 more)
+### Community 44 - "scheduler.py"
+Cohesion: 0.50
+Nodes (3): Sincroniza Movimientos/Liquidaciones/ATS/Ventas con los datos de AYER.     Corre, run_nightly_sync(), start_scheduler()
 
 ### Community 45 - "SyncService"
-Cohesion: 0.09
-Nodes (24): limpiar_cache(), get, post, Endpoint administrativo para forzar la sincronización de facturas, proveedores e, Borra TODO el cache (catálogo de productos, dashboard, totales de ventas...), Endpoint administrativo para forzar la sincronización de movimientos de inventar, Cobertura del staging por tipo: hasta qué día está sincronizado y qué días     d, Endpoint administrativo para forzar la sincronización de movimientos (seriales) (+16 more)
+Cohesion: 0.06
+Nodes (46): limpiar_cache(), get, post, Endpoint administrativo para forzar la sincronización de facturas, proveedores e, Borra TODO el cache (catálogo de productos, dashboard, totales de ventas...), Endpoint administrativo para forzar la sincronización de movimientos de inventar, Cobertura del staging por tipo: hasta qué día está sincronizado y qué días     d, Endpoint administrativo para forzar la sincronización de movimientos (seriales) (+38 more)
 
 ### Community 46 - "ClienteFalso"
 Cohesion: 0.21
@@ -301,17 +295,9 @@ Nodes (5): Celda, MetasKpiPage(), periodoActual(), poppins, VENTA_TIENDA
 Cohesion: 0.50
 Nodes (4): main(), Check de la seleccion de las hojas Top contra el reporte de Contabilidad "01 AL, Misma seleccion que ExcelService: el top por unidades quita ruido, el de dolares, seleccionar_tops()
 
-### Community 60 - "KpiService"
-Cohesion: 0.16
-Nodes (10): KpiService, Reporte de Seguimiento KPI por sucursal.      Sustituye el armado manual del E, Trae el maestro de bodegas del ERP y recalcula el mapeo a sucursal.          N, Trae los cobros de credito directo del ERP para un rango de fechas.          E, Carga sucursales, catalogo y metas desde el Excel armado a mano.          Es l, Lineas de venta con su categoria de KPI, para las hojas de detalle.          C, Venta total por tienda contra su meta mensual: la hoja PRESUPUESTO.          L, main() (+2 more)
-
 ### Community 63 - "config.py"
 Cohesion: 0.13
 Nodes (4): Settings, get_db(), Busca en INVT_Ficha_Principal los campos de "ultima venta" del ERP. Hipotesis: U, Explora estructura+datos de tablas ERP (grupo PROVEEDORES) para diseñar reporte
-
-### Community 64 - "importar_excel"
-Cohesion: 0.22
-Nodes (11): importar_excel(), Trae el maestro de bodegas del ERP y recalcula a que sucursal pertenecen., Sincroniza el kardex y las facturas al schema propio del KPI.      No toca el, Trae del ERP los cobros de credito directo del rango.      El rango es obligat, Siembra sucursales, catalogo y metas subiendo el Excel armado a mano.      Evi, sincronizar_bodegas(), sincronizar_cobros(), sincronizar_ventas() (+3 more)
 
 ### Community 65 - "Mba3Repository"
 Cohesion: 0.18
@@ -325,6 +311,26 @@ Nodes (7): ABC, Normaliza el entorno del ERP.      Antes, un valor no reconocido
 Cohesion: 0.27
 Nodes (10): procesar_respuesta_erp(), Parser robusto para interceptar respuestas de error o ausencia de registros, consultar(), login(), main(), norm(), Reporte: facturas recibidas conciliadas con transferencias bancarias. Cruce PROV, Normaliza llaves de cruce: quita .0 de floats, espacios, mayusculas. (+2 more)
 
+### Community 70 - "EstadisticasVentasCharts.tsx"
+Cohesion: 0.19
+Nodes (8): ExpandableChartCard(), EstadisticasVentasCharts(), fmtMoney(), fmtNumber(), Props, Card(), CardProps, CardVariant
+
+### Community 71 - "MovimientosCharts.tsx"
+Cohesion: 0.21
+Nodes (10): RadialGauge(), DevolucionesDonut(), DevolucionesDonutProps, DonutSegment, fmtNumber(), MovimientosCharts(), MovimientosChartsProps, normalizeMemo() (+2 more)
+
+### Community 72 - "LiquidacionesCharts.tsx"
+Cohesion: 0.18
+Nodes (7): ScatterXY(), TwoBarComparison(), EMPRESA_COLOR, EMPRESA_COLOR_FALLBACK, LiquidacionesCharts(), LiquidacionesChartsProps, num()
+
+### Community 73 - "AtsCharts.tsx"
+Cohesion: 0.22
+Nodes (6): AtsCharts(), AtsChartsProps, IVA_COLOR, num(), RankedBarChart(), TierHeading()
+
+### Community 74 - "TrendLineAdvanced.tsx"
+Cohesion: 0.50
+Nodes (4): ChartTooltip(), TrendLineAdvanced(), TrendLineAdvancedProps, useMeasuredWidth()
+
 ## Ambiguous Edges - Review These
 - `docker-compose: backend service` → `Wrong PROD ERP service (SERIALES vs ERICKDEV)`  [AMBIGUOUS]
   contexto-sesion/resumen.md · relation: conceptually_related_to
@@ -332,9 +338,9 @@ Nodes (10): procesar_respuesta_erp(), Parser robusto para interceptar respuestas
   frontend/public/logo.svg · relation: conceptually_related_to
 
 ## Knowledge Gaps
-- **161 isolated node(s):** `SyncSectionProps`, `CoberturaTipo`, `ETIQUETAS_TIPO`, `poppins`, `VENTA_TIENDA` (+156 more)
+- **161 isolated node(s):** `TotalesEmpresa`, `KPICardsProps`, `SyncSectionProps`, `CoberturaTipo`, `ETIQUETAS_TIPO` (+156 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **15 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **16 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
@@ -343,13 +349,13 @@ _Questions this graph is uniquely positioned to answer:_
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
 - **What is the exact relationship between `Frontend Logo (logo.svg)` and `Python MBA Wordmark / Brand Identity`?**
   _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
-- **Why does `VentasService` connect `VentasService` to `._calcular_periodos`, `Excel Export Controller`, `IMba3Repository`, `dependencies.py`?**
-  _High betweenness centrality (0.024) - this node is a cross-community bridge._
+- **Why does `KpiSyncVentas` connect `KpiSyncVentas` to `kpi_controller.py`, `test_kpi_cumplimiento.py`?**
+  _High betweenness centrality (0.028) - this node is a cross-community bridge._
 - **Why does `ExcelService` connect `ExcelService` to `Excel Export Controller`, `dependencies.py`?**
   _High betweenness centrality (0.024) - this node is a cross-community bridge._
-- **Why does `KpiService` connect `KpiService` to `importar_excel`, `kpi_controller.py`, `test_kpi_cumplimiento.py`?**
-  _High betweenness centrality (0.023) - this node is a cross-community bridge._
-- **Are the 5 inferred relationships involving `IMba3Repository` (e.g. with `AtsService` and `EstadisticasVentasService`) actually correct?**
-  _`IMba3Repository` has 5 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 2 inferred relationships involving `VentasService` (e.g. with `CustomExportRequest` and `IMba3Repository`) actually correct?**
-  _`VentasService` has 2 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `VentasService` connect `VentasService` to `kpi_controller.py`, `test_kpi_cumplimiento.py`, `Excel Export Controller`, `ExcelService`, `dependencies.py`?**
+  _High betweenness centrality (0.024) - this node is a cross-community bridge._
+- **Are the 4 inferred relationships involving `IMba3Repository` (e.g. with `AtsService` and `EstadisticasVentasService`) actually correct?**
+  _`IMba3Repository` has 4 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 4 inferred relationships involving `KpiSyncVentas` (e.g. with `BodegaIn` and `MetaIn`) actually correct?**
+  _`KpiSyncVentas` has 4 INFERRED edges - model-reasoned connections that need verification._

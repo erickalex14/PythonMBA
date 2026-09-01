@@ -18,14 +18,35 @@ PATRONES_PRODUCTO_RUIDO = ("GLOBO", "FUNDA", "SERVICIO")
 
 # Bodega de consumo interno: lo que sale por aqui se lo consume la propia tienda
 # (globos, portaglobos, material de local), no un cliente. El ERP igual lo marca
-# origin_memo='CLIENTES', asi que suma como venta. No se descuenta -- se reporta
-# aparte, igual que las devoluciones, para poder leerlo.
+# origin_memo='CLIENTES', asi que suma como venta.
 BODEGA_AUTOCONSUMO = "31A"
+
+# Consumibles de tienda: globos, portaglobos, infladores de globos y fundas. Se
+# venden al cliente igual que cualquier producto, pero son material de despacho
+# y decoracion: en volumen inflan el total de ventas y tapan el negocio real.
+# Se comparan contra el nombre en mayusculas, asi que "GLOBO" atrapa tambien
+# "PORTAGLOBOS" e "INFLAGLOBOS".
+#
+# NO es la misma lista que PATRONES_PRODUCTO_RUIDO: aquella saca ademas
+# "SERVICIO" y solo aplica a los rankings (tops). Esta define plata que se
+# descuenta del total, y los servicios si son venta real -- por eso van
+# separadas aunque hoy se parezcan.
+PATRONES_CONSUMIBLE = ("GLOBO", "FUNDA")
+
+# Para SQL: se pasa como parametro (LIKE ANY) en vez de interpolar el patron en
+# el texto de la consulta, asi la lista de arriba es la unica fuente de verdad y
+# no hay que escapar '%' a mano en cada query.
+LIKE_CONSUMIBLE = [f"%{p}%" for p in PATRONES_CONSUMIBLE]
 
 
 def es_producto_ruido(nombre) -> bool:
     texto = str(nombre or "").upper()
     return any(patron in texto for patron in PATRONES_PRODUCTO_RUIDO)
+
+
+def es_consumible(nombre) -> bool:
+    texto = str(nombre or "").upper()
+    return any(patron in texto for patron in PATRONES_CONSUMIBLE)
 
 
 class VentasService:
@@ -378,6 +399,26 @@ class VentasService:
                                f"WHERE fecha BETWEEN :piso AND :techo")
                 fila = conn.execute(text(sql_totales), params).mappings().first()
 
+                # Autoconsumos (bodega 31A) y consumibles (globos/fundas fuera de
+                # 31A): mismo escaneo por rango que arriba, en la misma vista. Los
+                # dos baldes se excluyen entre si a proposito -- la 31A ES la
+                # bodega de globos, contarlos juntos restaria dos veces lo mismo.
+                partes_extra = []
+                for clave in periodos:
+                    for sufijo in ("act", "ant"):
+                        cond = f"fecha BETWEEN :{clave}_{sufijo}_desde AND :{clave}_{sufijo}_hasta"
+                        partes_extra.append(
+                            f"SUM(CASE WHEN {cond} AND bodega_codigo = :bodega "
+                            f"THEN total_linea ELSE 0 END) AS {clave}_{sufijo}_auto")
+                        partes_extra.append(
+                            f"SUM(CASE WHEN {cond} AND bodega_codigo <> :bodega "
+                            f"AND producto LIKE ANY(:patrones) "
+                            f"THEN total_linea ELSE 0 END) AS {clave}_{sufijo}_cons")
+                params_extra = {**params, "bodega": BODEGA_AUTOCONSUMO, "patrones": LIKE_CONSUMIBLE}
+                sql_extra = (f"SELECT {', '.join(partes_extra)} FROM view_ventas_espejo_reporte "
+                             f"WHERE fecha BETWEEN :piso AND :techo")
+                fila_extra = conn.execute(text(sql_extra), params_extra).mappings().first()
+
                 # Devoluciones: van aparte porque la vista de ventas filtra
                 # origin_memo='CLIENTES' y no las incluye. Se leen del kardex con el
                 # mismo recorte de rangos para poder mostrar bruto, devuelto y neto.
@@ -398,8 +439,14 @@ class VentasService:
                     monto_ant = float(fila[f"{clave}_ant_monto"] or 0)
                     dev = float(fila_dev[f"{clave}_act_dev"] or 0) if fila_dev else 0.0
                     dev_ant = float(fila_dev[f"{clave}_ant_dev"] or 0) if fila_dev else 0.0
+                    auto = float(fila_extra[f"{clave}_act_auto"] or 0) if fila_extra else 0.0
+                    auto_ant = float(fila_extra[f"{clave}_ant_auto"] or 0) if fila_extra else 0.0
+                    cons = float(fila_extra[f"{clave}_act_cons"] or 0) if fila_extra else 0.0
+                    cons_ant = float(fila_extra[f"{clave}_ant_cons"] or 0) if fila_extra else 0.0
                     neto = monto - dev
                     neto_ant = monto_ant - dev_ant
+                    real = neto - auto - cons
+                    real_ant = neto_ant - auto_ant - cons_ant
                     # "hoy" queda cortado en el ultimo sync del dia, asi que compararlo
                     # contra un dia completo siempre daria negativo: se marca en curso
                     # y se devuelve delta_pct=None para que el front no muestre %.
@@ -413,17 +460,22 @@ class VentasService:
                         "monto": monto,                      # ventas con devoluciones incluidas
                         "monto_devoluciones": dev,
                         "monto_neto": neto,                  # ventas descontando devoluciones
+                        "monto_autoconsumos": auto,          # bodega 31A, consumo de la tienda
+                        "monto_consumibles": cons,           # globos/fundas fuera de 31A
+                        "monto_real": real,                  # lo que de verdad se le vendio a un cliente
                         "cantidad": int(fila[f"{clave}_act_cantidad"] or 0),
                         "comparado_con": p["etiqueta_ant"],
                         "monto_anterior": monto_ant,
                         "monto_devoluciones_anterior": dev_ant,
                         "monto_neto_anterior": neto_ant,
+                        "monto_real_anterior": real_ant,
                         "cantidad_anterior": int(fila[f"{clave}_ant_cantidad"] or 0),
                         "periodo_en_curso": clave == "hoy",
                         # None y no 0: sin periodo previo con ventas, el porcentaje
                         # no existe y el front debe mostrar "sin comparativo".
-                        "delta_pct": (round((neto - neto_ant) / neto_ant * 100, 1)
-                                      if neto_ant > 0 and clave != "hoy" else None),
+                        # Compara real contra real, no bruto contra bruto.
+                        "delta_pct": (round((real - real_ant) / real_ant * 100, 1)
+                                      if real_ant > 0 and clave != "hoy" else None),
                     })
 
                 # Top de productos: se agrega por producto una sola vez sobre el
@@ -495,8 +547,8 @@ class VentasService:
             """)
             # Autoconsumo: la bodega 31A es consumo interno (globos, portaglobos,
             # material de tienda). Entra como origin_memo='CLIENTES', asi que ya
-            # esta sumado dentro de `monto`; NO se resta, se expone aparte para
-            # poder leer cuanto de la venta no salio a un cliente real.
+            # esta sumado dentro de `monto` y hay que descontarlo para leer la
+            # venta que de verdad salio a un cliente.
             sql_auto = text("""
                 SELECT COALESCE(SUM(total_linea), 0) AS monto,
                        COALESCE(SUM(cantidad), 0) AS cantidad
@@ -504,9 +556,23 @@ class VentasService:
                 WHERE fecha BETWEEN :inicio AND :fin
                   AND bodega_codigo = :bodega
             """)
+            # Consumibles (globos/fundas) vendidos FUERA de 31A. El `bodega_codigo
+            # <> :bodega` no es cosmetico: la 31A es justamente la bodega de
+            # globos y portaglobos, asi que sin ese filtro las mismas lineas
+            # caerian en los dos baldes y se restarian dos veces del total.
+            sql_cons = text("""
+                SELECT COALESCE(SUM(total_linea), 0) AS monto,
+                       COALESCE(SUM(cantidad), 0) AS cantidad
+                FROM view_ventas_espejo_reporte
+                WHERE fecha BETWEEN :inicio AND :fin
+                  AND bodega_codigo <> :bodega
+                  AND producto LIKE ANY(:patrones)
+            """)
             actual = {"inicio": inicio, "fin": fin}
             previo = {"inicio": inicio_ant.isoformat(), "fin": fin_ant.isoformat()}
-            actual_auto = {**actual, "bodega": BODEGA_AUTOCONSUMO}
+            extra = {"bodega": BODEGA_AUTOCONSUMO, "patrones": LIKE_CONSUMIBLE}
+            actual_auto = {**actual, **extra}
+            previo_auto = {**previo, **extra}
 
             # Desglose por empresa. En el kardex la empresa no es una columna: viene
             # como sufijo del codigo de producto ("1CENV153-NVC01"), asi que se
@@ -539,33 +605,58 @@ class VentasService:
                   AND bodega_codigo = :bodega
                 GROUP BY empresa
             """)
+            sql_cons_emp = text("""
+                SELECT empresa,
+                       COALESCE(SUM(total_linea), 0) AS monto,
+                       COALESCE(SUM(cantidad), 0) AS cantidad
+                FROM view_ventas_espejo_reporte
+                WHERE fecha BETWEEN :inicio AND :fin
+                  AND bodega_codigo <> :bodega
+                  AND producto LIKE ANY(:patrones)
+                GROUP BY empresa
+            """)
 
             with db.get_bind().connect() as conn:
                 venta = conn.execute(sql_venta, actual).mappings().first()
                 dev = conn.execute(sql_dev, actual).mappings().first()
                 auto = conn.execute(sql_auto, actual_auto).mappings().first()
+                cons = conn.execute(sql_cons, actual_auto).mappings().first()
                 venta_ant = conn.execute(sql_venta, previo).mappings().first()
                 dev_ant = conn.execute(sql_dev, previo).mappings().first()
+                # El periodo previo se descuenta con la MISMA formula: comparar un
+                # neto limpio contra uno inflado daria un delta_pct inventado.
+                auto_ant = conn.execute(sql_auto, previo_auto).mappings().first()
+                cons_ant = conn.execute(sql_cons, previo_auto).mappings().first()
                 ventas_emp = conn.execute(sql_venta_emp, actual).mappings().all()
                 devs_emp = conn.execute(sql_dev_emp, actual).mappings().all()
                 autos_emp = conn.execute(sql_auto_emp, actual_auto).mappings().all()
+                cons_emp = conn.execute(sql_cons_emp, actual_auto).mappings().all()
 
             monto = float(venta["monto"] or 0)
             monto_dev = float(dev["monto"] or 0)
+            monto_auto = float(auto["monto"] or 0)
+            monto_cons = float(cons["monto"] or 0)
             neto = monto - monto_dev
+            # Venta real: se le saca todo lo que no es negocio con un cliente.
+            real = neto - monto_auto - monto_cons
             neto_ant = float(venta_ant["monto"] or 0) - float(dev_ant["monto"] or 0)
+            real_ant = neto_ant - float(auto_ant["monto"] or 0) - float(cons_ant["monto"] or 0)
 
             nombres = {"NVC01": "NOVICOMPU", "ENV01": "ENV"}
             ventas_por_emp = {r["empresa"]: r for r in ventas_emp}
             devs_por_emp = {r["empresa"]: r for r in devs_emp}
             autos_por_emp = {r["empresa"]: r for r in autos_emp}
+            cons_por_emp = {r["empresa"]: r for r in cons_emp}
             por_empresa = []
             for codigo in sorted(set(ventas_por_emp) | set(devs_por_emp)):
                 v = ventas_por_emp.get(codigo)
                 d = devs_por_emp.get(codigo)
                 a = autos_por_emp.get(codigo)
+                c = cons_por_emp.get(codigo)
                 m = float(v["monto"] or 0) if v else 0.0
                 md = float(d["monto"] or 0) if d else 0.0
+                ma = float(a["monto"] or 0) if a else 0.0
+                mc = float(c["monto"] or 0) if c else 0.0
                 por_empresa.append({
                     "empresa": codigo,
                     "empresa_nombre": nombres.get(codigo, codigo),
@@ -574,11 +665,17 @@ class VentasService:
                     "monto_neto": m - md,
                     "cantidad": int(v["cantidad"] or 0) if v else 0,
                     "cantidad_devoluciones": int(d["cantidad"] or 0) if d else 0,
-                    # Ya incluido en `monto`, no se resta de `monto_neto`.
-                    "monto_autoconsumos": float(a["monto"] or 0) if a else 0.0,
+                    "monto_autoconsumos": ma,
                     "cantidad_autoconsumos": int(a["cantidad"] or 0) if a else 0,
+                    "monto_consumibles": mc,
+                    "cantidad_consumibles": int(c["cantidad"] or 0) if c else 0,
+                    "monto_real": m - md - ma - mc,
                 })
 
+            # La cadena se devuelve entera y en orden para que el front pueda
+            # mostrarla como resta encadenada y cuadre a ojo:
+            #   monto - devoluciones = monto_neto
+            #   monto_neto - autoconsumos - consumibles = monto_real
             return {
                 "inicio": inicio,
                 "fin": fin,
@@ -587,15 +684,23 @@ class VentasService:
                 "monto_neto": neto,
                 "cantidad": int(venta["cantidad"] or 0),
                 "cantidad_devoluciones": int(dev["cantidad"] or 0),
-                # Dentro de `monto`, no restado: es venta que se consumio la propia
-                # tienda (bodega 31A), no una devolucion.
-                "monto_autoconsumos": float(auto["monto"] or 0),
+                # Venta que se consumio la propia tienda (bodega 31A), no un
+                # cliente. Se descuenta para llegar a `monto_real`.
+                "monto_autoconsumos": monto_auto,
                 "cantidad_autoconsumos": int(auto["cantidad"] or 0),
+                # Globos/portaglobos/infladores/fundas vendidos fuera de 31A: es
+                # material de despacho, no el negocio. Excluye 31A a proposito
+                # para no contarlo dos veces con la linea de arriba.
+                "monto_consumibles": monto_cons,
+                "cantidad_consumibles": int(cons["cantidad"] or 0),
+                "monto_real": real,
                 "comparado_con": f"{inicio_ant.isoformat()} a {fin_ant.isoformat()}",
                 "monto_neto_anterior": neto_ant,
+                "monto_real_anterior": real_ant,
+                # El % compara venta real contra venta real, no el bruto.
                 # null si no hay periodo previo con ventas: es preferible a un 0%
                 # que se leeria como "igual que antes".
-                "delta_pct": round((neto - neto_ant) / neto_ant * 100, 1) if neto_ant > 0 else None,
+                "delta_pct": round((real - real_ant) / real_ant * 100, 1) if real_ant > 0 else None,
                 "por_empresa": por_empresa,
             }
         finally:

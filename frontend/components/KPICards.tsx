@@ -2,6 +2,12 @@ import React, { useMemo } from "react";
 import { Card } from "./ui/Card";
 import { Sparkline } from "./charts/Sparkline";
 
+/* Cadena de descuentos que devuelve el backend, en orden:
+     monto − devoluciones                        = monto_neto
+     monto_neto − autoconsumos − consumibles     = monto_real
+   `autoconsumos` es la bodega 31A (consumo de la tienda) y `consumibles` son
+   globos/portaglobos/infladores/fundas vendidos FUERA de 31A — se excluyen
+   entre sí en el backend, así que se pueden restar los dos sin duplicar. */
 export interface TotalesEmpresa {
   empresa: string;
   empresa_nombre: string;
@@ -10,9 +16,11 @@ export interface TotalesEmpresa {
   monto_neto: number;
   cantidad: number;
   cantidad_devoluciones: number;
-  // Ya viene dentro de `monto`: es consumo interno, no se resta.
   monto_autoconsumos?: number;
   cantidad_autoconsumos?: number;
+  monto_consumibles?: number;
+  cantidad_consumibles?: number;
+  monto_real?: number;
 }
 
 export interface TotalesRango {
@@ -22,6 +30,9 @@ export interface TotalesRango {
   cantidad_devoluciones: number;
   monto_autoconsumos?: number;
   cantidad_autoconsumos?: number;
+  monto_consumibles?: number;
+  cantidad_consumibles?: number;
+  monto_real?: number;
   comparado_con: string;
   delta_pct: number | null;
   por_empresa?: TotalesEmpresa[];
@@ -246,9 +257,21 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
             </div>
           </Card>
 
+          <Card variant="kpiCard" styles={styles}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <h3>Ventas sin devoluciones</h3>
+            </div>
+            <p className={styles.kpiValue}>
+              {totales.monto_neto.toLocaleString("es-EC", { style: "currency", currency: "USD" })}
+            </p>
+            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
+              todavía incluye autoconsumos y consumibles
+            </div>
+          </Card>
+
           {/* Autoconsumo (bodega 31A): la tienda se consume el producto. El ERP lo
-              marca como venta a cliente, asi que ya esta sumado arriba. Se muestra
-              para poder leerlo, no se descuenta: por eso no va en rojo. */}
+              marca como venta a cliente, así que venía sumado en el bruto — se
+              descuenta para llegar a la venta real. */}
           <Card variant="kpiCard" styles={styles}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <h3>Autoconsumos</h3>
@@ -257,16 +280,30 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
               {(totales.monto_autoconsumos ?? 0).toLocaleString("es-EC", { style: "currency", currency: "USD" })}
             </p>
             <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
-              {(totales.cantidad_autoconsumos ?? 0).toLocaleString("es-EC")} unidades · incluido en las ventas
+              {(totales.cantidad_autoconsumos ?? 0).toLocaleString("es-EC")} unidades · bodega 31A · se descuenta
+            </div>
+          </Card>
+
+          {/* Globos, portaglobos, infladores y fundas vendidos fuera de 31A:
+              material de despacho, no el negocio. */}
+          <Card variant="kpiCard" styles={styles}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <h3>Globos y fundas</h3>
+            </div>
+            <p className={styles.kpiValue} style={{ color: (totales.monto_consumibles ?? 0) > 0 ? "#b7791f" : undefined }}>
+              {(totales.monto_consumibles ?? 0).toLocaleString("es-EC", { style: "currency", currency: "USD" })}
+            </p>
+            <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
+              {(totales.cantidad_consumibles ?? 0).toLocaleString("es-EC")} unidades · fuera de 31A · se descuenta
             </div>
           </Card>
 
           <Card variant="kpiCard" styles={styles}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <h3>Ventas sin devoluciones</h3>
+              <h3>Venta real</h3>
             </div>
-            <p className={styles.kpiValue}>
-              {totales.monto_neto.toLocaleString("es-EC", { style: "currency", currency: "USD" })}
+            <p className={styles.kpiValue} style={{ color: "var(--color-success-dark)" }}>
+              {(totales.monto_real ?? totales.monto_neto).toLocaleString("es-EC", { style: "currency", currency: "USD" })}
             </p>
             <DeltaReal delta={totales.delta_pct} comparadoCon={totales.comparado_con} />
           </Card>
@@ -286,8 +323,8 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={emp.empresa === "NVC01" ? "var(--color-brand-primary)" : "var(--color-brand-accent)"} strokeWidth="2.5"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4"/></svg>
                   </div>
                 </div>
-                <p className={styles.kpiValue}>{usd(emp.monto_neto)}</p>
-                <div style={{ fontSize: "0.7rem", color: "var(--color-text-muted)" }}>venta sin devoluciones</div>
+                <p className={styles.kpiValue}>{usd(emp.monto_real ?? emp.monto_neto)}</p>
+                <div style={{ fontSize: "0.7rem", color: "var(--color-text-muted)" }}>venta real</div>
                 <div style={{ borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.45rem" }}>
                   <LineaMonto etiqueta="Con devoluciones" valor={usd(emp.monto)} />
                   <LineaMonto
@@ -295,12 +332,17 @@ export const KPICards: React.FC<KPICardsProps> = ({ filteredData, activeTab, sty
                     valor={emp.monto_devoluciones > 0 ? `- ${usd(emp.monto_devoluciones)}` : usd(0)}
                     color={emp.monto_devoluciones > 0 ? "#c0392b" : undefined}
                   />
-                  <LineaMonto etiqueta="Unidades devueltas" valor={emp.cantidad_devoluciones.toLocaleString("es-EC")} />
                   <LineaMonto
-                    etiqueta="Autoconsumos (incluidos)"
-                    valor={usd(emp.monto_autoconsumos ?? 0)}
+                    etiqueta="Autoconsumos (31A)"
+                    valor={(emp.monto_autoconsumos ?? 0) > 0 ? `- ${usd(emp.monto_autoconsumos ?? 0)}` : usd(0)}
                     color={(emp.monto_autoconsumos ?? 0) > 0 ? "#b7791f" : undefined}
                   />
+                  <LineaMonto
+                    etiqueta="Globos y fundas"
+                    valor={(emp.monto_consumibles ?? 0) > 0 ? `- ${usd(emp.monto_consumibles ?? 0)}` : usd(0)}
+                    color={(emp.monto_consumibles ?? 0) > 0 ? "#b7791f" : undefined}
+                  />
+                  <LineaMonto etiqueta="Unidades devueltas" valor={emp.cantidad_devoluciones.toLocaleString("es-EC")} />
                 </div>
               </Card>
             ))

@@ -140,8 +140,8 @@
       "source_location": "L232",
       "_origin": "ast",
       "id": "backend_app_services_kpi_service_kpiservice_obtener_seguimiento",
-      "community": 60,
-      "community_name": "KpiService",
+      "community": 42,
+      "community_name": "test_kpi_cumplimiento.py",
       "norm_label": ".obtener_seguimiento()"
     },
     {
@@ -255,10 +255,32 @@
       "norm_label": "._num()"
     },
     {
+      "label": "._topado()",
+      "file_type": "code",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L780",
+      "_origin": "ast",
+      "id": "backend_app_services_kpi_service_kpisyncventas_topado",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": "._topado()"
+    },
+    {
+      "label": "._por_partes()",
+      "file_type": "code",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L788",
+      "_origin": "ast",
+      "id": "backend_app_services_kpi_service_kpisyncventas_por_partes",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": "._por_partes()"
+    },
+    {
       "label": "._consultar()",
       "file_type": "code",
       "source_file": "Backend/app/services/kpi_service.py",
-      "source_location": "L779",
+      "source_location": "L821",
       "_origin": "ast",
       "id": "backend_app_services_kpi_service_kpisyncventas_consultar",
       "community": 6,
@@ -269,7 +291,7 @@
       "label": ".sincronizar()",
       "file_type": "code",
       "source_file": "Backend/app/services/kpi_service.py",
-      "source_location": "L800",
+      "source_location": "L842",
       "_origin": "ast",
       "id": "backend_app_services_kpi_service_kpisyncventas_sincronizar",
       "community": 6,
@@ -277,10 +299,43 @@
       "norm_label": ".sincronizar()"
     },
     {
+      "label": "._valores()",
+      "file_type": "code",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L902",
+      "_origin": "ast",
+      "id": "backend_app_services_kpi_service_kpisyncventas_valores",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": "._valores()"
+    },
+    {
+      "label": "._bodegas()",
+      "file_type": "code",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L912",
+      "_origin": "ast",
+      "id": "backend_app_services_kpi_service_kpisyncventas_bodegas",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": "._bodegas()"
+    },
+    {
+      "label": "._locales()",
+      "file_type": "code",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L917",
+      "_origin": "ast",
+      "id": "backend_app_services_kpi_service_kpisyncventas_locales",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": "._locales()"
+    },
+    {
       "label": "._guardar_kardex()",
       "file_type": "code",
       "source_file": "Backend/app/services/kpi_service.py",
-      "source_location": "L853",
+      "source_location": "L920",
       "_origin": "ast",
       "id": "backend_app_services_kpi_service_kpisyncventas_guardar_kardex",
       "community": 6,
@@ -291,7 +346,7 @@
       "label": "._guardar_facturas()",
       "file_type": "code",
       "source_file": "Backend/app/services/kpi_service.py",
-      "source_location": "L888",
+      "source_location": "L959",
       "_origin": "ast",
       "id": "backend_app_services_kpi_service_kpisyncventas_guardar_facturas",
       "community": 6,
@@ -420,15 +475,180 @@
       "norm_label": "sincroniza el kardex y las facturas al schema propio del kpi.      deliberadam"
     },
     {
+      "label": "PRUEBAS corta en 3000 filas aunque el `limit` pida mas; PROD lo respeta.",
+      "file_type": "rationale",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L781",
+      "_origin": "ast",
+      "id": "backend_app_services_kpi_service_rationale_781",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": "pruebas corta en 3000 filas aunque el `limit` pida mas; prod lo respeta."
+    },
+    {
+      "label": "Parte un dia topado cortando el rango de `campo` a la mitad.          El ERP n",
+      "file_type": "rationale",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L790",
+      "_origin": "ast",
+      "id": "backend_app_services_kpi_service_rationale_790",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": "parte un dia topado cortando el rango de `campo` a la mitad.          el erp n"
+    },
+    {
       "label": "Consulta al ERP reintentando con token fresco.          Un backfill de meses t",
       "file_type": "rationale",
       "source_file": "Backend/app/services/kpi_service.py",
-      "source_location": "L780",
+      "source_location": "L822",
       "_origin": "ast",
-      "id": "backend_app_services_kpi_service_rationale_780",
+      "id": "backend_app_services_kpi_service_rationale_822",
       "community": 6,
       "community_name": "KpiSyncVentas",
       "norm_label": "consulta al erp reintentando con token fresco.          un backfill de meses t"
+    },
+    {
+      "label": "Valores del maestro de bodegas por los que se puede partir un dia.",
+      "file_type": "rationale",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L903",
+      "_origin": "ast",
+      "id": "backend_app_services_kpi_service_rationale_903",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": "valores del maestro de bodegas por los que se puede partir un dia."
+    },
+    {
+      "label": "test_kpi_particion.py",
+      "file_type": "code",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": "test_kpi_particion.py",
+      "id": "backend_scripts_test_kpi_particion"
+    },
+    {
+      "label": "ErpFalso",
+      "file_type": "code",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L21",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": "erpfalso",
+      "id": "backend_scripts_test_kpi_particion_erpfalso"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L24",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": ".__init__()",
+      "id": "backend_scripts_test_kpi_particion_erpfalso_init"
+    },
+    {
+      "label": ".obtener_token()",
+      "file_type": "code",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L28",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": ".obtener_token()",
+      "id": "backend_scripts_test_kpi_particion_erpfalso_obtener_token"
+    },
+    {
+      "label": ".ejecutar_consulta()",
+      "file_type": "code",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L31",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": ".ejecutar_consulta()",
+      "id": "backend_scripts_test_kpi_particion_erpfalso_ejecutar_consulta"
+    },
+    {
+      "label": "partir()",
+      "file_type": "code",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L46",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": "partir()",
+      "id": "backend_scripts_test_kpi_particion_partir"
+    },
+    {
+      "label": "test_dia_que_no_se_topa()",
+      "file_type": "code",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L55",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": "test_dia_que_no_se_topa()",
+      "id": "backend_scripts_test_kpi_particion_test_dia_que_no_se_topa"
+    },
+    {
+      "label": "test_dia_topado_se_recupera_entero()",
+      "file_type": "code",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L63",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": "test_dia_topado_se_recupera_entero()",
+      "id": "backend_scripts_test_kpi_particion_test_dia_topado_se_recupera_entero"
+    },
+    {
+      "label": "test_bodega_sola_mas_grande_que_el_tope()",
+      "file_type": "code",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L80",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": "test_bodega_sola_mas_grande_que_el_tope()",
+      "id": "backend_scripts_test_kpi_particion_test_bodega_sola_mas_grande_que_el_tope"
+    },
+    {
+      "label": "test_codigo_fuera_del_maestro_no_se_pierde()",
+      "file_type": "code",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L89",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": "test_codigo_fuera_del_maestro_no_se_pierde()",
+      "id": "backend_scripts_test_kpi_particion_test_codigo_fuera_del_maestro_no_se_pierde"
+    },
+    {
+      "label": "Valida que partir un dia topado no pierda ni duplique filas.  El ERP de PRUEBAS",
+      "file_type": "rationale",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L1",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": "valida que partir un dia topado no pierda ni duplique filas.  el erp de pruebas",
+      "id": "backend_scripts_test_kpi_particion_rationale_1"
+    },
+    {
+      "label": "ERP de mentira: respeta los rangos y corta en 3000 filas, como PRUEBAS.",
+      "file_type": "rationale",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L22",
+      "_origin": "ast",
+      "community": 6,
+      "community_name": "KpiSyncVentas",
+      "norm_label": "erp de mentira: respeta los rangos y corta en 3000 filas, como pruebas.",
+      "id": "backend_scripts_test_kpi_particion_rationale_22"
     },
     {
       "label": "SyncSection.tsx",
@@ -436,10 +656,10 @@
       "source_file": "frontend/components/SyncSection.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "id": "frontend_components_syncsection",
       "community": 4,
       "community_name": "estadisticas-ventas/page.tsx",
-      "norm_label": "syncsection.tsx"
+      "norm_label": "syncsection.tsx",
+      "id": "frontend_components_syncsection"
     },
     {
       "label": "SyncSectionProps",
@@ -447,10 +667,10 @@
       "source_file": "frontend/components/SyncSection.tsx",
       "source_location": "L8",
       "_origin": "ast",
-      "id": "frontend_components_syncsection_syncsectionprops",
       "community": 4,
       "community_name": "estadisticas-ventas/page.tsx",
-      "norm_label": "syncsectionprops"
+      "norm_label": "syncsectionprops",
+      "id": "frontend_components_syncsection_syncsectionprops"
     },
     {
       "label": "CoberturaTipo",
@@ -458,10 +678,10 @@
       "source_file": "frontend/components/SyncSection.tsx",
       "source_location": "L12",
       "_origin": "ast",
-      "id": "frontend_components_syncsection_coberturatipo",
       "community": 4,
       "community_name": "estadisticas-ventas/page.tsx",
-      "norm_label": "coberturatipo"
+      "norm_label": "coberturatipo",
+      "id": "frontend_components_syncsection_coberturatipo"
     },
     {
       "label": "ETIQUETAS_TIPO",
@@ -469,10 +689,10 @@
       "source_file": "frontend/components/SyncSection.tsx",
       "source_location": "L24",
       "_origin": "ast",
-      "id": "frontend_components_syncsection_etiquetas_tipo",
       "community": 4,
       "community_name": "estadisticas-ventas/page.tsx",
-      "norm_label": "etiquetas_tipo"
+      "norm_label": "etiquetas_tipo",
+      "id": "frontend_components_syncsection_etiquetas_tipo"
     },
     {
       "label": "agruparEnRangos()",
@@ -480,10 +700,10 @@
       "source_file": "frontend/components/SyncSection.tsx",
       "source_location": "L34",
       "_origin": "ast",
-      "id": "frontend_components_syncsection_agruparenrangos",
       "community": 4,
       "community_name": "estadisticas-ventas/page.tsx",
-      "norm_label": "agruparenrangos()"
+      "norm_label": "agruparenrangos()",
+      "id": "frontend_components_syncsection_agruparenrangos"
     },
     {
       "label": "getDatesInRange()",
@@ -491,10 +711,10 @@
       "source_file": "frontend/components/SyncSection.tsx",
       "source_location": "L56",
       "_origin": "ast",
-      "id": "frontend_components_syncsection_getdatesinrange",
       "community": 4,
       "community_name": "estadisticas-ventas/page.tsx",
-      "norm_label": "getdatesinrange()"
+      "norm_label": "getdatesinrange()",
+      "id": "frontend_components_syncsection_getdatesinrange"
     },
     {
       "label": "SyncSection()",
@@ -502,10 +722,10 @@
       "source_file": "frontend/components/SyncSection.tsx",
       "source_location": "L68",
       "_origin": "ast",
-      "id": "frontend_components_syncsection_syncsection",
       "community": 4,
       "community_name": "estadisticas-ventas/page.tsx",
-      "norm_label": "syncsection()"
+      "norm_label": "syncsection()",
+      "id": "frontend_components_syncsection_syncsection"
     },
     {
       "label": "sync/route.ts",
@@ -942,8 +1162,8 @@
       "source_file": "Backend/app/main.py",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "app/main.py",
       "id": "backend_app_main"
     },
@@ -953,8 +1173,8 @@
       "source_file": "Backend/app/main.py",
       "source_location": "L23",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "lifespan()",
       "id": "backend_app_main_lifespan"
     },
@@ -975,8 +1195,8 @@
       "source_file": "Backend/app/main.py",
       "source_location": "L284",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "authenticate_docs()",
       "id": "backend_app_main_authenticate_docs"
     },
@@ -986,8 +1206,8 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "httpbasiccredentials",
       "id": "httpbasiccredentials"
     },
@@ -997,8 +1217,8 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "get",
       "id": "backend_app_main_py_get"
     },
@@ -1008,8 +1228,8 @@
       "source_file": "Backend/app/main.py",
       "source_location": "L297",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "get_swagger_documentation()",
       "id": "backend_app_main_get_swagger_documentation"
     },
@@ -1019,8 +1239,8 @@
       "source_file": "Backend/app/main.py",
       "source_location": "L304",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "get_open_api_endpoint()",
       "id": "backend_app_main_get_open_api_endpoint"
     },
@@ -1030,8 +1250,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "kpi.py",
       "id": "backend_app_models_kpi"
     },
@@ -1041,8 +1261,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L17",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "kpiproductocat",
       "id": "backend_app_models_kpi_kpiproductocat"
     },
@@ -1052,8 +1272,8 @@
       "source_file": "",
       "source_location": "",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "base",
       "id": "base"
     },
@@ -1063,8 +1283,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L33",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "kpisucursal",
       "id": "backend_app_models_kpi_kpisucursal"
     },
@@ -1074,8 +1294,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L51",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "kpibodega",
       "id": "backend_app_models_kpi_kpibodega"
     },
@@ -1085,8 +1305,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L79",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "kpicobrocredito",
       "id": "backend_app_models_kpi_kpicobrocredito"
     },
@@ -1096,8 +1316,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L97",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "kpiplantilla",
       "id": "backend_app_models_kpi_kpiplantilla"
     },
@@ -1107,8 +1327,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L114",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "kpimeta",
       "id": "backend_app_models_kpi_kpimeta"
     },
@@ -1118,8 +1338,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L130",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "kpivalormanual",
       "id": "backend_app_models_kpi_kpivalormanual"
     },
@@ -1129,8 +1349,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L150",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "kpiventaskardex",
       "id": "backend_app_models_kpi_kpiventaskardex"
     },
@@ -1140,8 +1360,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L181",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "kpiventasfactura",
       "id": "backend_app_models_kpi_kpiventasfactura"
     },
@@ -1151,8 +1371,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L18",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "catalogo producto -> categoria de kpi.      reemplaza el vlookup contra la hoj",
       "id": "backend_app_models_kpi_rationale_18"
     },
@@ -1162,8 +1382,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L34",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "sucursal -> supervisor / marca / ciudad.      el erp no expone el supervisor:",
       "id": "backend_app_models_kpi_rationale_34"
     },
@@ -1173,8 +1393,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L52",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "bodega del erp -> sucursal del reporte.      el erp no tiene un campo que diga",
       "id": "backend_app_models_kpi_rationale_52"
     },
@@ -1184,8 +1404,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L80",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "cobros de credito directo (credinovi / banco solidario) del erp.      `codigo_",
       "id": "backend_app_models_kpi_rationale_80"
     },
@@ -1195,8 +1415,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L98",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "el .xlsx que sube contabilidad, guardado para usarlo como plantilla.      repl",
       "id": "backend_app_models_kpi_rationale_98"
     },
@@ -1206,8 +1426,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L115",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "meta por sucursal, kpi y mes. se carga a mano desde el panel.      `periodo` e",
       "id": "backend_app_models_kpi_rationale_115"
     },
@@ -1217,8 +1437,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L131",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "valores reales que no salen del erp (hoy llegan por un google form).      revi",
       "id": "backend_app_models_kpi_rationale_131"
     },
@@ -1228,8 +1448,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L151",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "copia del kardex solo para el reporte kpi.      espeja `ventas_kardex_staging` d",
       "id": "backend_app_models_kpi_rationale_151"
     },
@@ -1239,8 +1459,8 @@
       "source_file": "Backend/app/models/kpi.py",
       "source_location": "L182",
       "_origin": "ast",
-      "community": 44,
-      "community_name": "app/main.py",
+      "community": 45,
+      "community_name": "SyncService",
       "norm_label": "cabecera de factura para el reporte kpi. espeja `ventas_facturas_staging`.",
       "id": "backend_app_models_kpi_rationale_182"
     },
@@ -2548,8 +2768,8 @@
       "source_file": "Backend/app/core/scheduler.py",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 45,
-      "community_name": "SyncService",
+      "community": 44,
+      "community_name": "scheduler.py",
       "norm_label": "scheduler.py",
       "id": "backend_app_core_scheduler"
     },
@@ -2559,8 +2779,8 @@
       "source_file": "Backend/app/core/scheduler.py",
       "source_location": "L14",
       "_origin": "ast",
-      "community": 45,
-      "community_name": "SyncService",
+      "community": 44,
+      "community_name": "scheduler.py",
       "norm_label": "run_nightly_sync()",
       "id": "backend_app_core_scheduler_run_nightly_sync"
     },
@@ -2570,8 +2790,8 @@
       "source_file": "Backend/app/core/scheduler.py",
       "source_location": "L45",
       "_origin": "ast",
-      "community": 45,
-      "community_name": "SyncService",
+      "community": 44,
+      "community_name": "scheduler.py",
       "norm_label": "start_scheduler()",
       "id": "backend_app_core_scheduler_start_scheduler"
     },
@@ -2581,8 +2801,8 @@
       "source_file": "Backend/app/core/scheduler.py",
       "source_location": "L60",
       "_origin": "ast",
-      "community": 45,
-      "community_name": "SyncService",
+      "community": 44,
+      "community_name": "scheduler.py",
       "norm_label": "stop_scheduler()",
       "id": "backend_app_core_scheduler_stop_scheduler"
     },
@@ -2592,8 +2812,8 @@
       "source_file": "Backend/app/core/scheduler.py",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 45,
-      "community_name": "SyncService",
+      "community": 44,
+      "community_name": "scheduler.py",
       "norm_label": "sincroniza movimientos/liquidaciones/ats/ventas con los datos de ayer.     corre",
       "id": "backend_app_core_scheduler_rationale_15"
     },
@@ -6189,8 +6409,8 @@
       "source_file": "frontend/app/panel/admin/page.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 4,
+      "community_name": "estadisticas-ventas/page.tsx",
       "norm_label": "admin/page.tsx",
       "id": "frontend_app_panel_admin_page"
     },
@@ -6200,8 +6420,8 @@
       "source_file": "frontend/app/panel/admin/page.tsx",
       "source_location": "L13",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 4,
+      "community_name": "estadisticas-ventas/page.tsx",
       "norm_label": "poppins",
       "id": "frontend_app_panel_admin_page_poppins"
     },
@@ -6211,8 +6431,8 @@
       "source_file": "frontend/app/panel/admin/page.tsx",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 4,
+      "community_name": "estadisticas-ventas/page.tsx",
       "norm_label": "adminpage()",
       "id": "frontend_app_panel_admin_page_adminpage"
     },
@@ -6607,8 +6827,8 @@
       "source_file": "frontend/components/AtsCharts.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 73,
+      "community_name": "AtsCharts.tsx",
       "norm_label": "atscharts.tsx",
       "id": "frontend_components_atscharts"
     },
@@ -6618,8 +6838,8 @@
       "source_file": "frontend/components/AtsCharts.tsx",
       "source_location": "L15",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 73,
+      "community_name": "AtsCharts.tsx",
       "norm_label": "iva_color",
       "id": "frontend_components_atscharts_iva_color"
     },
@@ -6629,8 +6849,8 @@
       "source_file": "frontend/components/AtsCharts.tsx",
       "source_location": "L20",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 73,
+      "community_name": "AtsCharts.tsx",
       "norm_label": "atschartsprops",
       "id": "frontend_components_atscharts_atschartsprops"
     },
@@ -6640,8 +6860,8 @@
       "source_file": "frontend/components/AtsCharts.tsx",
       "source_location": "L25",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 73,
+      "community_name": "AtsCharts.tsx",
       "norm_label": "num()",
       "id": "frontend_components_atscharts_num"
     },
@@ -6651,8 +6871,8 @@
       "source_file": "frontend/components/AtsCharts.tsx",
       "source_location": "L29",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 73,
+      "community_name": "AtsCharts.tsx",
       "norm_label": "str()",
       "id": "frontend_components_atscharts_str"
     },
@@ -6662,8 +6882,8 @@
       "source_file": "frontend/components/AtsCharts.tsx",
       "source_location": "L33",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 73,
+      "community_name": "AtsCharts.tsx",
       "norm_label": "fmtmoney()",
       "id": "frontend_components_atscharts_fmtmoney"
     },
@@ -6673,8 +6893,8 @@
       "source_file": "frontend/components/AtsCharts.tsx",
       "source_location": "L36",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 73,
+      "community_name": "AtsCharts.tsx",
       "norm_label": "fmtmoney2()",
       "id": "frontend_components_atscharts_fmtmoney2"
     },
@@ -6684,8 +6904,8 @@
       "source_file": "frontend/components/AtsCharts.tsx",
       "source_location": "L40",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 73,
+      "community_name": "AtsCharts.tsx",
       "norm_label": "atscharts()",
       "id": "frontend_components_atscharts_atscharts"
     },
@@ -6696,7 +6916,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "dailysalesdashboard.tsx",
       "id": "frontend_components_dailysalesdashboard"
     },
@@ -6707,7 +6927,7 @@
       "source_location": "L9",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "dailysalesdashboardprops",
       "id": "frontend_components_dailysalesdashboard_dailysalesdashboardprops"
     },
@@ -6718,7 +6938,7 @@
       "source_location": "L20",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "clickablecard()",
       "id": "frontend_components_dailysalesdashboard_clickablecard"
     },
@@ -6729,7 +6949,7 @@
       "source_location": "L37",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "fmtcurrency()",
       "id": "frontend_components_dailysalesdashboard_fmtcurrency"
     },
@@ -6740,7 +6960,7 @@
       "source_location": "L41",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "fmtnumber()",
       "id": "frontend_components_dailysalesdashboard_fmtnumber"
     },
@@ -6751,7 +6971,7 @@
       "source_location": "L45",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "rankbrandsbyrevenue()",
       "id": "frontend_components_dailysalesdashboard_rankbrandsbyrevenue"
     },
@@ -6762,7 +6982,7 @@
       "source_location": "L60",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "datendaysago()",
       "id": "frontend_components_dailysalesdashboard_datendaysago"
     },
@@ -6773,7 +6993,7 @@
       "source_location": "L66",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "daysbefore()",
       "id": "frontend_components_dailysalesdashboard_daysbefore"
     },
@@ -6784,7 +7004,7 @@
       "source_location": "L72",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "fetchrange()",
       "id": "frontend_components_dailysalesdashboard_fetchrange"
     },
@@ -6795,7 +7015,7 @@
       "source_location": "L114",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "fetchventasadaptive()",
       "id": "frontend_components_dailysalesdashboard_fetchventasadaptive"
     },
@@ -6806,7 +7026,7 @@
       "source_location": "L121",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "deltapct()",
       "id": "frontend_components_dailysalesdashboard_deltapct"
     },
@@ -6817,7 +7037,7 @@
       "source_location": "L126",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "comparisonminicard()",
       "id": "frontend_components_dailysalesdashboard_comparisonminicard"
     },
@@ -6828,7 +7048,7 @@
       "source_location": "L183",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "isdashboardcachefresh()",
       "id": "frontend_components_dailysalesdashboard_isdashboardcachefresh"
     },
@@ -6839,7 +7059,7 @@
       "source_location": "L187",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "dailysalesdashboard()",
       "id": "frontend_components_dailysalesdashboard_dailysalesdashboard"
     },
@@ -6849,8 +7069,8 @@
       "source_file": "frontend/components/EstadisticasVentasCharts.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 70,
+      "community_name": "EstadisticasVentasCharts.tsx",
       "norm_label": "estadisticasventascharts.tsx",
       "id": "frontend_components_estadisticasventascharts"
     },
@@ -6860,8 +7080,8 @@
       "source_file": "frontend/components/EstadisticasVentasCharts.tsx",
       "source_location": "L5",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 70,
+      "community_name": "EstadisticasVentasCharts.tsx",
       "norm_label": "props",
       "id": "frontend_components_estadisticasventascharts_props"
     },
@@ -6871,8 +7091,8 @@
       "source_file": "frontend/components/EstadisticasVentasCharts.tsx",
       "source_location": "L10",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 70,
+      "community_name": "EstadisticasVentasCharts.tsx",
       "norm_label": "fmtmoney()",
       "id": "frontend_components_estadisticasventascharts_fmtmoney"
     },
@@ -6882,8 +7102,8 @@
       "source_file": "frontend/components/EstadisticasVentasCharts.tsx",
       "source_location": "L13",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 70,
+      "community_name": "EstadisticasVentasCharts.tsx",
       "norm_label": "fmtnumber()",
       "id": "frontend_components_estadisticasventascharts_fmtnumber"
     },
@@ -6893,8 +7113,8 @@
       "source_file": "frontend/components/EstadisticasVentasCharts.tsx",
       "source_location": "L17",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 70,
+      "community_name": "EstadisticasVentasCharts.tsx",
       "norm_label": "tooltip()",
       "id": "frontend_components_estadisticasventascharts_tooltip"
     },
@@ -6904,8 +7124,8 @@
       "source_file": "frontend/components/EstadisticasVentasCharts.tsx",
       "source_location": "L31",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 70,
+      "community_name": "EstadisticasVentasCharts.tsx",
       "norm_label": "toprankingchart()",
       "id": "frontend_components_estadisticasventascharts_toprankingchart"
     },
@@ -6915,8 +7135,8 @@
       "source_file": "frontend/components/EstadisticasVentasCharts.tsx",
       "source_location": "L73",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 70,
+      "community_name": "EstadisticasVentasCharts.tsx",
       "norm_label": "productodestacado()",
       "id": "frontend_components_estadisticasventascharts_productodestacado"
     },
@@ -6926,8 +7146,8 @@
       "source_file": "frontend/components/EstadisticasVentasCharts.tsx",
       "source_location": "L89",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 70,
+      "community_name": "EstadisticasVentasCharts.tsx",
       "norm_label": "estadisticasventascharts()",
       "id": "frontend_components_estadisticasventascharts_estadisticasventascharts"
     },
@@ -7025,8 +7245,8 @@
       "source_file": "frontend/components/LiquidacionesCharts.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 72,
+      "community_name": "LiquidacionesCharts.tsx",
       "norm_label": "liquidacionescharts.tsx",
       "id": "frontend_components_liquidacionescharts"
     },
@@ -7036,8 +7256,8 @@
       "source_file": "frontend/components/LiquidacionesCharts.tsx",
       "source_location": "L16",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 72,
+      "community_name": "LiquidacionesCharts.tsx",
       "norm_label": "empresa_color",
       "id": "frontend_components_liquidacionescharts_empresa_color"
     },
@@ -7047,8 +7267,8 @@
       "source_file": "frontend/components/LiquidacionesCharts.tsx",
       "source_location": "L20",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 72,
+      "community_name": "LiquidacionesCharts.tsx",
       "norm_label": "empresa_color_fallback",
       "id": "frontend_components_liquidacionescharts_empresa_color_fallback"
     },
@@ -7058,8 +7278,8 @@
       "source_file": "frontend/components/LiquidacionesCharts.tsx",
       "source_location": "L26",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 72,
+      "community_name": "LiquidacionesCharts.tsx",
       "norm_label": "liquidacioneschartsprops",
       "id": "frontend_components_liquidacionescharts_liquidacioneschartsprops"
     },
@@ -7069,8 +7289,8 @@
       "source_file": "frontend/components/LiquidacionesCharts.tsx",
       "source_location": "L31",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 72,
+      "community_name": "LiquidacionesCharts.tsx",
       "norm_label": "num()",
       "id": "frontend_components_liquidacionescharts_num"
     },
@@ -7080,8 +7300,8 @@
       "source_file": "frontend/components/LiquidacionesCharts.tsx",
       "source_location": "L35",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 72,
+      "community_name": "LiquidacionesCharts.tsx",
       "norm_label": "str()",
       "id": "frontend_components_liquidacionescharts_str"
     },
@@ -7091,8 +7311,8 @@
       "source_file": "frontend/components/LiquidacionesCharts.tsx",
       "source_location": "L39",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 72,
+      "community_name": "LiquidacionesCharts.tsx",
       "norm_label": "fmtmoney()",
       "id": "frontend_components_liquidacionescharts_fmtmoney"
     },
@@ -7102,8 +7322,8 @@
       "source_file": "frontend/components/LiquidacionesCharts.tsx",
       "source_location": "L42",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 72,
+      "community_name": "LiquidacionesCharts.tsx",
       "norm_label": "fmtmoney2()",
       "id": "frontend_components_liquidacionescharts_fmtmoney2"
     },
@@ -7113,8 +7333,8 @@
       "source_file": "frontend/components/LiquidacionesCharts.tsx",
       "source_location": "L45",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 72,
+      "community_name": "LiquidacionesCharts.tsx",
       "norm_label": "fmtnumber()",
       "id": "frontend_components_liquidacionescharts_fmtnumber"
     },
@@ -7124,8 +7344,8 @@
       "source_file": "frontend/components/LiquidacionesCharts.tsx",
       "source_location": "L49",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 72,
+      "community_name": "LiquidacionesCharts.tsx",
       "norm_label": "liquidacionescharts()",
       "id": "frontend_components_liquidacionescharts_liquidacionescharts"
     },
@@ -7135,8 +7355,8 @@
       "source_file": "frontend/components/MovimientosCharts.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 71,
+      "community_name": "MovimientosCharts.tsx",
       "norm_label": "movimientoscharts.tsx",
       "id": "frontend_components_movimientoscharts"
     },
@@ -7146,8 +7366,8 @@
       "source_file": "frontend/components/MovimientosCharts.tsx",
       "source_location": "L20",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 71,
+      "community_name": "MovimientosCharts.tsx",
       "norm_label": "tipo_color",
       "id": "frontend_components_movimientoscharts_tipo_color"
     },
@@ -7157,8 +7377,8 @@
       "source_file": "frontend/components/MovimientosCharts.tsx",
       "source_location": "L28",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 71,
+      "community_name": "MovimientosCharts.tsx",
       "norm_label": "tipo_color_fallback",
       "id": "frontend_components_movimientoscharts_tipo_color_fallback"
     },
@@ -7168,8 +7388,8 @@
       "source_file": "frontend/components/MovimientosCharts.tsx",
       "source_location": "L35",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 71,
+      "community_name": "MovimientosCharts.tsx",
       "norm_label": "movimientoschartsprops",
       "id": "frontend_components_movimientoscharts_movimientoschartsprops"
     },
@@ -7179,8 +7399,8 @@
       "source_file": "frontend/components/MovimientosCharts.tsx",
       "source_location": "L40",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 71,
+      "community_name": "MovimientosCharts.tsx",
       "norm_label": "str()",
       "id": "frontend_components_movimientoscharts_str"
     },
@@ -7190,8 +7410,8 @@
       "source_file": "frontend/components/MovimientosCharts.tsx",
       "source_location": "L44",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 71,
+      "community_name": "MovimientosCharts.tsx",
       "norm_label": "fmtnumber()",
       "id": "frontend_components_movimientoscharts_fmtnumber"
     },
@@ -7201,8 +7421,8 @@
       "source_file": "frontend/components/MovimientosCharts.tsx",
       "source_location": "L51",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 71,
+      "community_name": "MovimientosCharts.tsx",
       "norm_label": "normalizememo()",
       "id": "frontend_components_movimientoscharts_normalizememo"
     },
@@ -7212,8 +7432,8 @@
       "source_file": "frontend/components/MovimientosCharts.tsx",
       "source_location": "L61",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 71,
+      "community_name": "MovimientosCharts.tsx",
       "norm_label": "movimientoscharts()",
       "id": "frontend_components_movimientoscharts_movimientoscharts"
     },
@@ -7938,8 +8158,8 @@
       "source_file": "frontend/components/charts/ChartPrimitives.tsx",
       "source_location": "L27",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 74,
+      "community_name": "TrendLineAdvanced.tsx",
       "norm_label": "charttooltip()",
       "id": "frontend_components_charts_chartprimitives_charttooltip"
     },
@@ -7949,8 +8169,8 @@
       "source_file": "frontend/components/charts/ChartPrimitives.tsx",
       "source_location": "L50",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 73,
+      "community_name": "AtsCharts.tsx",
       "norm_label": "rankedbarchart()",
       "id": "frontend_components_charts_chartprimitives_rankedbarchart"
     },
@@ -7960,8 +8180,8 @@
       "source_file": "frontend/components/charts/ChartPrimitives.tsx",
       "source_location": "L139",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 73,
+      "community_name": "AtsCharts.tsx",
       "norm_label": "tierheading()",
       "id": "frontend_components_charts_chartprimitives_tierheading"
     },
@@ -7971,8 +8191,8 @@
       "source_file": "frontend/components/charts/ChartPrimitives.tsx",
       "source_location": "L170",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 72,
+      "community_name": "LiquidacionesCharts.tsx",
       "norm_label": "twobarcomparison()",
       "id": "frontend_components_charts_chartprimitives_twobarcomparison"
     },
@@ -8037,8 +8257,8 @@
       "source_file": "frontend/components/charts/ChartPrimitives.tsx",
       "source_location": "L516",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 71,
+      "community_name": "MovimientosCharts.tsx",
       "norm_label": "radialgauge()",
       "id": "frontend_components_charts_chartprimitives_radialgauge"
     },
@@ -8092,8 +8312,8 @@
       "source_file": "frontend/components/charts/ChartPrimitives.tsx",
       "source_location": "L727",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 72,
+      "community_name": "LiquidacionesCharts.tsx",
       "norm_label": "scatterxy()",
       "id": "frontend_components_charts_chartprimitives_scatterxy"
     },
@@ -8114,8 +8334,8 @@
       "source_file": "frontend/components/charts/ChartPrimitives.tsx",
       "source_location": "L884",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 70,
+      "community_name": "EstadisticasVentasCharts.tsx",
       "norm_label": "expandablechartcard()",
       "id": "frontend_components_charts_chartprimitives_expandablechartcard"
     },
@@ -8125,8 +8345,8 @@
       "source_file": "frontend/components/charts/DevolucionesDonut.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 71,
+      "community_name": "MovimientosCharts.tsx",
       "norm_label": "devolucionesdonut.tsx",
       "id": "frontend_components_charts_devolucionesdonut"
     },
@@ -8136,8 +8356,8 @@
       "source_file": "frontend/components/charts/DevolucionesDonut.tsx",
       "source_location": "L6",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 71,
+      "community_name": "MovimientosCharts.tsx",
       "norm_label": "donutsegment",
       "id": "frontend_components_charts_devolucionesdonut_donutsegment"
     },
@@ -8147,8 +8367,8 @@
       "source_file": "frontend/components/charts/DevolucionesDonut.tsx",
       "source_location": "L13",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 71,
+      "community_name": "MovimientosCharts.tsx",
       "norm_label": "devolucionesdonutprops",
       "id": "frontend_components_charts_devolucionesdonut_devolucionesdonutprops"
     },
@@ -8158,8 +8378,8 @@
       "source_file": "frontend/components/charts/DevolucionesDonut.tsx",
       "source_location": "L25",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 71,
+      "community_name": "MovimientosCharts.tsx",
       "norm_label": "devolucionesdonut()",
       "id": "frontend_components_charts_devolucionesdonut_devolucionesdonut"
     },
@@ -8202,8 +8422,8 @@
       "source_file": "frontend/components/charts/TrendLineAdvanced.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 74,
+      "community_name": "TrendLineAdvanced.tsx",
       "norm_label": "trendlineadvanced.tsx",
       "id": "frontend_components_charts_trendlineadvanced"
     },
@@ -8213,8 +8433,8 @@
       "source_file": "frontend/components/charts/TrendLineAdvanced.tsx",
       "source_location": "L6",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 74,
+      "community_name": "TrendLineAdvanced.tsx",
       "norm_label": "trendlineadvancedprops",
       "id": "frontend_components_charts_trendlineadvanced_trendlineadvancedprops"
     },
@@ -8224,8 +8444,8 @@
       "source_file": "frontend/components/charts/TrendLineAdvanced.tsx",
       "source_location": "L16",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 74,
+      "community_name": "TrendLineAdvanced.tsx",
       "norm_label": "usemeasuredwidth()",
       "id": "frontend_components_charts_trendlineadvanced_usemeasuredwidth"
     },
@@ -8235,8 +8455,8 @@
       "source_file": "frontend/components/charts/TrendLineAdvanced.tsx",
       "source_location": "L37",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 74,
+      "community_name": "TrendLineAdvanced.tsx",
       "norm_label": "trendlineadvanced()",
       "id": "frontend_components_charts_trendlineadvanced_trendlineadvanced"
     },
@@ -8334,8 +8554,8 @@
       "source_file": "frontend/components/ui/Card.tsx",
       "source_location": "L1",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 70,
+      "community_name": "EstadisticasVentasCharts.tsx",
       "norm_label": "card.tsx",
       "id": "frontend_components_ui_card"
     },
@@ -8345,8 +8565,8 @@
       "source_file": "frontend/components/ui/Card.tsx",
       "source_location": "L3",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 70,
+      "community_name": "EstadisticasVentasCharts.tsx",
       "norm_label": "cardvariant",
       "id": "frontend_components_ui_card_cardvariant"
     },
@@ -8356,8 +8576,8 @@
       "source_file": "frontend/components/ui/Card.tsx",
       "source_location": "L5",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 70,
+      "community_name": "EstadisticasVentasCharts.tsx",
       "norm_label": "cardprops",
       "id": "frontend_components_ui_card_cardprops"
     },
@@ -8367,8 +8587,8 @@
       "source_file": "frontend/components/ui/Card.tsx",
       "source_location": "L11",
       "_origin": "ast",
-      "community": 0,
-      "community_name": "ChartPrimitives.tsx",
+      "community": 70,
+      "community_name": "EstadisticasVentasCharts.tsx",
       "norm_label": "card()",
       "id": "frontend_components_ui_card_card"
     },
@@ -8819,7 +9039,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "empresa.ts",
       "id": "frontend_lib_empresa"
     },
@@ -8830,7 +9050,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "empresa_labels",
       "id": "frontend_lib_empresa_empresa_labels"
     },
@@ -8841,7 +9061,7 @@
       "source_location": "L6",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "getempresacode()",
       "id": "frontend_lib_empresa_getempresacode"
     },
@@ -8852,7 +9072,7 @@
       "source_location": "L12",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "getempresalabel()",
       "id": "frontend_lib_empresa_getempresalabel"
     },
@@ -8863,7 +9083,7 @@
       "source_location": "L1",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "marca.ts",
       "id": "frontend_lib_marca"
     },
@@ -8874,7 +9094,7 @@
       "source_location": "L11",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "marca_keywords",
       "id": "frontend_lib_marca_marca_keywords"
     },
@@ -8885,7 +9105,7 @@
       "source_location": "L66",
       "_origin": "ast",
       "community": 9,
-      "community_name": "Daily Sales Dashboard",
+      "community_name": "DailySalesDashboard.tsx",
       "norm_label": "getmarcafromproductname()",
       "id": "frontend_lib_marca_getmarcafromproductname"
     },
@@ -11388,7 +11608,7 @@
       "context": "generic_arg",
       "confidence": "EXTRACTED",
       "source_file": "Backend/app/services/kpi_service.py",
-      "source_location": "L800",
+      "source_location": "L842",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_app_services_kpi_service_kpisyncventas_sincronizar",
@@ -11511,7 +11731,18 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "Backend/app/services/kpi_service.py",
-      "source_location": "L779",
+      "source_location": "L912",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_app_services_kpi_service_kpisyncventas",
+      "target": "backend_app_services_kpi_service_kpisyncventas_bodegas",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L821",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_app_services_kpi_service_kpisyncventas",
@@ -11522,7 +11753,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "Backend/app/services/kpi_service.py",
-      "source_location": "L888",
+      "source_location": "L959",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_app_services_kpi_service_kpisyncventas",
@@ -11533,7 +11764,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "Backend/app/services/kpi_service.py",
-      "source_location": "L853",
+      "source_location": "L920",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_app_services_kpi_service_kpisyncventas",
@@ -11555,6 +11786,17 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L917",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_app_services_kpi_service_kpisyncventas",
+      "target": "backend_app_services_kpi_service_kpisyncventas_locales",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/app/services/kpi_service.py",
       "source_location": "L773",
       "weight": 1.0,
       "_origin": "ast",
@@ -11566,11 +11808,33 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "Backend/app/services/kpi_service.py",
-      "source_location": "L800",
+      "source_location": "L788",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_app_services_kpi_service_kpisyncventas",
+      "target": "backend_app_services_kpi_service_kpisyncventas_por_partes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L842",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_app_services_kpi_service_kpisyncventas",
       "target": "backend_app_services_kpi_service_kpisyncventas_sincronizar",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L780",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_app_services_kpi_service_kpisyncventas",
+      "target": "backend_app_services_kpi_service_kpisyncventas_topado",
       "confidence_score": 1.0
     },
     {
@@ -11585,6 +11849,17 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L902",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_app_services_kpi_service_kpisyncventas",
+      "target": "backend_app_services_kpi_service_kpisyncventas_valores",
+      "confidence_score": 1.0
+    },
+    {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "Backend/app/services/kpi_service.py",
@@ -11596,11 +11871,58 @@
       "confidence_score": 1.0
     },
     {
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L15",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion",
+      "target": "backend_app_services_kpi_service_kpisyncventas"
+    },
+    {
+      "relation": "uses",
+      "confidence": "INFERRED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L15",
+      "weight": 0.8,
+      "_origin": "ast",
+      "confidence_score": 0.5,
+      "source": "backend_scripts_test_kpi_particion_erpfalso",
+      "target": "backend_app_services_kpi_service_kpisyncventas"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L48",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion_partir",
+      "target": "backend_app_services_kpi_service_kpisyncventas"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L94",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion_test_codigo_fuera_del_maestro_no_se_pierde",
+      "target": "backend_app_services_kpi_service_kpisyncventas"
+    },
+    {
       "relation": "calls",
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "Backend/app/services/kpi_service.py",
-      "source_location": "L891",
+      "source_location": "L966",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_app_services_kpi_service_kpisyncventas_guardar_facturas",
@@ -11612,7 +11934,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "Backend/app/services/kpi_service.py",
-      "source_location": "L856",
+      "source_location": "L925",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_app_services_kpi_service_kpisyncventas_guardar_kardex",
@@ -11624,7 +11946,7 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "Backend/app/services/kpi_service.py",
-      "source_location": "L871",
+      "source_location": "L931",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_app_services_kpi_service_kpisyncventas_guardar_kardex",
@@ -11636,7 +11958,77 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "Backend/app/services/kpi_service.py",
-      "source_location": "L828",
+      "source_location": "L807",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_app_services_kpi_service_kpisyncventas_por_partes",
+      "target": "backend_app_services_kpi_service_kpisyncventas_topado",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L873",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_app_services_kpi_service_kpisyncventas_sincronizar",
+      "target": "backend_app_services_kpi_service_kpisyncventas_topado",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L781",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_app_services_kpi_service_rationale_781",
+      "target": "backend_app_services_kpi_service_kpisyncventas_topado",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L806",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_app_services_kpi_service_kpisyncventas_por_partes",
+      "target": "backend_app_services_kpi_service_kpisyncventas_consultar",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L874",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_app_services_kpi_service_kpisyncventas_sincronizar",
+      "target": "backend_app_services_kpi_service_kpisyncventas_por_partes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L790",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_app_services_kpi_service_rationale_790",
+      "target": "backend_app_services_kpi_service_kpisyncventas_por_partes",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L871",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_app_services_kpi_service_kpisyncventas_sincronizar",
@@ -11647,10 +12039,10 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "Backend/app/services/kpi_service.py",
-      "source_location": "L780",
+      "source_location": "L822",
       "weight": 1.0,
       "_origin": "ast",
-      "source": "backend_app_services_kpi_service_rationale_780",
+      "source": "backend_app_services_kpi_service_rationale_822",
       "target": "backend_app_services_kpi_service_kpisyncventas_consultar",
       "confidence_score": 1.0
     },
@@ -11659,7 +12051,19 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "Backend/app/services/kpi_service.py",
-      "source_location": "L840",
+      "source_location": "L876",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_app_services_kpi_service_kpisyncventas_sincronizar",
+      "target": "backend_app_services_kpi_service_kpisyncventas_bodegas",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L888",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_app_services_kpi_service_kpisyncventas_sincronizar",
@@ -11671,12 +12075,240 @@
       "context": "call",
       "confidence": "EXTRACTED",
       "source_file": "Backend/app/services/kpi_service.py",
-      "source_location": "L833",
+      "source_location": "L878",
       "weight": 1.0,
       "_origin": "ast",
       "source": "backend_app_services_kpi_service_kpisyncventas_sincronizar",
       "target": "backend_app_services_kpi_service_kpisyncventas_guardar_kardex",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L886",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_app_services_kpi_service_kpisyncventas_sincronizar",
+      "target": "backend_app_services_kpi_service_kpisyncventas_locales",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L915",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_app_services_kpi_service_kpisyncventas_bodegas",
+      "target": "backend_app_services_kpi_service_kpisyncventas_valores",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L918",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_app_services_kpi_service_kpisyncventas_locales",
+      "target": "backend_app_services_kpi_service_kpisyncventas_valores",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/app/services/kpi_service.py",
+      "source_location": "L903",
+      "weight": 1.0,
+      "_origin": "ast",
+      "source": "backend_app_services_kpi_service_rationale_903",
+      "target": "backend_app_services_kpi_service_kpisyncventas_valores",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L21",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion",
+      "target": "backend_scripts_test_kpi_particion_erpfalso"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L46",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion",
+      "target": "backend_scripts_test_kpi_particion_partir"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L80",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion",
+      "target": "backend_scripts_test_kpi_particion_test_bodega_sola_mas_grande_que_el_tope"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L89",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion",
+      "target": "backend_scripts_test_kpi_particion_test_codigo_fuera_del_maestro_no_se_pierde"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L55",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion",
+      "target": "backend_scripts_test_kpi_particion_test_dia_que_no_se_topa"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L63",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion",
+      "target": "backend_scripts_test_kpi_particion_test_dia_topado_se_recupera_entero"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion_rationale_1",
+      "target": "backend_scripts_test_kpi_particion"
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L31",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion_erpfalso",
+      "target": "backend_scripts_test_kpi_particion_erpfalso_ejecutar_consulta"
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L24",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion_erpfalso",
+      "target": "backend_scripts_test_kpi_particion_erpfalso_init"
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L28",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion_erpfalso",
+      "target": "backend_scripts_test_kpi_particion_erpfalso_obtener_token"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L47",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion_partir",
+      "target": "backend_scripts_test_kpi_particion_erpfalso"
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L22",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion_rationale_22",
+      "target": "backend_scripts_test_kpi_particion_erpfalso"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L93",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion_test_codigo_fuera_del_maestro_no_se_pierde",
+      "target": "backend_scripts_test_kpi_particion_erpfalso"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L83",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion_test_bodega_sola_mas_grande_que_el_tope",
+      "target": "backend_scripts_test_kpi_particion_partir"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L56",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion_test_dia_que_no_se_topa",
+      "target": "backend_scripts_test_kpi_particion_partir"
+    },
+    {
+      "relation": "calls",
+      "context": "call",
+      "confidence": "EXTRACTED",
+      "source_file": "Backend/scripts/test_kpi_particion.py",
+      "source_location": "L68",
+      "weight": 1.0,
+      "_origin": "ast",
+      "confidence_score": 1.0,
+      "source": "backend_scripts_test_kpi_particion_test_dia_topado_se_recupera_entero",
+      "target": "backend_scripts_test_kpi_particion_partir"
     },
     {
       "relation": "imports_from",
@@ -11697,9 +12329,9 @@
       "source_location": "L34",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "frontend_components_syncsection",
-      "target": "frontend_components_syncsection_agruparenrangos",
-      "confidence_score": 1.0
+      "target": "frontend_components_syncsection_agruparenrangos"
     },
     {
       "relation": "contains",
@@ -11708,9 +12340,9 @@
       "source_location": "L12",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "frontend_components_syncsection",
-      "target": "frontend_components_syncsection_coberturatipo",
-      "confidence_score": 1.0
+      "target": "frontend_components_syncsection_coberturatipo"
     },
     {
       "relation": "contains",
@@ -11719,9 +12351,9 @@
       "source_location": "L24",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "frontend_components_syncsection",
-      "target": "frontend_components_syncsection_etiquetas_tipo",
-      "confidence_score": 1.0
+      "target": "frontend_components_syncsection_etiquetas_tipo"
     },
     {
       "relation": "contains",
@@ -11730,9 +12362,9 @@
       "source_location": "L56",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "frontend_components_syncsection",
-      "target": "frontend_components_syncsection_getdatesinrange",
-      "confidence_score": 1.0
+      "target": "frontend_components_syncsection_getdatesinrange"
     },
     {
       "relation": "contains",
@@ -11741,9 +12373,9 @@
       "source_location": "L68",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "frontend_components_syncsection",
-      "target": "frontend_components_syncsection_syncsection",
-      "confidence_score": 1.0
+      "target": "frontend_components_syncsection_syncsection"
     },
     {
       "relation": "contains",
@@ -11752,9 +12384,9 @@
       "source_location": "L8",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "frontend_components_syncsection",
-      "target": "frontend_components_syncsection_syncsectionprops",
-      "confidence_score": 1.0
+      "target": "frontend_components_syncsection_syncsectionprops"
     },
     {
       "relation": "imports_from",
@@ -11764,9 +12396,9 @@
       "source_location": "L3",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "frontend_components_syncsection",
-      "target": "frontend_components_ui_button",
-      "confidence_score": 1.0
+      "target": "frontend_components_ui_button"
     },
     {
       "relation": "imports",
@@ -11776,9 +12408,9 @@
       "source_location": "L3",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "frontend_components_syncsection",
-      "target": "frontend_components_ui_button_button",
-      "confidence_score": 1.0
+      "target": "frontend_components_ui_button_button"
     },
     {
       "relation": "imports_from",
@@ -11788,9 +12420,9 @@
       "source_location": "L4",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "frontend_components_syncsection",
-      "target": "frontend_components_ui_card",
-      "confidence_score": 1.0
+      "target": "frontend_components_ui_card"
     },
     {
       "relation": "imports",
@@ -11800,9 +12432,9 @@
       "source_location": "L4",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "frontend_components_syncsection",
-      "target": "frontend_components_ui_card_card",
-      "confidence_score": 1.0
+      "target": "frontend_components_ui_card_card"
     },
     {
       "relation": "imports_from",
@@ -11812,9 +12444,9 @@
       "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "frontend_components_syncsection",
-      "target": "frontend_components_ui_datepicker",
-      "confidence_score": 1.0
+      "target": "frontend_components_ui_datepicker"
     },
     {
       "relation": "imports",
@@ -11824,9 +12456,9 @@
       "source_location": "L5",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "frontend_components_syncsection",
-      "target": "frontend_components_ui_datepicker_datepicker",
-      "confidence_score": 1.0
+      "target": "frontend_components_ui_datepicker_datepicker"
     },
     {
       "relation": "imports_from",
@@ -11836,9 +12468,9 @@
       "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "frontend_components_syncsection",
-      "target": "frontend_components_ui_segmentedprogressbar",
-      "confidence_score": 1.0
+      "target": "frontend_components_ui_segmentedprogressbar"
     },
     {
       "relation": "imports",
@@ -11848,9 +12480,9 @@
       "source_location": "L6",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "frontend_components_syncsection",
-      "target": "frontend_components_ui_segmentedprogressbar_segmentedprogressbar",
-      "confidence_score": 1.0
+      "target": "frontend_components_ui_segmentedprogressbar_segmentedprogressbar"
     },
     {
       "relation": "calls",
@@ -11860,9 +12492,9 @@
       "source_location": "L341",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "frontend_components_syncsection_syncsection",
-      "target": "frontend_components_syncsection_agruparenrangos",
-      "confidence_score": 1.0
+      "target": "frontend_components_syncsection_agruparenrangos"
     },
     {
       "relation": "calls",
@@ -11872,9 +12504,9 @@
       "source_location": "L161",
       "weight": 1.0,
       "_origin": "ast",
+      "confidence_score": 1.0,
       "source": "frontend_components_syncsection_syncsection",
-      "target": "frontend_components_syncsection_getdatesinrange",
-      "confidence_score": 1.0
+      "target": "frontend_components_syncsection_getdatesinrange"
     },
     {
       "relation": "imports",
@@ -29480,5 +30112,5 @@
       "source_file": "contexto-sesion/resumen.md"
     }
   ],
-  "built_at_commit": "5ccf974aeb59ca4ebfdd8e0a383092c70cf0c914"
+  "built_at_commit": "41fde2344803830d27bbeed2c0b744933c223e1d"
 }

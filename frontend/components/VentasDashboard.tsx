@@ -7,6 +7,10 @@ import { Button } from "./ui/Button";
 import NovbiSplash from "./NovbiSplash";
 import { DevolucionesDonut, type DonutSegment } from "./charts/DevolucionesDonut";
 
+/* Cadena de descuentos del backend:
+     monto − devoluciones                    = monto_neto
+     monto_neto − autoconsumos − consumibles = monto_real
+   Los dos últimos no se solapan (31A vs. globos/fundas fuera de 31A). */
 interface RangoVentas {
   clave: string;
   etiqueta: string;
@@ -15,10 +19,14 @@ interface RangoVentas {
   monto: number;
   monto_devoluciones: number;
   monto_neto: number;
+  monto_autoconsumos: number;
+  monto_consumibles: number;
+  monto_real: number;
   cantidad: number;
   comparado_con: string;
   monto_anterior: number;
   monto_neto_anterior: number;
+  monto_real_anterior: number;
   cantidad_anterior: number;
   periodo_en_curso: boolean;
   delta_pct: number | null;
@@ -51,6 +59,9 @@ interface TotalesEmpresaResp {
   monto: number;
   monto_devoluciones: number;
   monto_neto: number;
+  monto_autoconsumos?: number;
+  monto_consumibles?: number;
+  monto_real?: number;
   cantidad: number;
 }
 
@@ -303,19 +314,19 @@ function TarjetaRango({
       <div style={{ fontSize: "var(--rc-font-value)", fontWeight: 700, margin: "0.35rem 0 0.1rem", color: "var(--rc-text)" }}>
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.span
-            key={rango.monto_neto}
+            key={rango.monto_real}
             initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={reducedMotion ? { opacity: 1 } : { opacity: 0, y: -6 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
             style={{ display: "inline-block" }}
           >
-            {money0(rango.monto_neto)}
+            {money0(rango.monto_real)}
           </motion.span>
         </AnimatePresence>
       </div>
       <div style={{ fontSize: "var(--rc-font-subtext)", color: "var(--rc-text-muted)", marginBottom: "0.5rem" }}>
-        venta sin devoluciones
+        venta real
       </div>
 
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--rc-font-row)", color: "var(--rc-text-muted)" }}>
@@ -326,6 +337,18 @@ function TarjetaRango({
         <span>Devoluciones</span>
         <strong style={{ color: rango.monto_devoluciones > 0 ? "var(--rc-delta-down)" : "var(--rc-text)" }}>
           {rango.monto_devoluciones > 0 ? `- ${money0(rango.monto_devoluciones)}` : money0(0)}
+        </strong>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--rc-font-row)", color: "var(--rc-text-muted)" }}>
+        <span>Autoconsumos (31A)</span>
+        <strong style={{ color: rango.monto_autoconsumos > 0 ? "var(--rc-delta-down)" : "var(--rc-text)" }}>
+          {rango.monto_autoconsumos > 0 ? `- ${money0(rango.monto_autoconsumos)}` : money0(0)}
+        </strong>
+      </div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--rc-font-row)", color: "var(--rc-text-muted)" }}>
+        <span>Globos y fundas</span>
+        <strong style={{ color: rango.monto_consumibles > 0 ? "var(--rc-delta-down)" : "var(--rc-text)" }}>
+          {rango.monto_consumibles > 0 ? `- ${money0(rango.monto_consumibles)}` : money0(0)}
         </strong>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: "var(--rc-font-row)", color: "var(--rc-text-muted)", marginTop: 2 }}>
@@ -425,12 +448,23 @@ export const VentasDashboard: React.FC<{
     if (empresaSel === "general") return datos.rangos;
     return datos.rangos.map((r) => {
       const emp = rangosPorEmpresa?.[r.clave];
-      if (!emp) return { ...r, monto: 0, monto_devoluciones: 0, monto_neto: 0, cantidad: 0, delta_pct: null };
+      // Se pisan TODOS los montos, no solo algunos: lo que quede del spread
+      // vendría del consolidado y se leería como si fuera de esta empresa.
+      if (!emp) {
+        return {
+          ...r, monto: 0, monto_devoluciones: 0, monto_neto: 0,
+          monto_autoconsumos: 0, monto_consumibles: 0, monto_real: 0,
+          cantidad: 0, delta_pct: null,
+        };
+      }
       return {
         ...r,
         monto: emp.monto,
         monto_devoluciones: emp.monto_devoluciones,
         monto_neto: emp.monto_neto,
+        monto_autoconsumos: emp.monto_autoconsumos ?? 0,
+        monto_consumibles: emp.monto_consumibles ?? 0,
+        monto_real: emp.monto_real ?? emp.monto_neto,
         cantidad: emp.cantidad,
         delta_pct: null,
       };

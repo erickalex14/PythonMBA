@@ -160,8 +160,8 @@
     "semantic_hash": ""
   },
   "Backend/app/services/ventas_service.py": {
-    "mtime": 1788273308.909593,
-    "ast_hash": "2e5c8121f7921e33be14d920aee80fbe",
+    "mtime": 1787077548.4186182,
+    "ast_hash": "e44995dd454e84e620175f8002d7f870",
     "semantic_hash": ""
   },
   "Backend/consulta.json": {
@@ -340,8 +340,8 @@
     "semantic_hash": "09f5888bc8f4777dda09a5761195cc2b"
   },
   "frontend/components/KPICards.tsx": {
-    "mtime": 1788273370.5633087,
-    "ast_hash": "70a5b40d2aa673688be2f0b1dea2032a",
+    "mtime": 1787092843.1197493,
+    "ast_hash": "03d7fd6990e711fc5bb1383d45cfb1b1",
     "semantic_hash": ""
   },
   "frontend/components/LiquidacionesCharts.tsx": {
@@ -620,8 +620,8 @@
     "semantic_hash": ""
   },
   "Backend/scripts/test_dashboard_ventas.py": {
-    "mtime": 1788273452.320014,
-    "ast_hash": "f8162a23e5295f5b4da9d0a12dd89c3b",
+    "mtime": 1787077593.4945679,
+    "ast_hash": "573e00bf5372efe141def4dfbae86ad2",
     "semantic_hash": ""
   },
   "Backend/scripts/test_erp_entorno.py": {
@@ -690,8 +690,8 @@
     "semantic_hash": ""
   },
   "frontend/components/VentasDashboard.tsx": {
-    "mtime": 1788273417.9733837,
-    "ast_hash": "d37b69f84c2323bb249ae5e93b3aba2b",
+    "mtime": 1787349699.975867,
+    "ast_hash": "ece506a781bdb2dfbbef2a50851b2649",
     "semantic_hash": ""
   },
   "frontend/components/charts/DevolucionesDonut.tsx": {
@@ -777,11 +777,6 @@
   "Backend/scripts/test_kpi_particion.py": {
     "mtime": 1787753918.6827972,
     "ast_hash": "d425c5365106caeb5958d373bbf8c166",
-    "semantic_hash": ""
-  },
-  ".claude/launch.json": {
-    "mtime": 1788212291.5604105,
-    "ast_hash": "d5169a03bf603cf388118244c458bb97",
     "semantic_hash": ""
   }
 }
