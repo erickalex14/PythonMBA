@@ -113,6 +113,7 @@ class SyncService:
         dias_totales = (dt_fin - dt_inicio).days + 1
         dia_contador = 1
         registros_sincronizados = 0
+        dias_omitidos = []
 
         while dt_actual <= dt_fin:
             fecha_str = dt_actual.strftime('%Y-%m-%d')
@@ -134,9 +135,10 @@ class SyncService:
                         table="INVT_Producto_Movimientos",
                         where=condicion_where,
                         limit=50000,
-                        env=env
+                        env=env,
+                        estricto=True  # fallo -> None (no []); el gate de abajo NO borra el dia
                     )
-                    # Si no da error pero regresa None/vacío, intentamos refrescar token una vez
+                    # None = el ERP no contesto. [] = respondio y no hay registros ese dia.
                     if datos is None:
                         logging.warning(f"SyncService: Intento {intento_dia} fallido para {fecha_str}. Refrescando token con login fresco...")
                         # Esperar 3 segundos antes del reintento de login para evitar rate limiting del Sophos/ERP
@@ -144,6 +146,7 @@ class SyncService:
                         nuevo_token = self.repository.obtener_token(force_refresh=True, env=env)
                         if nuevo_token:
                             token_actual = nuevo_token
+                            intento_dia += 1
                             continue # Reintentar el ciclo con el nuevo token
                     else:
                         break # Éxito en la consulta, salir del loop de reintentos
@@ -205,16 +208,21 @@ class SyncService:
                     logging.error(f"SyncService: Error escribiendo día {fecha_str} en base de datos: {e}")
                     # Continuamos con el siguiente día en lugar de abortar todo el semestre
             else:
-                logging.error(f"SyncService: No se pudieron obtener datos del ERP para el día {fecha_str} tras {max_intentos_dia} intentos.")
+                dias_omitidos.append(fecha_str)
+                logging.error(f"SyncService: Día {fecha_str} OMITIDO (el ERP no respondió tras {max_intentos_dia} intentos). El staging de ese día NO se toca.")
 
             dt_actual += datetime.timedelta(days=1)
             dia_contador += 1
             time.sleep(0.3)  # Delay preventivo para el ERP
 
         return {
-            "status": "success",
-            "message": f"Sincronización completada. Total de registros procesados: {registros_sincronizados}",
-            "records_count": registros_sincronizados
+            "status": "success" if not dias_omitidos else "parcial",
+            "message": (
+                f"Sincronización completada. Total de registros procesados: {registros_sincronizados}"
+                + (f". {len(dias_omitidos)} día(s) OMITIDOS por falta de respuesta del ERP: {dias_omitidos}" if dias_omitidos else "")
+            ),
+            "records_count": registros_sincronizados,
+            "dias_omitidos": dias_omitidos
         }
 
     def sync_liquidaciones(self, db: Session, fecha_inicio: str, fecha_fin: str, env: Optional[str] = None) -> dict:
@@ -730,6 +738,7 @@ class SyncService:
         dia_contador = 1
         kardex_count = 0
         facturas_count = 0
+        dias_omitidos = []
 
         def parse_float(val):
             try:
@@ -775,13 +784,15 @@ class SyncService:
                         table="INVT_Producto_Movimientos",
                         where=condicion_where,
                         limit=250000,
-                        env=env
+                        env=env,
+                        estricto=True  # None si el ERP no responde; [] solo si respondio vacio
                     )
                     if datos_movs is None:
                         time.sleep(3)
                         nuevo_token = self.repository.obtener_token(force_refresh=True, env=env)
                         if nuevo_token:
                             token_actual = nuevo_token
+                            intento += 1
                             continue
                     break
                 except Exception as e:
@@ -803,13 +814,15 @@ class SyncService:
                         table="CLNT_Factura_Principal",
                         where=f"FECHA_FACTURA = '{fecha_str}'",
                         limit=100000,
-                        env=env
+                        env=env,
+                        estricto=True
                     )
                     if datos_facturas is None:
                         time.sleep(3)
                         nuevo_token = self.repository.obtener_token(force_refresh=True, env=env)
                         if nuevo_token:
                             token_actual = nuevo_token
+                            intento += 1
                             continue
                     break
                 except Exception as e:
@@ -819,6 +832,22 @@ class SyncService:
                     if nuevo_token:
                         token_actual = nuevo_token
                 intento += 1
+
+            # Si CUALQUIERA de las dos consultas al ERP fallo (None, distinto de []
+            # que es "dia sin registros"), se SALTA el dia sin tocar el staging:
+            # un ERP caido no debe vaciar datos buenos. Bug historico "dias
+            # perdidos en silencio".
+            if datos_movs is None or datos_facturas is None:
+                dias_omitidos.append(fecha_str)
+                logging.error(
+                    f"SyncService [Ventas]: Día {fecha_str} OMITIDO. El ERP no respondió "
+                    f"(kardex={'OK' if datos_movs is not None else 'FALLO'}, "
+                    f"facturas={'OK' if datos_facturas is not None else 'FALLO'}). "
+                    "El staging de ese día NO se toca."
+                )
+                dt_actual += datetime.timedelta(days=1)
+                dia_contador += 1
+                continue
 
             # 3. Guardar localmente de forma atómica
             try:
@@ -964,10 +993,14 @@ class SyncService:
             time.sleep(0.35)
 
         return {
-            "status": "success",
-            "message": f"Sincronización completada. Movimientos: {kardex_count}, Facturas Clientes: {facturas_count}",
+            "status": "success" if not dias_omitidos else "parcial",
+            "message": (
+                f"Sincronización completada. Movimientos: {kardex_count}, Facturas Clientes: {facturas_count}"
+                + (f". {len(dias_omitidos)} día(s) OMITIDOS por falta de respuesta del ERP: {dias_omitidos}" if dias_omitidos else "")
+            ),
             "kardex_count": kardex_count,
-            "facturas_count": facturas_count
+            "facturas_count": facturas_count,
+            "dias_omitidos": dias_omitidos
         }
 
 

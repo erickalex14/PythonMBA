@@ -31,6 +31,15 @@ class LiquidacionDTO(BaseModel):
     VALOR_TOTAL_CIF_UNIDAD: float = Field(0.0, description="Valor CIF por unidad")
     LIQUIDACION_ESTADO: Any = Field(None, description="Estado de la liquidación")
     LIQUIDACION_ID_CORP: Optional[Any] = Field(None, description="ID corporativo de liquidación")
+    # Agregados en la revision 2026-09-11/12. FastAPI filtra del JSON de salida
+    # cualquier campo no declarado aca (response_model=List[LiquidacionDTO]):
+    # el service ya los calculaba, pero sin declararlos aca nunca llegaban al
+    # front ni al Excel descargado desde la web (bug real, encontrado
+    # 2026-09-12 -- el curl directo al backend SI los traia porque no pasa por
+    # este filtro de FastAPI, la lectura normal del front si).
+    PRODUCTO_CODIGO: Optional[Any] = Field(None, description="Código de producto sin el sufijo de empresa")
+    PRODUCTO_NOMBRE: Optional[Any] = Field(None, description="Nombre del producto")
+    PROVEEDOR_NOMBRE: Optional[Any] = Field(None, description="Nombre del proveedor")
 
     class Config:
         from_attributes = True

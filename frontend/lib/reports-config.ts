@@ -111,6 +111,21 @@ export const REPORTS_CONFIG: Record<string, ReportConfig> = {
     excelType: "ventas",
     columns: [
       { key: "factura_final", label: "Factura", type: "bold" },
+      {
+        // Las filas de autoconsumo (bodega 31A) y de globos/fundas NO se
+        // filtran: el reporte tiene que seguir cuadrando linea por linea con
+        // el ERP. Se marcan para poder distinguirlas y filtrarlas a mano; su
+        // plata ya sale descontada aparte en los KPIs de arriba.
+        key: "clasificacion",
+        label: "Tipo",
+        type: "badge",
+        badgeStyles: (value: any) => ({
+          label: value === "AUTOCONSUMO" ? "AUTOCONSUMO"
+            : value === "GLOBOS/FUNDAS" ? "GLOBOS/FUNDAS"
+            : "VENTA",
+          className: value === "VENTA" || !value ? "badgeActivo" : "badgeAnulado"
+        })
+      },
       { key: "fecha", label: "Fecha", type: "text" },
       { key: "empresa", label: "Empresa", type: "text" },
       { key: "sucursal", label: "Sucursal", type: "text" },

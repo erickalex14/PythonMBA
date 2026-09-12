@@ -23,30 +23,32 @@ export const ReportTable: React.FC<ReportTableProps> = ({ config, paginatedData,
           <tr key={idx}>
             {config.columns.map((col) => {
               const val = row[col.key];
+              // null/undefined es "no se sabe" y se pinta "—"; un 0 real sigue
+              // saliendo como 0. Importa: cuando el ERP no responde, el stock
+              // llega en null, y mostrarlo como "0" se leeria como "no hay
+              // stock" — una afirmacion que nadie verifico.
+              const sinDato = val === null || val === undefined || val === "";
 
               if (col.type === "currency") {
-                const numVal = Number(val) || 0;
                 return (
                   <td key={col.key}>
-                    ${numVal.toFixed(2)}
+                    {sinDato ? "—" : `$${(Number(val) || 0).toFixed(2)}`}
                   </td>
                 );
               }
 
               if (col.type === "number") {
-                const numVal = Number(val) || 0;
                 return (
                   <td key={col.key}>
-                    {numVal.toLocaleString()}
+                    {sinDato ? "—" : (Number(val) || 0).toLocaleString()}
                   </td>
                 );
               }
 
               if (col.type === "percent") {
-                const numVal = Number(val) || 0;
                 return (
                   <td key={col.key}>
-                    {numVal.toFixed(1)}%
+                    {sinDato ? "—" : `${(Number(val) || 0).toFixed(1)}%`}
                   </td>
                 );
               }

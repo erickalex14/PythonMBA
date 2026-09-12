@@ -26,6 +26,10 @@ class VentasDTO(BaseModel):
     utilidad_total: float = Field(0.0, description="Utilidad total de la línea")
     pct_utilidad_neto: Optional[float] = Field(None, description="% utilidad sobre el neto de línea")
     pct_utilidad_costo: Optional[float] = Field(None, description="% utilidad sobre el costo")
+    # VENTA / AUTOCONSUMO / GLOBOS/FUNDAS. La fila NO se filtra (el reporte
+    # tiene que cuadrar linea por linea con el ERP), solo se marca. Sin este
+    # campo el response_model de FastAPI descarta la columna en silencio.
+    clasificacion: Optional[str] = Field(None, description="Tipo de línea: VENTA, AUTOCONSUMO o GLOBOS/FUNDAS")
 
     class Config:
         from_attributes = True

@@ -101,7 +101,8 @@ def read_ventas(
         "UTILIDAD UNIDAD": "utilidad_unidad",
         "UTILIDAD TOTAL": "utilidad_total",
         "% UTILIDAD/NETO": "pct_utilidad_neto",
-        "% UTILIDAD/COSTO": "pct_utilidad_costo"
+        "% UTILIDAD/COSTO": "pct_utilidad_costo",
+        "CLASIFICACION": "clasificacion"
     })
     
     return df_renamed.to_dict(orient='records')

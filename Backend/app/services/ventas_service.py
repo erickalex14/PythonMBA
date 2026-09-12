@@ -338,6 +338,25 @@ class VentasService:
 
         df_final = df_final.sort_values(by=['# de factura', 'CODIGO'], ascending=[True, True])
 
+        # CLASIFICACION: las filas NO se filtran -- el reporte tiene que seguir
+        # cuadrando contra el ERP linea por linea -- pero se marca cual no es
+        # venta a un cliente, para poder separarla en pantalla y en el Excel.
+        # Se calcula aca y no en el SQL a proposito: asi cubre de una vez el
+        # historico de Postgres y las filas de hoy que vienen del ERP en vivo,
+        # y usa el mismo `es_consumible` que descuenta los totales (no pueden
+        # divergir). El orden importa: 31A gana sobre globos/fundas, igual que
+        # en los totales, para que un globo de la 31A cuente en un solo balde.
+        #
+        # Las devoluciones no aparecen: la vista filtra origin_memo='CLIENTES'
+        # y nunca las trajo. Van aparte, en los KPIs.
+        bodega = df_final['BODEGA'].astype(str).str.strip() if 'BODEGA' in df_final.columns else ''
+        producto = df_final['PRODUCTO'] if 'PRODUCTO' in df_final.columns else ''
+        df_final['CLASIFICACION'] = [
+            'AUTOCONSUMO' if b == BODEGA_AUTOCONSUMO
+            else ('GLOBOS/FUNDAS' if es_consumible(p) else 'VENTA')
+            for b, p in zip(bodega, producto)
+        ]
+
         # NaN/Infinity no son JSON valido (Starlette los rechaza al serializar la
         # respuesta) - pueden venir del calculo en tiempo real (division por cero)
         # o del historico via SQL NULLIF (SQL NULL se carga como NaN en pandas).
@@ -480,15 +499,22 @@ class VentasService:
 
                 # Top de productos: se agrega por producto una sola vez sobre el
                 # rango mas largo y se recorta por periodo en Python.
+                # Se excluye la bodega de autoconsumo: lo que la tienda se
+                # consume a si misma no es un producto "mas vendido". Los globos
+                # y fundas salen aparte, en `_calcular_tops` (es_producto_ruido),
+                # porque ahi tambien se filtran los servicios, que SI son venta
+                # real y por eso no se pueden sacar en este SQL.
                 sql_top = """
                     SELECT codigo, producto, empresa, fecha, SUM(cantidad) AS cantidad, SUM(total_linea) AS monto
                     FROM view_ventas_espejo_reporte
                     WHERE fecha BETWEEN :desde AND :hasta
+                      AND bodega_codigo <> :bodega
                     GROUP BY codigo, producto, empresa, fecha
                 """
                 filas_top = conn.execute(text(sql_top), {
                     "desde": periodos["anio"]["desde"].isoformat(),
                     "hasta": ancla.isoformat(),
+                    "bodega": BODEGA_AUTOCONSUMO,
                 }).mappings().all()
 
                 # Hora de corte real: las ventas se sincronizan varias veces al dia,

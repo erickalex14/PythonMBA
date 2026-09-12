@@ -121,7 +121,14 @@ class Mba3Repository(IMba3Repository):
             return None
 
     #EJECUTAR LA CONSULTA EXTERNA NECESARIA PARA EL REPORTE
-    def ejecutar_consulta(self, token: str, select: str, table: str, where: Optional[str] = None, limit: Optional[int] = None, env: Optional[str] = None) -> List[Dict]:
+    def ejecutar_consulta(self, token: str, select: str, table: str, where: Optional[str] = None, limit: Optional[int] = None, env: Optional[str] = None, estricto: bool = False):
+        """
+        estricto=False (por defecto): un fallo de comunicacion devuelve []
+        (comportamiento historico; el llamador no distingue de "sin registros").
+        estricto=True: un fallo devuelve None, y solo una respuesta 200 real
+        devuelve lista (aunque sea []). Lo usan los syncs para NO borrar el
+        staging de un dia cuando el ERP no contesto.
+        """
         target_env = _resolver_env(env)
 
         logging.info(f"Repository: Ejecutando consulta sobre la tabla {table} (Entorno: {target_env})")
@@ -169,5 +176,5 @@ class Mba3Repository(IMba3Repository):
                         if nuevo_token:
                             token = nuevo_token
                             continue
-                return []
-        return []
+                return None if estricto else []
+        return None if estricto else []

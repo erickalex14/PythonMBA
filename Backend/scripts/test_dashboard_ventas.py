@@ -9,7 +9,8 @@ import datetime
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.services.ventas_service import (
-    VentasService, es_consumible, es_producto_ruido, LIKE_CONSUMIBLE)
+    VentasService, es_consumible, es_producto_ruido, LIKE_CONSUMIBLE,
+    BODEGA_AUTOCONSUMO)
 
 
 def test_periodos_lunes_17_agosto():
@@ -139,6 +140,28 @@ def test_venta_real_no_descuenta_dos_veces_los_globos_de_31A():
     assert real != 7_900.0, "los globos de 31A no se pueden restar dos veces"
 
 
+def test_clasificacion_de_fila_no_se_solapa():
+    """
+    Misma regla que usa el reporte de Ventas para etiquetar cada linea. Un globo
+    despachado por la 31A tiene que caer en UN solo balde (AUTOCONSUMO), igual
+    que en los totales: si cayera en los dos, el desglose de la pantalla no
+    sumaria el total.
+    """
+    def clasificar(bodega, producto):
+        if bodega == BODEGA_AUTOCONSUMO:
+            return "AUTOCONSUMO"
+        return "GLOBOS/FUNDAS" if es_consumible(producto) else "VENTA"
+
+    # Nombres reales sacados de produccion (agosto 2026).
+    assert clasificar("31A", "PORTAGLOBOS") == "AUTOCONSUMO", "31A manda sobre el patron"
+    assert clasificar("31A", 'GLOBO NOVICOMPU 3.2GR 12"') == "AUTOCONSUMO"
+    assert clasificar("31A", "CELULAR SAMSUNG A16") == "AUTOCONSUMO", "todo lo de 31A es autoconsumo"
+    assert clasificar("31V", "FUNDAS GANACELL 30 X 40 CM") == "GLOBOS/FUNDAS"
+    assert clasificar("31V", "GLOBOS DE NUMEROS METALIZADOS") == "GLOBOS/FUNDAS"
+    assert clasificar("31V", "CELULAR SAMSUNG A16 4+128GB") == "VENTA"
+    assert clasificar("31V", "SERVICIO TECNICO") == "VENTA", "un servicio es venta real"
+
+
 if __name__ == "__main__":
     test_periodos_lunes_17_agosto()
     test_cada_rango_compara_contra_uno_del_mismo_largo()
@@ -147,5 +170,6 @@ if __name__ == "__main__":
     test_tops_sin_ruido_y_sin_duplicar_empresas()
     test_consumibles_atrapan_globos_y_fundas()
     test_venta_real_no_descuenta_dos_veces_los_globos_de_31A()
+    test_clasificacion_de_fila_no_se_solapa()
     print("OK: periodos, tops por rango, ruido filtrado, tops general y por empresa, "
           "consumibles (globos/fundas) y venta real sin doble descuento.")

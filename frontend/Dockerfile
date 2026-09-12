@@ -4,10 +4,19 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 
 # Instalar pnpm de forma global
-RUN npm install -g pnpm
+# Version fija: `npm install -g pnpm` agarraba la ultima de cada dia, asi que
+# el build cambiaba de pnpm sin que nadie tocara nada. Debe coincidir con
+# "packageManager" en package.json.
+#
+# NO subir a pnpm 11 sin subir antes la imagen base: pnpm 11 exige Node >=22.13
+# y aca corre node:20-alpine. Con 11 el install muere en
+# ERR_UNKNOWN_BUILTIN_MODULE (node:sqlite). pnpm 10.x pide Node >=18.12.
+RUN npm install -g pnpm@10.34.5
 
-# Copiar archivos de dependencias
-COPY package.json pnpm-lock.yaml* ./
+# Copiar archivos de dependencias. pnpm-workspace.yaml va SI O SI en este COPY:
+# ahi vive `allowBuilds`, y sin el `pnpm install` sale con codigo 1 por
+# ERR_PNPM_IGNORED_BUILDS y se cae el build entero.
+COPY package.json pnpm-lock.yaml* pnpm-workspace.yaml* ./
 
 # Instalar todas las dependencias
 RUN pnpm install --frozen-lockfile
@@ -30,7 +39,10 @@ RUN pnpm run build
 # Stage 2: Imagen de ejecución (ligera)
 FROM node:20-alpine AS runner
 WORKDIR /app
-RUN npm install -g pnpm
+# Version fija: `npm install -g pnpm` agarraba la ultima de cada dia, asi que
+# el build cambiaba de pnpm sin que nadie tocara nada. Debe coincidir con
+# "packageManager" en package.json.
+RUN npm install -g pnpm@10.34.5
 
 # Copiar únicamente los archivos necesarios compilados del Stage 1
 COPY --from=builder /app/package.json ./

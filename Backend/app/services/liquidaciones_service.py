@@ -8,6 +8,19 @@ from app.core.database import SessionLocal
 from typing import Optional
 from app.repositories.mba3_repository import IMba3Repository
 
+
+def codigo_sin_sufijo_empresa(producto_id_corp: str, corp: str) -> str:
+    """
+    PRODUCTO_ID_CORP viene como "código-EMPRESA" (HANDOFF.md: la empresa no es
+    una columna, es un sufijo del código). La columna "Corp" ya trae esa
+    empresa aparte, asi que el sufijo ahi es redundante. Solo se recorta si
+    coincide con el "Corp" de esa misma fila -- si no coincide (dato raro o
+    ya viene sin sufijo) se deja tal cual, para no cortar de mas.
+    """
+    sufijo = f"-{corp}"
+    return producto_id_corp[:-len(sufijo)] if producto_id_corp.upper().endswith(sufijo.upper()) else producto_id_corp
+
+
 class LiquidacionesService:
     """
     Servicio de Reglas de Negocio para Liquidaciones e Importaciones.
@@ -150,10 +163,37 @@ class LiquidacionesService:
 
             df_final = df_consolidado[columnas_finales].copy()
 
+            # Nombre del producto y código sin el sufijo de empresa (pedido en
+            # la revisión del reporte, 2026-09-11). PRODUCTO_ID_CORP viene como
+            # "código-EMPRESA" (HANDOFF.md: la empresa no es una columna, es un
+            # sufijo del código) y esa columna "Corp" ya existe aparte, asi que
+            # el sufijo ahi es redundante. El nombre no lo trae el ERP para
+            # liquidaciones (PROV_Liquidaciones_Productos no tiene esa
+            # columna) -- se toma de ventas_kardex_staging, que ya lo trae
+            # sincronizado para el mismo codigo. Cobertura: solo productos que
+            # ya tuvieron alguna venta: uno recien importado puede salir sin
+            # nombre todavia.
+            df_final["PRODUCTO_CODIGO"] = df_final.apply(
+                lambda r: codigo_sin_sufijo_empresa(r["PRODUCTO_ID_CORP"], r["CORP"]), axis=1
+            )
+            try:
+                with SessionLocal() as db_nombres:
+                    filas_nombre = db_nombres.execute(text(
+                        "SELECT DISTINCT ON (product_id_corp) product_id_corp, product_name "
+                        "FROM ventas_kardex_staging WHERE product_name IS NOT NULL "
+                        "ORDER BY product_id_corp, trans_date DESC"
+                    )).fetchall()
+                mapa_nombres = {fila[0]: fila[1] for fila in filas_nombre}
+            except Exception as e:
+                logging.error(f"Service [Liquidaciones]: No se pudo obtener nombres de producto: {e}")
+                mapa_nombres = {}
+            df_final["PRODUCTO_NOMBRE"] = df_final["PRODUCTO_ID_CORP"].map(mapa_nombres).fillna("")
+
             # Limpiar strings de caracteres nulos
             str_cols = [
                 "CORP", "OBSERVACIONES", "FACTURA_ID_CORP", "IdRecepcionRelacionada",
-                "PARTIDA_ID_CORP", "PRODUCTO_ID_CORP", "LIQUIDACION_ID", "LIQUIDACION_ID_CORP"
+                "PARTIDA_ID_CORP", "PRODUCTO_ID_CORP", "LIQUIDACION_ID", "LIQUIDACION_ID_CORP",
+                "PRODUCTO_CODIGO", "PRODUCTO_NOMBRE"
             ]
             for col in str_cols:
                 if col in df_final.columns:
@@ -172,7 +212,70 @@ class LiquidacionesService:
                 if col in df_final.columns:
                     df_final[col] = pd.to_numeric(df_final[col], errors='coerce').fillna(0.0)
 
+            # Nombre del proveedor: ninguna tabla de Liquidaciones/Importaciones
+            # lo trae. Camino real probado contra PRUEBAS (2026-09-12):
+            # FACTURA_ID_CORP -> PROV_Factura_Principal.DOC_ID_CORP -> VENDOR_ID
+            # -> PROV_Ficha_Principal.VENDOR_ID -> VENDOR_NAME. Se resuelve aca,
+            # al armar el reporte, no en el sync -- evita migrar el staging y
+            # la vista SQL, y backfillear el historico, por un dato de
+            # exhibicion. Si el ERP no responde o al servicio le falta el
+            # permiso de esas 2 tablas (008), la columna queda en blanco: no
+            # se cae el reporte por esto.
+            df_final["PROVEEDOR_NOMBRE"] = self._resolver_nombres_proveedor(df_final["FACTURA_ID_CORP"])
+
             return df_final
 
         return pd.DataFrame()
+
+    def _resolver_nombres_proveedor(self, facturas: pd.Series) -> pd.Series:
+        """
+        Dado un Series de FACTURA_ID_CORP, devuelve el nombre del proveedor de
+        cada una (o "" si no se pudo resolver). 2 consultas batch (factura ->
+        vendor_id, vendor_id -> nombre) con OR, no una por fila -- el ERP no
+        soporta IN(). Cualquier fallo (ERP caido, tabla sin permiso, token
+        vencido) devuelve todo en blanco; nunca lanza.
+
+        Se consulta el entorno PRUEBAS a proposito, no el que use el resto del
+        servicio (normalmente PROD). Confirmado el 2026-09-12: PRUEBAS refleja
+        los mismos datos reales de NVC01 (misma LIQ-000002363, mismos montos,
+        mismo proveedor que el Excel de Contabilidad) -- no es data ficticia.
+        El VPS de PROD no llega al ERP de PROD (192.168.80.190:8081 rechaza
+        conexion, problema de red ya reportado); PRUEBAS si es alcanzable y ya
+        tiene habilitadas PROV_Factura_Principal/PROV_Ficha_Principal. Es un
+        parche hasta que arreglen esa red -- volver a sin argumento (el env
+        por defecto) cuando PROD sea alcanzable otra vez.
+        """
+        vacio = pd.Series([""] * len(facturas), index=facturas.index)
+        facturas_unicas = [f for f in facturas.dropna().unique().tolist() if f]
+        if not facturas_unicas:
+            return vacio
+
+        try:
+            token = self.repository.obtener_token(env="PRUEBAS")
+            if not token:
+                return vacio
+
+            or_facturas = " OR ".join(f"DOC_ID_CORP = '{f}'" for f in facturas_unicas)
+            datos_factura = self.repository.ejecutar_consulta(
+                token=token, select="DOC_ID_CORP,VENDOR_ID", table="PROV_Factura_Principal",
+                where=f"CORP = 'NVC01' AND ({or_facturas})", limit=len(facturas_unicas) + 10,
+                env="PRUEBAS",
+            )
+            factura_a_vendor = {d["DOC_ID_CORP"]: d["VENDOR_ID"] for d in (datos_factura or []) if d.get("VENDOR_ID")}
+            if not factura_a_vendor:
+                return vacio
+
+            vendors_unicos = list({v for v in factura_a_vendor.values() if v})
+            or_vendors = " OR ".join(f"VENDOR_ID = '{v}'" for v in vendors_unicos)
+            datos_vendor = self.repository.ejecutar_consulta(
+                token=token, select="VENDOR_ID,VENDOR_NAME", table="PROV_Ficha_Principal",
+                where=f"CORP = 'NVC01' AND ({or_vendors})", limit=len(vendors_unicos) + 10,
+                env="PRUEBAS",
+            )
+            vendor_a_nombre = {d["VENDOR_ID"]: d.get("VENDOR_NAME", "") for d in (datos_vendor or [])}
+
+            return facturas.map(lambda f: vendor_a_nombre.get(factura_a_vendor.get(f, ""), ""))
+        except Exception as e:
+            logging.error(f"Service [Liquidaciones]: No se pudo resolver nombre de proveedor: {e}")
+            return vacio
 

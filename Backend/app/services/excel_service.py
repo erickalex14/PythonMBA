@@ -256,24 +256,78 @@ class ExcelService:
         )
 
     def generar_reporte_liquidaciones(self, df: pd.DataFrame, inicio: str, fin: str) -> io.BytesIO:
+        """
+        2 hojas: "Consolidado" con lo que ya se sabe que es cada columna, y
+        "Valores Sin Confirmar" con los campos del ERP que nadie identificó
+        todavía -- separados a pedido de la revisión (2026-09-11), para no
+        mezclar dato entendido con dato "¿qué es esto?" en la misma tabla.
+
+        ANTES_TOTAL_1 y DESPUES_TOTAL_1 se identificaron cruzando el Excel de
+        Contabilidad de la Invoice 1361 China (agosto 2026): 1606.35 es la
+        línea "Flete MDG CARGO..." y 3679.5 la línea "Impuesto a la salida de
+        Divisas" de ESE archivo, calce exacto.
+
+        ANTES_TOTAL_2/3 y DESPUES_TOTAL_2/3 se identificaron distinto (2026-09-12):
+        no calzaron con el Excel de Contabilidad, pero la tabla real
+        PROV_Importaciones_Principal (probada en vivo contra PRUEBAS) tiene los
+        campos FLETE_*, SERVICIO_*, OTROSGASTOS_* en ese orden exacto -- misma
+        estructura de costos de importación, mismo orden que 1/2/3 aca. Con el
+        1 ya confirmado como Flete por el cruce anterior, 2=Servicio y
+        3=Otros Gastos quedan confirmados por la posición en esa tabla.
+
+        Esto NO aplica a VALOR_ANTES_x/VALOR_DESPUES_x (el detalle por línea de
+        producto): esos usan otra numeración -- Contabilidad ya había
+        confirmado 1=Flete, 2=SEGURO ahí, no Servicio. Quedan sin confirmar el
+        3 de ambos y los VALOR_DESPUES completos.
+        """
         columnas = [
             ("CORP", "Corp"), ("LIQUIDACION_FECHA", "Fecha"), ("LIQUIDACION_ID_CORP", "Liquidación"),
             ("LIQUIDACION_ESTADO", "Estado"), ("FACTURA_ID_CORP", "Factura"),
-            ("PRODUCTO_ID_CORP", "Producto"), ("CANTIDAD", "Cantidad"), ("PRECIO", "Precio"),
-            ("TOTAL", "Total"), ("VALOR_TOTAL_CIF", "Valor Total CIF"),
-            ("VALOR_SUBTOTAL_CIF", "Valor Subtotal CIF"), ("VALOR_TOTAL_CIF_MANUAL", "Valor CIF Manual"),
+            # Proveedor: pedido en la revisión (2026-09-11/12). Se resuelve en
+            # LiquidacionesService via FACTURA_ID_CORP -> PROV_Factura_Principal
+            # -> PROV_Ficha_Principal (ninguna tabla de Liquidaciones lo trae).
+            ("PROVEEDOR_NOMBRE", "Proveedor"),
+            # Producto: código y nombre separados (antes venía "código-EMPRESA"
+            # en una sola celda, con el sufijo de empresa repetido de la
+            # columna "Corp"). Pedido en revisión, 2026-09-11.
+            ("PRODUCTO_CODIGO", "Código Producto"), ("PRODUCTO_NOMBRE", "Nombre Producto"),
+            ("CANTIDAD", "Cantidad"),
+            # Renombres pedidos en la misma revisión, para que coincida con el
+            # vocabulario de Contabilidad (FOB/CIF de una importación), no con
+            # el nombre crudo del campo del ERP.
+            ("PRECIO", "PRECIO UNITARIO FOB"),
+            ("TOTAL", "TOTAL FOB / OC"),
+            ("VALOR_TOTAL_CIF", "COSTO DE LA OPERACIÓN / GASTOS ASOCIADOS"),
+            ("VALOR_SUBTOTAL_CIF", "Valor Subtotal CIF"),
+            ("VALOR_TOTAL_CIF_MANUAL", "DIFERENCIA FOB- CIF"),
+            # Confirmado por Contabilidad que este SÍ es el nombre correcto,
+            # no hace falta traducirlo.
             ("VALOR_TOTAL_CIF_UNIDAD", "Valor CIF Unidad"),
-            ("ANTES_TOTAL_1", "Antes Total 1"), ("ANTES_TOTAL_2", "Antes Total 2"), ("ANTES_TOTAL_3", "Antes Total 3"),
-            ("DESPUES_TOTAL_1", "Después Total 1"), ("DESPUES_TOTAL_2", "Después Total 2"), ("DESPUES_TOTAL_3", "Después Total 3"),
-            ("VALOR_ANTES_1", "Valor Antes 1"), ("VALOR_ANTES_2", "Valor Antes 2"), ("VALOR_ANTES_3", "Valor Antes 3"),
-            ("VALOR_DESPUES_1", "Valor Después 1"), ("VALOR_DESPUES_2", "Valor Después 2"), ("VALOR_DESPUES_3", "Valor Después 3"),
+            # "(Liquidación)": son el total de TODA la liquidación, repetido en
+            # cada línea de producto -- distinto de FLETE/SEGURO de abajo, que
+            # son la porción de esa línea.
+            ("ANTES_TOTAL_1", "FLETE (Liquidación)"),
+            ("ANTES_TOTAL_2", "SERVICIO (Liquidación)"),
+            ("ANTES_TOTAL_3", "OTROS GASTOS (Liquidación)"),
+            ("DESPUES_TOTAL_1", "IMPUESTO SALIDA DE DIVISAS (Liquidación)"),
+            ("DESPUES_TOTAL_2", "SERVICIO Después (Liquidación)"),
+            ("DESPUES_TOTAL_3", "OTROS GASTOS Después (Liquidación)"),
+            ("VALOR_ANTES_1", "FLETE"), ("VALOR_ANTES_2", "SEGURO"),
             ("OBSERVACIONES", "Observaciones"), ("PARTIDA_ID_CORP", "Partida"), ("IdRecepcionRelacionada", "Recepción Relacionada"),
         ]
         money_cols = {"PRECIO", "TOTAL", "VALOR_TOTAL_CIF", "VALOR_SUBTOTAL_CIF", "VALOR_TOTAL_CIF_MANUAL",
                       "VALOR_TOTAL_CIF_UNIDAD", "ANTES_TOTAL_1", "ANTES_TOTAL_2", "ANTES_TOTAL_3",
                       "DESPUES_TOTAL_1", "DESPUES_TOTAL_2", "DESPUES_TOTAL_3",
-                      "VALOR_ANTES_1", "VALOR_ANTES_2", "VALOR_ANTES_3",
-                      "VALOR_DESPUES_1", "VALOR_DESPUES_2", "VALOR_DESPUES_3"}
+                      "VALOR_ANTES_1", "VALOR_ANTES_2"}
+
+        columnas_sin_confirmar = [
+            ("LIQUIDACION_ID_CORP", "Liquidación"), ("LIQUIDACION_FECHA", "Fecha"),
+            ("FACTURA_ID_CORP", "Factura"), ("PRODUCTO_CODIGO", "Código Producto"),
+            ("VALOR_ANTES_3", "Valor Antes 3"),
+            ("VALOR_DESPUES_1", "Valor Después 1"), ("VALOR_DESPUES_2", "Valor Después 2"),
+            ("VALOR_DESPUES_3", "Valor Después 3"),
+        ]
+        money_cols_sin_confirmar = {"VALOR_ANTES_3", "VALOR_DESPUES_1", "VALOR_DESPUES_2", "VALOR_DESPUES_3"}
 
         def num(col):
             return pd.to_numeric(df[col], errors='coerce').fillna(0) if col in df.columns else pd.Series([0] * len(df))
@@ -282,12 +336,25 @@ class ExcelService:
             ("Total Valor CIF", float(num("VALOR_TOTAL_CIF").sum())),
             ("Total General", float(num("TOTAL").sum())),
         ]
-        anchos = {"OBSERVACIONES": 30, "FACTURA_ID_CORP": 18, "PRODUCTO_ID_CORP": 18, "LIQUIDACION_ID_CORP": 18}
+        anchos = {"OBSERVACIONES": 30, "FACTURA_ID_CORP": 18, "PRODUCTO_CODIGO": 16,
+                  "PRODUCTO_NOMBRE": 36, "LIQUIDACION_ID_CORP": 18}
 
-        return self._generar_reporte_corporativo(
-            df, "Consolidado", "Reporte Consolidado de Liquidaciones",
-            inicio, fin, columnas, money_cols, qty_cols={"CANTIDAD"}, resumen=resumen, anchos=anchos
-        )
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            if "Sheet" in writer.book.sheetnames:
+                del writer.book["Sheet"]
+            self._escribir_hoja_corporativa(
+                writer.book, df, "Consolidado", "Reporte Consolidado de Liquidaciones",
+                inicio, fin, columnas, money_cols, qty_cols={"CANTIDAD"}, resumen=resumen, anchos=anchos
+            )
+            self._escribir_hoja_corporativa(
+                writer.book, df, "Valores Sin Confirmar",
+                "Campos del ERP sin identificar todavía (no mezclar con el Consolidado)",
+                inicio, fin, columnas_sin_confirmar, money_cols_sin_confirmar,
+                anchos={"LIQUIDACION_ID_CORP": 18, "FACTURA_ID_CORP": 18, "PRODUCTO_CODIGO": 16}
+            )
+        output.seek(0)
+        return output
 
     def generar_reporte_estadisticas_ventas(self, df: pd.DataFrame, inicio: str, fin: str,
                                             top_cantidades: int = 11, top_dolares: int = 10) -> io.BytesIO:

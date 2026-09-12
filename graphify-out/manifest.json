@@ -1,8 +1,8 @@
 {
   ".claude/settings.local.json": {
-    "mtime": 1783724767.200015,
-    "ast_hash": "85e38f403354293d26d9356a39b1658c",
-    "semantic_hash": "85e38f403354293d26d9356a39b1658c"
+    "mtime": 1788901337.2131882,
+    "ast_hash": "061037c4dd62d5448a57ec2d09b5ee7c",
+    "semantic_hash": ""
   },
   "Backend/app/config.py": {
     "mtime": 1783113107.1152394,
@@ -50,8 +50,8 @@
     "semantic_hash": ""
   },
   "Backend/app/controllers/ventas_controller.py": {
-    "mtime": 1786991654.2521577,
-    "ast_hash": "9e2901a6cbe22434c41135b1c7e5522d",
+    "mtime": 1788277402.234459,
+    "ast_hash": "2920f5ddf1df8fefaccc241a16d375da",
     "semantic_hash": ""
   },
   "Backend/app/core/database.py": {
@@ -80,14 +80,14 @@
     "semantic_hash": "887d001bc4b8815a7df3f3ee2ede850b"
   },
   "Backend/app/dtos/estadisticas.py": {
-    "mtime": 1786981147.214947,
-    "ast_hash": "e201db78cd842e1ad9958d88b9f15376",
+    "mtime": 1788278048.5500977,
+    "ast_hash": "fd7f7ac79a314169d53726680a8cf5a2",
     "semantic_hash": ""
   },
   "Backend/app/dtos/liquidaciones.py": {
-    "mtime": 1783008847.6913614,
-    "ast_hash": "a251fd3959d2f241cb8d0502180fb97b",
-    "semantic_hash": "a251fd3959d2f241cb8d0502180fb97b"
+    "mtime": 1789251880.1441247,
+    "ast_hash": "cd4ca2e5339dc1bf08f6f17a9fa17e71",
+    "semantic_hash": ""
   },
   "Backend/app/dtos/movimientos.py": {
     "mtime": 1782938277.732933,
@@ -95,9 +95,9 @@
     "semantic_hash": "7a8649ceffd7afba2fb62c8985fb936d"
   },
   "Backend/app/dtos/ventas.py": {
-    "mtime": 1784154371.4425714,
-    "ast_hash": "68201d60c59afbfed3796bcbac9313d9",
-    "semantic_hash": "68201d60c59afbfed3796bcbac9313d9"
+    "mtime": 1788277950.1357377,
+    "ast_hash": "f3b10a129f6d4280f378ebc5c7be523a",
+    "semantic_hash": ""
   },
   "Backend/app/main.py": {
     "mtime": 1787684117.9686534,
@@ -125,8 +125,8 @@
     "semantic_hash": ""
   },
   "Backend/app/repositories/mba3_repository.py": {
-    "mtime": 1787605635.9606388,
-    "ast_hash": "4da1338acfbc3b7ddbcf9bb9f95083e3",
+    "mtime": 1788904686.9845319,
+    "ast_hash": "2084ead214fd4b54f64f9784ceb2325b",
     "semantic_hash": ""
   },
   "Backend/app/services/ats_service.py": {
@@ -135,19 +135,19 @@
     "semantic_hash": "6155838c43dc4c85abafa26091a54445"
   },
   "Backend/app/services/estadisticas_service.py": {
-    "mtime": 1786989204.907554,
-    "ast_hash": "6c957a0ac4ecfd1381d6454a8088b813",
+    "mtime": 1788276798.165099,
+    "ast_hash": "1885bee9f2d145ff7e24383b869ea07d",
     "semantic_hash": ""
   },
   "Backend/app/services/excel_service.py": {
-    "mtime": 1787674547.833712,
-    "ast_hash": "35780c85065e09601c338e06b7eef3c8",
+    "mtime": 1789249737.028557,
+    "ast_hash": "e2b15f9439942e7313b909741e0ae907",
     "semantic_hash": ""
   },
   "Backend/app/services/liquidaciones_service.py": {
-    "mtime": 1783356259.7160878,
-    "ast_hash": "03e5d1fe0da31d39a1ee6f0b171739a1",
-    "semantic_hash": "03e5d1fe0da31d39a1ee6f0b171739a1"
+    "mtime": 1789252361.328119,
+    "ast_hash": "1eb782dd766df5d5d8992eb2b053bd54",
+    "semantic_hash": ""
   },
   "Backend/app/services/movimientos_service.py": {
     "mtime": 1783113159.5680466,
@@ -155,13 +155,13 @@
     "semantic_hash": "69610b6b706b1059e1a133d08884a8a1"
   },
   "Backend/app/services/sync_service.py": {
-    "mtime": 1787682559.2105927,
-    "ast_hash": "a4060b8d04dfb5eaa97871165bf9ada3",
+    "mtime": 1788904770.93654,
+    "ast_hash": "e2305b84d3e938354feb372e9b337d1f",
     "semantic_hash": ""
   },
   "Backend/app/services/ventas_service.py": {
-    "mtime": 1788273308.909593,
-    "ast_hash": "2e5c8121f7921e33be14d920aee80fbe",
+    "mtime": 1788277084.8196537,
+    "ast_hash": "34a537bd45100cba89a6c7eee0fba350",
     "semantic_hash": ""
   },
   "Backend/consulta.json": {
@@ -370,9 +370,9 @@
     "semantic_hash": ""
   },
   "frontend/components/ReportTable.tsx": {
-    "mtime": 1783960124.190693,
-    "ast_hash": "77caf7f50b7ef7449f017c5e055dbab6",
-    "semantic_hash": "77caf7f50b7ef7449f017c5e055dbab6"
+    "mtime": 1788278066.9673588,
+    "ast_hash": "ddc4aabbd3a4601221f806e69043b0ab",
+    "semantic_hash": ""
   },
   "frontend/components/Sidebar.tsx": {
     "mtime": 1787260698.8293684,
@@ -450,9 +450,9 @@
     "semantic_hash": "37be107d8139cb7133034c75b96fa1f6"
   },
   "frontend/lib/reports-config.ts": {
-    "mtime": 1784066744.4147549,
-    "ast_hash": "f3fe5f0985ea2023e602cdb15e220f5f",
-    "semantic_hash": "f3fe5f0985ea2023e602cdb15e220f5f"
+    "mtime": 1788277418.760943,
+    "ast_hash": "c35bbb564d4b2c6885c650397ef7f49e",
+    "semantic_hash": ""
   },
   "frontend/next.config.ts": {
     "mtime": 1784318838.8245556,
@@ -460,8 +460,8 @@
     "semantic_hash": "79dec8eb26dd0385797a5449711b2f0a"
   },
   "frontend/package.json": {
-    "mtime": 1787075560.8538942,
-    "ast_hash": "4532cfa8b307167ebf1eacd65349527e",
+    "mtime": 1788275890.6371472,
+    "ast_hash": "5e4f0409369c5f4639810fa043f12960",
     "semantic_hash": ""
   },
   "frontend/prisma.config.ts": {
@@ -515,9 +515,9 @@
     "semantic_hash": "f15aaa42d5d299d091b1171097ea56ad"
   },
   "frontend/pnpm-workspace.yaml": {
-    "mtime": 1783618144.9408133,
-    "ast_hash": "daeab9c3092dab828f04d554cad3af92",
-    "semantic_hash": "daeab9c3092dab828f04d554cad3af92"
+    "mtime": 1788275916.6387012,
+    "ast_hash": "2bb6fc8d09380beadd5c2caea25e1aad",
+    "semantic_hash": ""
   },
   "frontend/Novicompu-El-Recreo.svg": {
     "mtime": 1783018956.2368293,
@@ -620,8 +620,8 @@
     "semantic_hash": ""
   },
   "Backend/scripts/test_dashboard_ventas.py": {
-    "mtime": 1788273452.320014,
-    "ast_hash": "f8162a23e5295f5b4da9d0a12dd89c3b",
+    "mtime": 1788277105.9671154,
+    "ast_hash": "826658ac9f34e35abb9d46b69a929631",
     "semantic_hash": ""
   },
   "Backend/scripts/test_erp_entorno.py": {
@@ -782,6 +782,16 @@
   ".claude/launch.json": {
     "mtime": 1788212291.5604105,
     "ast_hash": "d5169a03bf603cf388118244c458bb97",
+    "semantic_hash": ""
+  },
+  "Backend/scripts/test_sync_estricto_no_borra.py": {
+    "mtime": 1788904892.558931,
+    "ast_hash": "3a073339f31ea3a819fc12d5f336df7c",
+    "semantic_hash": ""
+  },
+  "Backend/scripts/test_liquidaciones_reporte.py": {
+    "mtime": 1789252385.477209,
+    "ast_hash": "8b8a822385350c42e839c9f4bfffd8e6",
     "semantic_hash": ""
   }
 }

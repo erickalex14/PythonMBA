@@ -34,8 +34,18 @@ class EstadisticasVentasService:
         # tambien aparecen (con 0 en las columnas de venta), igual que el reporte del ERP.
         catalogo = self._obtener_catalogo()
         if catalogo.empty:
-            logging.error("EstadisticasService: no se pudo obtener el catálogo de productos.")
-            return pd.DataFrame()
+            # El ERP no contesto. Antes se devolvia un DataFrame vacio y la
+            # pantalla mostraba "No se encontraron registros", que se lee como
+            # "no hubo ventas" cuando en realidad el staging tiene los datos
+            # completos. Se sirve lo que si tenemos.
+            logging.warning(
+                "EstadisticasService: sin catálogo del ERP, se sirve el reporte "
+                "solo con datos del staging (sin existencia/asignado/disponible)."
+            )
+            catalogo = self._catalogo_desde_staging(fecha_inicio, fecha_fin, db)
+            if catalogo.empty:
+                logging.error("EstadisticasService: el staging tampoco tiene ventas en el rango.")
+                return pd.DataFrame()
 
         # 2. Ventas agregadas por producto en el rango.
         ventas = self._obtener_ventas_agregadas(fecha_inicio, fecha_fin, db)
@@ -169,6 +179,57 @@ class EstadisticasVentasService:
             for col in ["unid_dev", "unid_anuladas", "total_anulado"]:
                 df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
             return df
+        finally:
+            if close_db_manually:
+                db.close()
+
+    def _catalogo_desde_staging(
+        self, fecha_inicio: str, fecha_fin: str, db: Optional[Session] = None
+    ) -> pd.DataFrame:
+        """
+        Catalogo de reemplazo armado con la misma forma que el del ERP, pero
+        sacado de `view_ventas_espejo_reporte`. Se usa cuando el ERP no
+        responde: el reporte sigue saliendo con todo lo que vive en el staging.
+
+        Dos diferencias contra el catalogo real, a proposito:
+          - existencia/asignado/disponible quedan en None, no en 0: son el
+            inventario "de ahora" y no existen en staging. Un 0 se leeria como
+            "no hay stock", que es una afirmacion falsa; None se pinta vacio.
+          - solo aparecen productos CON venta en el rango. El catalogo del ERP
+            es la base izquierda del merge y trae tambien los que no vendieron.
+        """
+        close_db_manually = False
+        if db is None:
+            db = SessionLocal()
+            close_db_manually = True
+        try:
+            # Un producto tiene siempre el mismo nombre/grupo/empresa en todas
+            # sus lineas, asi que DISTINCT ON (codigo) alcanza: no se agrega
+            # nada, solo se toma una fila por producto.
+            sql = """
+                SELECT DISTINCT ON (codigo)
+                    codigo, producto, unidad, grupo, subgrupo, empresa, empresa_nombre
+                FROM view_ventas_espejo_reporte
+                WHERE fecha BETWEEN :inicio AND :fin
+                ORDER BY codigo, fecha DESC
+            """
+            with db.get_bind().connect() as conn:
+                result = conn.execute(text(sql), {"inicio": fecha_inicio, "fin": fecha_fin})
+                rows = result.fetchall()
+                keys = result.keys()
+            if not rows:
+                return pd.DataFrame()
+
+            out = pd.DataFrame([dict(zip(keys, r)) for r in rows])
+            out["codigo"] = out["codigo"].astype(str).str.strip()
+            out["existencia"] = None
+            out["asignado"] = None
+            out["disponible"] = None
+            # El Excel usa product_type para excluir servicios de las hojas Top;
+            # sin ERP no se sabe el tipo, y "" no matchea con nada, que es lo
+            # correcto: mejor no excluir que excluir al azar.
+            out["product_type"] = ""
+            return out
         finally:
             if close_db_manually:
                 db.close()

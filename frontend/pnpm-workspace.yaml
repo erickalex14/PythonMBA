@@ -1,9 +1,31 @@
-packages:
-  - '.'
+# pnpm 10+ no corre los postinstall de dependencias que no esten autorizadas
+# aca: sale con codigo 1 y ERR_PNPM_IGNORED_BUILDS. En Docker eso reventaba el
+# build entero (y de paso cancelaba el del backend), pero deploy.py no miraba
+# el exit code y publicaba "successfully" sobre imagenes viejas.
+#
+# Las cinco son necesarias, no opcionales:
+#   @prisma/engines, prisma -> bajan los engines; sin ellos el contenedor ni
+#                              arranca (el CMD corre `prisma db push` y `db seed`)
+#   sharp                   -> binario nativo de optimizacion de imagenes de Next
+#   esbuild                 -> binario propio de la plataforma
+#   unrs-resolver           -> resolver nativo de eslint
+#
+# Va la MISMA lista dos veces a proposito, porque el ajuste cambio de nombre
+# entre versiones y asi el archivo sirve para las dos:
+#   pnpm 10.x -> lee `onlyBuiltDependencies` (es la que corre en el Dockerfile)
+#   pnpm 11.x -> dejo de leer esa y pide `allowBuilds` con true/false por paquete
+# Cada version ignora la clave de la otra. Si algun dia se sube la imagen base
+# a Node >=22.13 y con eso pnpm a 11, esto ya queda listo.
+onlyBuiltDependencies:
+  - "@prisma/engines"
+  - prisma
+  - sharp
+  - esbuild
+  - unrs-resolver
 
 allowBuilds:
   "@prisma/engines": true
-  esbuild: true
   prisma: true
   sharp: true
+  esbuild: true
   unrs-resolver: true
