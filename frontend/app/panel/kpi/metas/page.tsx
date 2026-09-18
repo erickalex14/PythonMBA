@@ -409,7 +409,7 @@ export default function MetasKpiPage() {
                       <td><strong>{b.ware_code}</strong></td>
                       <td>{b.ware_name || "—"}</td>
                       <td>{b.corp}</td>
-                      <td>{b.sucursal || <span style={{ color: "#c62828" }}>sin mapear</span>}</td>
+                      <td>{b.sucursal || <span style={{ color: "var(--color-danger)" }}>sin mapear</span>}</td>
                       <td>
                         <input
                           type="text"

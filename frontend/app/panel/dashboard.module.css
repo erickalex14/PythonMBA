@@ -739,6 +739,21 @@ select.selectFilter {
   }
 }
 
+/* Variante de 2 columnas: para cuando la fila tiene exactamente 2 tarjetas
+   (ej. Novicompu/ENV en KPICards) y no deben dejar un tercer espacio vacio. */
+.kpiGridTwo {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .kpiGridTwo {
+    grid-template-columns: 1fr;
+  }
+}
+
 .card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -1445,6 +1460,45 @@ select.selectFilter {
 }
 
 /* Panel de Administración */
+/* Sub-nav de /panel/admin (Usuarios y Roles / Configuración ERP /
+   Personalización de Dashboards) -- navegación real (Link, no toggle de
+   estado), el estilo activo lo decide el pathname, mismo criterio que ya
+   usa Sidebar.tsx con isActive(). */
+.adminSubNav {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.75rem;
+}
+
+.adminSubNavTab {
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: transparent;
+  transition: all 0.15s ease;
+}
+
+.adminSubNavTab:hover {
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-primary);
+}
+
+.adminSubNavTabActive,
+.adminSubNavTabActive:hover {
+  background: linear-gradient(135deg, var(--color-brand-primary) 0%, var(--color-brand-primary-alt) 100%);
+  color: #ffffff;
+}
+
+.dashboardDark .adminSubNavTabActive,
+.dashboardDark .adminSubNavTabActive:hover {
+  color: #0a0a0a;
+}
+
 .adminGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1606,11 +1660,11 @@ select.selectFilter {
 }
 
 .btnEdit {
-  color: #2563eb;
+  color: var(--color-brand-primary-alt);
 }
 
 .btnEdit:hover {
-  color: #1d4ed8;
+  color: var(--color-brand-primary);
 }
 
 .btnDelete {
@@ -2359,6 +2413,27 @@ select.selectFilter {
   --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.55);
   --shadow-brand-md: 0 4px 14px rgba(255, 255, 255, 0.08);
+
+  /* Los 3 semaforos (peligro/exito/advertencia) que usan alertas, badges,
+     bordes y textos de estado en todo el panel (SyncSection, KPI, tablas
+     de admin...) nunca se habian redefinido aca -- se quedaban con sus
+     tonos pastel de tema claro (ej. --color-danger-bg: #fef2f2) o, peor,
+     varios lugares los tenian hardcodeados en el propio .tsx (#c0392b,
+     #2e7d32, #e67e22) en vez de usar estas variables, asi que ni con este
+     bloque los agarraban. Se corrigieron esos usos para que pasen por
+     aca (ver costos-bodega/page.tsx, SyncSection.tsx, kpi/page.tsx,
+     kpi/metas/page.tsx, VentasDashboard.tsx) y estos tonos son mas claros/
+     saturados que el original -- el original se veia apagado o directamente
+     invisible sobre el negro de fondo. */
+  --color-danger: #f87171;
+  --color-danger-dark: #fca5a5;
+  --color-danger-light: rgba(248, 113, 113, 0.4);
+  --color-danger-bg: rgba(220, 38, 38, 0.16);
+  --color-success: #34d399;
+  --color-success-dark: #6ee7b7;
+  --color-success-bg: rgba(16, 185, 129, 0.16);
+  --color-warning: #fbbf24;
+  --color-warning-dark: #fde68a;
 }
 
 /* Tarjetas grandes y muy redondeadas, como en la referencia. */
@@ -2487,6 +2562,18 @@ select.selectFilter {
 .dashboardDark .saveConfigBtn,
 .dashboardDark .adminBtnSave,
 .dashboardDark .btnConfirm {
+  color: #0a0a0a;
+}
+
+/* Mismo caso que el bloque de arriba (texto blanco fijo pensado para el
+   degradé azul original), pero para el switch Resumen/Detalle de Costos
+   por Sucursal -- ese botón no usa ninguna de las clases de arriba (es
+   estilo inline), así que se armó su propia clase solo para el color. */
+.vistaSwitchBtnActive {
+  color: #ffffff;
+}
+
+.dashboardDark .vistaSwitchBtnActive {
   color: #0a0a0a;
 }
 

@@ -283,7 +283,7 @@ export default function SeguimientoKpiPage() {
             {datos?.corte && (
               // El sync es manual varias veces al dia: el mes casi nunca esta
               // completo, asi que el corte va siempre a la vista.
-              <span style={{ color: "#c62828", fontWeight: 600, marginLeft: 10 }}>
+              <span style={{ color: "var(--color-danger)", fontWeight: 600, marginLeft: 10 }}>
                 corte al {datos.corte} ({datos.dias_corte} de {datos.dias_mes} dias)
               </span>
             )}

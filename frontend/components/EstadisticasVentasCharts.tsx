@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Card } from "./ui/Card";
 import { ExpandableChartCard } from "./charts/ChartPrimitives";
+import { esProductoRuido } from "../lib/productoRuido";
 
 interface Props {
   data: any[];
@@ -86,20 +87,44 @@ function ProductoDestacado({ label, producto, valor, color, styles }: { label: s
   );
 }
 
-export const EstadisticasVentasCharts: React.FC<Props> = ({ data, styles }) => {
-  const topDolares = useMemo(() => {
-    return [...data]
-      .sort((a, b) => (Number(b.total_ventas) || 0) - (Number(a.total_ventas) || 0))
-      .slice(0, 10)
-      .map((r) => ({ label: String(r.producto || r.codigo || ""), codigo: String(r.codigo || ""), total: Number(r.total_ventas) || 0 }));
-  }, [data]);
+// Arma un Top 10 por un campo numerico (total_ventas / unidades_vendidas),
+// opcionalmente acotado a una empresa (NVC01/ENV01 -- viene en `row.empresa`,
+// cada producto trae una fila por empresa que lo vendio). Sin `empresa`
+// junta ambas, para las tarjetas "Producto Más Vendido" de arriba.
+function construirTop(
+  rows: any[],
+  campo: "total_ventas" | "unidades_vendidas",
+  empresa?: string
+) {
+  return rows
+    .filter((r) => !esProductoRuido(r.producto))
+    .filter((r) => !empresa || String(r.empresa).trim() === empresa)
+    .sort((a, b) => (Number(b[campo]) || 0) - (Number(a[campo]) || 0))
+    .slice(0, 10)
+    .map((r) => ({ label: String(r.producto || r.codigo || ""), codigo: String(r.codigo || ""), total: Number(r[campo]) || 0 }));
+}
 
-  const topCantidad = useMemo(() => {
-    return [...data]
-      .sort((a, b) => (Number(b.unidades_vendidas) || 0) - (Number(a.unidades_vendidas) || 0))
-      .slice(0, 10)
-      .map((r) => ({ label: String(r.producto || r.codigo || ""), codigo: String(r.codigo || ""), total: Number(r.unidades_vendidas) || 0 }));
-  }, [data]);
+const EMPRESAS_TOP = [
+  { codigo: "NVC01" as const, etiqueta: "Novicompu" },
+  { codigo: "ENV01" as const, etiqueta: "ENV" },
+];
+
+export const EstadisticasVentasCharts: React.FC<Props> = ({ data, styles }) => {
+  const [empresaTop, setEmpresaTop] = useState<"NVC01" | "ENV01">("NVC01");
+
+  const topDolares = useMemo(() => construirTop(data, "total_ventas"), [data]);
+  const topCantidad = useMemo(() => construirTop(data, "unidades_vendidas"), [data]);
+
+  // Los 4 se calculan siempre (son baratos) para que cambiar el switch no
+  // tenga que esperar un recalculo -- solo se elige cual par se muestra.
+  const topDolaresNovicompu = useMemo(() => construirTop(data, "total_ventas", "NVC01"), [data]);
+  const topDolaresEnv = useMemo(() => construirTop(data, "total_ventas", "ENV01"), [data]);
+  const topCantidadNovicompu = useMemo(() => construirTop(data, "unidades_vendidas", "NVC01"), [data]);
+  const topCantidadEnv = useMemo(() => construirTop(data, "unidades_vendidas", "ENV01"), [data]);
+
+  const topDolaresActivo = empresaTop === "NVC01" ? topDolaresNovicompu : topDolaresEnv;
+  const topCantidadActivo = empresaTop === "NVC01" ? topCantidadNovicompu : topCantidadEnv;
+  const etiquetaEmpresa = EMPRESAS_TOP.find((e) => e.codigo === empresaTop)?.etiqueta || empresaTop;
 
   if (data.length === 0) return null;
 
@@ -124,12 +149,40 @@ export const EstadisticasVentasCharts: React.FC<Props> = ({ data, styles }) => {
           styles={styles}
         />
       </div>
+      {/* Switch compartido: elige la empresa para los 2 Top 10 de abajo, en
+          vez de mostrar las 4 combinaciones (Novicompu/ENV x $/Cantidad) a
+          la vez -- ocupaba demasiado espacio vertical. */}
+      <div style={{ display: "inline-flex", background: "var(--color-surface-subtle)", borderRadius: "var(--radius-pill)", padding: "0.25rem", gap: "0.25rem", marginBottom: "1rem" }}>
+        {EMPRESAS_TOP.map((e) => (
+          <button
+            key={e.codigo}
+            type="button"
+            onClick={() => setEmpresaTop(e.codigo)}
+            className={empresaTop === e.codigo ? styles.vistaSwitchBtnActive : undefined}
+            style={{
+              border: "none",
+              cursor: "pointer",
+              padding: "0.45rem 1.1rem",
+              borderRadius: "var(--radius-pill)",
+              fontSize: "0.8rem",
+              fontWeight: 700,
+              whiteSpace: "nowrap",
+              background: empresaTop === e.codigo
+                ? "linear-gradient(135deg, var(--color-brand-primary) 0%, var(--color-brand-primary-alt) 100%)"
+                : "transparent",
+              color: empresaTop === e.codigo ? undefined : "var(--color-text-tertiary)",
+            }}
+          >
+            {e.etiqueta}
+          </button>
+        ))}
+      </div>
       <div className={styles.chartsGridTwo}>
-        <ExpandableChartCard title="Top 10 Productos Más Vendidos ($)" styles={styles} render={() => (
-          <TopRankingChart items={topDolares} color="var(--color-brand-primary)" formatter={fmtMoney} />
+        <ExpandableChartCard title={`Top 10 Más Vendidos ($) · ${etiquetaEmpresa}`} styles={styles} render={() => (
+          <TopRankingChart items={topDolaresActivo} color="var(--color-brand-primary)" formatter={fmtMoney} />
         )} />
-        <ExpandableChartCard title="Top 10 Productos Más Vendidos (Cantidad)" styles={styles} render={() => (
-          <TopRankingChart items={topCantidad} color="var(--color-success-dark)" formatter={fmtNumber} />
+        <ExpandableChartCard title={`Top 10 Más Vendidos (Cantidad) · ${etiquetaEmpresa}`} styles={styles} render={() => (
+          <TopRankingChart items={topCantidadActivo} color="var(--color-success-dark)" formatter={fmtNumber} />
         )} />
       </div>
     </section>

@@ -43,7 +43,6 @@ export const Pagination: React.FC<PaginationProps> = ({
           onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
           disabled={isLastPage}
           className={styles.pageBtn}
-          style={isLastPage ? {} : { background: "#ffffff", color: "#005daa" }}
         >
           Siguiente
         </button>

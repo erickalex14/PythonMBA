@@ -25,6 +25,7 @@ async function main() {
     { action: 'DOWNLOAD_EXCEL', description: 'Permite descargar archivos Excel de los reportes' },
     { action: 'MANAGE_USERS', description: 'Permite crear, editar y eliminar usuarios en el panel de administración' },
     { action: 'MANAGE_CONFIG', description: 'Permite cambiar entre pruebas/producción y editar credenciales del ERP' },
+    { action: 'MANAGE_DASHBOARDS', description: 'Permite agrandar, achicar y reposicionar las tarjetas de los dashboards para todos los usuarios' },
   ];
 
   const permissions: any = {};

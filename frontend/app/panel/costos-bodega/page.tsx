@@ -5,11 +5,13 @@ import { Poppins } from "next/font/google";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import styles from "../dashboard.module.css";
-import { Card } from "../../../components/ui/Card";
 import { Button } from "../../../components/ui/Button";
 import { GooeySearchBar } from "../../../components/ui/GooeySearchBar";
 import { LoadingState, EmptyState } from "../../../components/ui/StatusArea";
 import { Pagination } from "../../../components/ui/Pagination";
+import { DashboardGrid } from "../../../components/ui/DashboardGrid";
+import { buildCostosBodegaCards } from "../../../components/dashboards/costosBodegaCards";
+import { useDashboardLayout } from "../../../hooks/useDashboardLayout";
 
 const poppins = Poppins({ weight: ["600", "700"], subsets: ["latin"] });
 
@@ -156,6 +158,12 @@ export default function CostosBodegaPage() {
     () => [...filtradas].sort((a, b) => b.costo_total - a.costo_total),
     [filtradas]
   );
+
+  // Acomodo (tamaño/posición) de las tarjetas KPI de abajo, guardado por un
+  // admin desde /panel/admin/dashboards -- ver DashboardGrid. Siempre
+  // editable=false acá: esta pantalla solo LEE el acomodo global, nunca lo
+  // modifica.
+  const { layout: layoutGuardado } = useDashboardLayout("costos-bodega");
 
   // La busqueda/empresa cambian que entra en `ordenadas` -- sin este reset se
   // puede quedar pidiendo una pagina que ya no existe en el resultado filtrado.
@@ -403,6 +411,7 @@ export default function CostosBodegaPage() {
                 key={op.valor}
                 type="button"
                 onClick={() => setVista(op.valor)}
+                className={vista === op.valor ? styles.vistaSwitchBtnActive : undefined}
                 style={{
                   position: "relative",
                   border: "none",
@@ -412,7 +421,7 @@ export default function CostosBodegaPage() {
                   borderRadius: "var(--radius-pill)",
                   fontSize: "0.85rem",
                   fontWeight: 700,
-                  color: vista === op.valor ? "#ffffff" : "var(--color-text-tertiary)",
+                  color: vista === op.valor ? undefined : "var(--color-text-tertiary)",
                   transition: "color 0.15s ease",
                   whiteSpace: "nowrap",
                 }}
@@ -533,102 +542,17 @@ export default function CostosBodegaPage() {
 
           {!loading && datos && datos.sucursales.length > 0 && (
             <>
-              <section className={styles.kpiGrid}>
-                <Card variant="kpiCard" styles={styles}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <h3>Costo Total de Inventario</h3>
-                    <div style={{ background: "var(--color-surface-tint-accent)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-chart-accent)" strokeWidth="2.5"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
-                    </div>
-                  </div>
-                  <p className={styles.kpiValue}>{usd(datos.total_general)}</p>
-                  <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
-                    {filtroCorp ? empresas.find((e) => e.corp === filtroCorp)?.nombre || filtroCorp : "todas las empresas"}
-                  </div>
-                </Card>
-
-                <Card variant="kpiCard" styles={styles}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <h3>Bodegas Principales</h3>
-                    <div style={{ background: "var(--color-surface-tint-blue)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-primary)" strokeWidth="2.5"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" /></svg>
-                    </div>
-                  </div>
-                  <p className={styles.kpiValue}>{datos.sucursales.length.toLocaleString("es-EC")}</p>
-                  <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
-                    con costo de inventario &gt; 0
-                  </div>
-                </Card>
-
-                <Card variant="kpiCard" styles={styles}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <h3>Líneas de Inventario</h3>
-                    <div style={{ background: "var(--color-surface-tint-violet)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-violet)" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" /></svg>
-                    </div>
-                  </div>
-                  <p className={styles.kpiValue}>{datos.filas_procesadas.toLocaleString("es-EC")}</p>
-                  <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem" }}>
-                    productos x bodega, con existencia &gt; 0
-                  </div>
-                </Card>
-              </section>
-
-              {datos.top_productos.length > 0 && (
-                <section className={styles.kpiGrid} style={{ marginBottom: "1.5rem" }}>
-                  <Card variant="kpiCard" styles={styles}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                      <h3>Bodega Principal con Mayor Costo</h3>
-                      <div style={{ background: "var(--color-surface-tint-blue)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-primary)" strokeWidth="2.5"><path d="M3 21h18M5 21V7l8-4v18M19 21V11l-6-4" /></svg>
-                      </div>
-                    </div>
-                    <p className={styles.kpiValue}>{usd(ordenadas[0]?.costo_total || 0)}</p>
-                    <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {ordenadas[0]?.sucursal}
-                    </div>
-                  </Card>
-
-                  <Card variant="kpiCard" styles={styles}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                      <h3>Producto con Mayor Costo</h3>
-                      <div style={{ background: "var(--color-surface-tint-accent)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-chart-accent)" strokeWidth="2.5"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" /><polyline points="3.27 6.96 12 12.01 20.73 6.96" /><line x1="12" y1="22.08" x2="12" y2="12" /></svg>
-                      </div>
-                    </div>
-                    <p className={styles.kpiValue}>{usd(datos.top_productos[0]?.costo_total || 0)}</p>
-                    <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {datos.top_productos[0]?.etiqueta}
-                    </div>
-                  </Card>
-
-                  <Card variant="kpiCard" styles={styles}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                      <h3>Grupo con Mayor Costo</h3>
-                      <div style={{ background: "var(--color-surface-tint-violet)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent-violet)" strokeWidth="2.5"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>
-                      </div>
-                    </div>
-                    <p className={styles.kpiValue}>{usd(datos.top_grupos[0]?.costo_total || 0)}</p>
-                    <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {datos.top_grupos[0]?.etiqueta}
-                    </div>
-                  </Card>
-
-                  <Card variant="kpiCard" styles={styles}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                      <h3>Marca con Mayor Costo</h3>
-                      <div style={{ background: "var(--color-surface-tint-blue)", padding: "0.45rem", borderRadius: "8px", display: "flex" }}>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand-primary)" strokeWidth="2.5"><path d="M12 2l3 7h7l-5.5 4.5L18.5 21 12 16.5 5.5 21l2-7.5L2 9h7z" /></svg>
-                      </div>
-                    </div>
-                    <p className={styles.kpiValue}>{usd(datos.top_marcas[0]?.costo_total || 0)}</p>
-                    <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", borderTop: "1px solid var(--color-surface-subtle)", paddingTop: "0.45rem", marginTop: "0.25rem", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {datos.top_marcas[0]?.etiqueta}
-                    </div>
-                  </Card>
-                </section>
-              )}
+              <div style={{ marginBottom: "1.5rem" }}>
+                <DashboardGrid
+                  cards={buildCostosBodegaCards(
+                    styles,
+                    datos,
+                    ordenadas,
+                    filtroCorp ? empresas.find((e) => e.corp === filtroCorp)?.nombre || filtroCorp : "todas las empresas"
+                  )}
+                  savedLayout={layoutGuardado}
+                />
+              </div>
 
               <div className={styles.reportHeaderActions}>
                 <h3>
@@ -696,7 +620,7 @@ export default function CostosBodegaPage() {
                                     </div>
                                   )}
                                   {desgloseError[clave] && (
-                                    <div style={{ padding: "0.5rem 1.5rem 0.5rem 2.75rem", fontSize: "0.8rem", color: "#c0392b" }}>
+                                    <div style={{ padding: "0.5rem 1.5rem 0.5rem 2.75rem", fontSize: "0.8rem", color: "var(--color-danger)" }}>
                                       {desgloseError[clave]}
                                     </div>
                                   )}

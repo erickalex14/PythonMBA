@@ -1,0 +1,54 @@
+.grid {
+  position: relative;
+}
+
+.item {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.itemEditable {
+  outline: 1px dashed var(--color-border-strong);
+  outline-offset: 2px;
+}
+
+.itemBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.dragHandle {
+  cursor: grab;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--color-text-muted);
+  background-color: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-bottom: none;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  padding: 0.35rem 0.65rem;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dragHandle:active {
+  cursor: grabbing;
+}
+
+/* El handle de redimensionar viene del CSS vendored de la librería
+   (react-grid-layout/css/styles.css) con un gris fijo (rgba(0,0,0,.4)) en
+   el ::after -- casi invisible sobre el fondo negro de .dashboardDark. Se
+   repinta acá con nuestros tokens sin tocar el CSS vendored. */
+.grid :global(.react-resizable-handle::after) {
+  border-right: 2px solid var(--color-border-strong);
+  border-bottom: 2px solid var(--color-border-strong);
+}

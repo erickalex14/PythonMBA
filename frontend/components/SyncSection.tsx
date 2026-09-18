@@ -453,7 +453,7 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
             // Solo las tablas diarias tienen que estar completas; en las esporadicas
             // (liquidaciones, ATS) un dia sin registros es normal y no es un hueco.
             const esAlerta = !completo && !c.error && c.frecuencia === "diaria";
-            const colorBorde = c.error ? "#c0392b" : completo ? "#2e7d32" : esAlerta ? "#e67e22" : "var(--color-border)";
+            const colorBorde = c.error ? "var(--color-danger)" : completo ? "var(--color-success-dark)" : esAlerta ? "var(--color-warning-dark)" : "var(--color-border)";
             return (
               <motion.div
                 key={c.tipo}
@@ -483,9 +483,9 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
                       {c.dias_con_datos ?? 0}/{c.dias_esperados ?? 0} días · {(c.filas_en_rango ?? 0).toLocaleString()} filas
                     </span>
                     {completo ? (
-                      <span style={{ fontSize: "0.8rem", color: "#2e7d32", fontWeight: 700 }}>Sin huecos</span>
+                      <span style={{ fontSize: "0.8rem", color: "var(--color-success-dark)", fontWeight: 700 }}>Sin huecos</span>
                     ) : esAlerta ? (
-                      <span style={{ fontSize: "0.8rem", color: "#e67e22", fontWeight: 700 }}>
+                      <span style={{ fontSize: "0.8rem", color: "var(--color-warning-dark)", fontWeight: 700 }}>
                         Faltan {diasFaltantes.length} día(s): {agruparEnRangos(diasFaltantes).join(" · ")}
                       </span>
                     ) : (
@@ -529,7 +529,7 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
             style={{
               display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem",
               padding: "0.5rem 0.75rem", borderRadius: "6px",
-              borderLeft: `4px solid ${sincronizandoEnCurso ? "#e67e22" : "#2e7d32"}`,
+              borderLeft: `4px solid ${sincronizandoEnCurso ? "var(--color-warning-dark)" : "var(--color-success-dark)"}`,
               background: "var(--color-bg-subtle, rgba(0,0,0,0.03))",
             }}
           >
@@ -537,7 +537,7 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
 
             {sincronizandoEnCurso ? (
               <>
-                <span style={{ fontSize: "0.8rem", color: "#e67e22", fontWeight: 700 }}>
+                <span style={{ fontSize: "0.8rem", color: "var(--color-warning-dark)", fontWeight: 700 }}>
                   Sincronizando... {filasCostos !== null ? `${filasCostos.toLocaleString("es-EC")} filas cargadas hasta ahora` : "consultando avance..."}
                 </span>
                 <span style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
@@ -604,7 +604,7 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
       </div>
 
       {mensajeCostos && (
-        <p style={{ fontSize: "0.85rem", color: "#2e7d32", marginBottom: "0.75rem" }}>{mensajeCostos}</p>
+        <p style={{ fontSize: "0.85rem", color: "var(--color-success-dark)", marginBottom: "0.75rem" }}>{mensajeCostos}</p>
       )}
       {errorCostos && (
         <p style={{ fontSize: "0.85rem", color: "var(--color-danger, #c0392b)", marginBottom: "0.75rem" }}>{errorCostos}</p>
@@ -640,7 +640,13 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
           {/* Consola de logs */}
           <div
             style={{
-              background: "var(--color-text-primary)",
+              // Fijo (no var(--color-text-primary)): esa variable se pensó
+              // como "negro casi siempre", pero en el tema oscuro del panel
+              // se invierte a gris casi blanco (ver .dashboardDark), y el
+              // texto celeste de abajo quedaba ilegible sobre un fondo casi
+              // blanco. La consola de logs es SIEMPRE oscura, sin importar
+              // el tema de la página.
+              background: "#0a0a0a",
               color: "#38bdf8",
               fontFamily: "Courier New, monospace",
               padding: "1rem",

@@ -24,6 +24,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setMobileOpen(false);
   };
   const isActive = (route: string) => pathname === `/panel/${route}`;
+  // "admin" ahora tiene sub-rutas (/panel/admin/usuarios, /erp, /dashboards)
+  // -- el link del sidebar debe seguir marcado activo en cualquiera de ellas.
+  const isAdminActive = pathname === "/panel/admin" || pathname?.startsWith("/panel/admin/");
 
   return (
     <>
@@ -160,7 +163,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {isUserAdmin && (
           <button
-            className={`${styles.navItem} ${isActive("admin") ? styles.active : ""}`}
+            className={`${styles.navItem} ${isAdminActive ? styles.active : ""}`}
             onClick={() => goTo("admin")}
           >
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><circle cx="10" cy="10" r="3" stroke="currentColor" strokeWidth="1.5"/><path d="M10 2.5v2M10 15.5v2M2.5 10h2M15.5 10h2M4.4 4.4l1.4 1.4M14.2 14.2l1.4 1.4M4.4 15.6l1.4-1.4M14.2 5.8l1.4-1.4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>

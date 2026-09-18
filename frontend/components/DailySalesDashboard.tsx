@@ -3,6 +3,7 @@ import { Card } from "./ui/Card";
 import { FilterBar } from "./ui/FilterBar";
 import { getMarcaFromProductName } from "../lib/marca";
 import { getEmpresaLabel } from "../lib/empresa";
+import { esProductoRuido } from "../lib/productoRuido";
 import { ChartTooltip, RankedBarChart } from "./charts/ChartPrimitives";
 import NovbiSplash from "./NovbiSplash";
 
@@ -383,6 +384,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
     const map: Record<string, number> = {};
     recentData.forEach((row: any) => {
       const key = row.producto || row.PRODUCTO || "Sin producto";
+      if (esProductoRuido(key)) return;
       const val = Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0;
       map[key] = (map[key] || 0) + val;
     });
@@ -401,6 +403,7 @@ export const DailySalesDashboard: React.FC<DailySalesDashboardProps> = ({ styles
     const map: Record<string, number> = {};
     todayData.forEach((row: any) => {
       const key = row.producto || row.PRODUCTO || "Sin producto";
+      if (esProductoRuido(key)) return;
       const val = Number(row.total_linea) || Number(row.TOTAL_LINEA) || 0;
       map[key] = (map[key] || 0) + val;
     });

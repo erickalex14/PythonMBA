@@ -36,6 +36,26 @@ model Permission {
   updatedAt   DateTime @updatedAt
 }
 
+// Acomodo (tamaño/posición) de las tarjetas de un dashboard, definido por un
+// admin desde /panel/admin/dashboards y compartido por TODOS los usuarios
+// (no es por-usuario) -- ver DashboardGrid.tsx. `dashboardId` identifica la
+// pantalla ("costos-bodega" por ahora), `cardId` identifica la tarjeta
+// dentro de esa pantalla. Sin fila para un cardId = usa el default hardcodeado
+// en el código de esa pantalla (nunca se pierde una tarjeta por falta de dato).
+model DashboardLayout {
+  id          String   @id @default(uuid())
+  dashboardId String
+  cardId      String
+  x           Int
+  y           Int
+  w           Int
+  h           Int
+  updatedAt   DateTime @updatedAt
+
+  @@unique([dashboardId, cardId])
+  @@map("dashboard_layouts")
+}
+
 model DownloadLog {
   id           String   @id @default(uuid())
   userId       String

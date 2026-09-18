@@ -9,12 +9,14 @@ from app.core.database import SessionLocal
 from typing import Optional
 from app.repositories.mba3_repository import IMba3Repository
 
-# Productos que ensucian los rankings: material promocional/regalo y servicios.
-# Salen en cantidades enormes o con montos irrisorios y tapan a los productos
-# que de verdad interesan. Se compara contra el nombre en mayusculas, asi que
-# "GLOBO" tambien atrapa "PORTAGLOBOS". Para excluir otro tipo, agregarlo aqui:
-# lo usan tanto los tops del dashboard como las hojas Top del Excel.
-PATRONES_PRODUCTO_RUIDO = ("GLOBO", "FUNDA", "SERVICIO")
+# Productos que ensucian los rankings: material promocional/regalo, servicios
+# y bolsas de despacho. Salen en cantidades enormes o con montos irrisorios y
+# tapan a los productos que de verdad interesan. Se compara contra el nombre
+# en mayusculas, asi que "GLOBO" tambien atrapa "PORTAGLOBOS" y "NOVOA" atrapa
+# cualquier talla de "IMPORTADORA NOVOA" (bolsas de despacho). Para excluir
+# otro tipo, agregarlo aqui: lo usan tanto los tops del dashboard como las
+# hojas Top del Excel.
+PATRONES_PRODUCTO_RUIDO = ("GLOBO", "FUNDA", "SERVICIO", "NOVOA")
 
 # Bodega de consumo interno: lo que sale por aqui se lo consume la propia tienda
 # (globos, portaglobos, material de local), no un cliente. El ERP igual lo marca

@@ -503,7 +503,7 @@ export const VentasDashboard: React.FC<{
   if (error) {
     return (
       <Card variant="chartCard" styles={styles}>
-        <p style={{ color: "#c0392b", margin: 0 }}>{error}</p>
+        <p style={{ color: "var(--color-danger)", margin: 0 }}>{error}</p>
       </Card>
     );
   }

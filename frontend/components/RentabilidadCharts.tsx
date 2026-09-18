@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { ExpandableChartCard } from "./charts/ChartPrimitives";
+import { esProductoRuido } from "../lib/productoRuido";
 
 interface RentabilidadChartsProps {
   data: any[];
@@ -716,7 +717,15 @@ function TendenciaDiaria({ data, expanded }: { data: any[]; expanded?: boolean }
 // Componente principal
 // =====================================================================
 export const RentabilidadCharts: React.FC<RentabilidadChartsProps> = ({ data, styles }) => {
-  const productos = useMemo(() => aggregate(data, "codigo", "producto"), [data]);
+  // Globos/fundas/servicios se sacan SOLO de los rankings por producto
+  // (TopBottomMargen, ScatterCantidadMargen, ParetoUtilidad -- los 3 leen de
+  // `productos`) -- el Waterfall/Treemap/BodegaMargen/DescuentoPorGrupo usan
+  // `data` directo y siguen sumando todo, para que la utilidad total del
+  // periodo no deje de cuadrar contra el ERP.
+  const productos = useMemo(
+    () => aggregate(data.filter((r) => !esProductoRuido(r.producto)), "codigo", "producto"),
+    [data]
+  );
 
   if (data.length === 0) return null;
 
