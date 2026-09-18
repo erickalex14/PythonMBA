@@ -21,6 +21,12 @@ from app.models.costos_bodega import (SCHEMA_COSTOS_BODEGA, CostosBodegaBodega, 
 from sqlalchemy import text
 from app.core.scheduler import start_scheduler, stop_scheduler
 
+# Sin esto el root logger queda en WARNING y todo lo que el sync y el
+# scheduler cuentan con logging.info nunca llega a `docker logs`: solo se
+# veian los errores sueltos, sin saber si la corrida nocturna siquiera arranco.
+logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logging.info("Arrancando aplicación: Inicializando base de datos...")

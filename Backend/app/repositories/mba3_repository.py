@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import requests
 import logging
+import time
 from typing import Optional, Union, List, Dict
 from app.config import settings
 
@@ -104,21 +105,26 @@ class Mba3Repository(IMba3Repository):
             "codigo": codigo,
             "pwd": pwd
         }
-        try:
-            response = requests.post(url_login, json=payload, headers=headers, timeout=15)
-            response.raise_for_status()
-            datos = response.json()
-            token = datos.get("jwt")
-            if token:
-                logging.info(f"Repository: Token JWT obtenido correctamente y cacheado para entorno {target_env}.")
-                Mba3Repository._cached_tokens[target_env] = token
-                return token
-            else:
+        # El 4D de PROD se cae a ratos (Connection refused visto en el sync
+        # nocturno, 2026-09-18) y vuelve en segundos. Un solo intento perdia la
+        # noche entera; tres con espera cubren un reinicio corto del ERP.
+        for intento, espera in ((1, 5), (2, 20), (3, 0)):
+            try:
+                response = requests.post(url_login, json=payload, headers=headers, timeout=30)
+                response.raise_for_status()
+                datos = response.json()
+                token = datos.get("jwt")
+                if token:
+                    logging.info(f"Repository: Token JWT obtenido correctamente y cacheado para entorno {target_env}.")
+                    Mba3Repository._cached_tokens[target_env] = token
+                    return token
                 logging.error("Repository: La respuesta no contiene la clave 'jwt'.")
                 return None
-        except Exception as e:
-            logging.error(f"Repository: Error en la autenticación del ERP para entorno {target_env}: {e}")
-            return None
+            except Exception as e:
+                logging.error(f"Repository: Error en la autenticación del ERP para entorno {target_env} (intento {intento}/3): {e}")
+                if espera:
+                    time.sleep(espera)
+        return None
 
     #EJECUTAR LA CONSULTA EXTERNA NECESARIA PARA EL REPORTE
     def ejecutar_consulta(self, token: str, select: str, table: str, where: Optional[str] = None, order_by: Optional[str] = None, limit: Optional[int] = None, offset: Optional[int] = None, env: Optional[str] = None, estricto: bool = False):

@@ -18,12 +18,20 @@ def run_nightly_sync():
     ERP, asi que se consolida en staging. El dia actual sigue resolviendose
     en tiempo real contra el ERP (ver ventas_service/movimientos_service),
     no hace falta sincronizarlo aqui.
-    Usa el entorno ERP activo en settings.MBA3_ENV (ver app/config.py) - no
-    fuerza un entorno especifico aqui, para que el toggle PRUEBAS/PROD del
-    panel de Admin siga siendo la unica fuente de verdad.
+    Siempre contra PROD: el staging es el espejo de produccion. Antes usaba
+    el toggle PRUEBAS/PROD del panel de Admin (en memoria) y bastaba que
+    alguien lo dejara en PRUEBAS para que la noche guardara los 3 movimientos
+    de prueba como si fueran el dia real (paso el 15, 16 y 17 de septiembre
+    de 2026: dias "sincronizados" con 3 filas en vez de ~7.000).
     """
-    ayer = (datetime.date.today() - datetime.timedelta(days=1)).isoformat()
-    logging.info(f"SyncScheduler: iniciando sincronizacion automatica de madrugada para {ayer}")
+    # Ventana de 3 dias, no solo ayer: si una noche el ERP estuvo caido, el
+    # dia quedaba como hueco para siempre (nadie lo volvia a pedir). Repetir
+    # un dia es idempotente (borra e inserta por dia) y el modo estricto no
+    # toca el staging cuando el ERP no contesta.
+    hoy = datetime.date.today()
+    ayer = (hoy - datetime.timedelta(days=1)).isoformat()
+    desde = (hoy - datetime.timedelta(days=3)).isoformat()
+    logging.info(f"SyncScheduler: iniciando sincronizacion automatica de madrugada para {desde}..{ayer}")
     db = SessionLocal()
     try:
         service = SyncService(Mba3Repository())
@@ -34,7 +42,7 @@ def run_nightly_sync():
             ("ventas", service.sync_ventas),
         ):
             try:
-                resultado = fn(db, ayer, ayer, env=None)
+                resultado = fn(db, desde, ayer, env="PROD")
                 logging.info(f"SyncScheduler [{nombre}]: {resultado.get('message', resultado)}")
             except Exception as exc:
                 logging.error(f"SyncScheduler [{nombre}]: fallo la sincronizacion automatica: {exc}")
@@ -49,12 +57,14 @@ def start_scheduler():
     # donde vive el negocio, sin importar en que UTC corra el host Docker.
     scheduler.add_job(
         run_nightly_sync,
-        CronTrigger(hour=5, minute=0, timezone="America/Guayaquil"),
+        # Dos pasadas: si a las 05:00 el ERP esta en backup/reinicio, la de
+        # las 07:00 recupera el dia antes de que alguien abra el reporte.
+        CronTrigger(hour="5,7", minute=0, timezone="America/Guayaquil"),
         id="sync_nocturno_diario",
         replace_existing=True,
     )
     scheduler.start()
-    logging.info("SyncScheduler: job de sincronizacion de madrugada (05:00 America/Guayaquil) programado.")
+    logging.info("SyncScheduler: job de sincronizacion de madrugada (05:00 y 07:00 America/Guayaquil) programado.")
 
 
 def stop_scheduler():
