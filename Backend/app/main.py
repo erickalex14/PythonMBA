@@ -16,6 +16,8 @@ from app.models.ats import AtsFacturaStaging, AtsProveedorStaging, AtsFiscalStag
 from app.models.ventas import VentasKardexStaging, VentasFacturaStaging
 from app.models.kpi import (SCHEMA_KPI, KpiProductoCat, KpiSucursal, KpiMeta,
                             KpiValorManual, KpiVentasKardex, KpiVentasFactura)
+from app.models.costos_bodega import (SCHEMA_COSTOS_BODEGA, CostosBodegaBodega, CostosBodegaSaldo,
+                                      CostosBodegaProducto, CostosBodegaPrincipal, CostosBodegaSubtipo)
 from sqlalchemy import text
 from app.core.scheduler import start_scheduler, stop_scheduler
 
@@ -27,6 +29,7 @@ async def lifespan(app: FastAPI):
         #    del create_all o sus tablas no se pueden crear.
         with engine.begin() as connection:
             connection.execute(text(f'CREATE SCHEMA IF NOT EXISTS {SCHEMA_KPI};'))
+            connection.execute(text(f'CREATE SCHEMA IF NOT EXISTS {SCHEMA_COSTOS_BODEGA};'))
 
         # 1. Crear tablas físicas
         Base.metadata.create_all(bind=engine)
@@ -53,6 +56,22 @@ async def lifespan(app: FastAPI):
                 CREATE INDEX IF NOT EXISTS ix_ventas_kardex_staging_codigo_cliente ON ventas_kardex_staging (codigo_cliente);
             """))
             logging.info("Columnas de rentabilidad (bodega/cliente/costo) verificadas en ventas_kardex_staging.")
+
+            # Costos por Sucursal: Codigo_Local (agrupa sub-bodegas bajo su Bodega
+            # Principal, ver app/models/costos_bodega.py) se agrego despues de crear
+            # la tabla original -- create_all no la agrega sola en un deploy existente.
+            connection.execute(text(f"""
+                ALTER TABLE {SCHEMA_COSTOS_BODEGA}.bodegas ADD COLUMN IF NOT EXISTS codigo_local VARCHAR(20);
+            """))
+            connection.execute(text(f"""
+                CREATE INDEX IF NOT EXISTS ix_costos_bodega_bodegas_codigo_local
+                ON {SCHEMA_COSTOS_BODEGA}.bodegas (codigo_local);
+            """))
+            # CITY de INVT_Bodegas_Lista (ciudad de la bodega), agregado 2026-09-16
+            # junto con el total de sub-bodegas por Bodega Principal.
+            connection.execute(text(f"""
+                ALTER TABLE {SCHEMA_COSTOS_BODEGA}.bodegas ADD COLUMN IF NOT EXISTS ciudad VARCHAR(60);
+            """))
 
             # ATS: columnas nuevas (JOIN vendor-empresa + campos fiscales) de forma idempotente.
             connection.execute(text("ALTER TABLE ats_facturas_staging ADD COLUMN IF NOT EXISTS vendor_id_corp VARCHAR(60);"))
@@ -256,7 +275,8 @@ from app.controllers import (
     sync_controller,
     ventas_controller,
     estadisticas_controller,
-    kpi_controller
+    kpi_controller,
+    costos_bodega_controller
 )
 
 root_path = os.getenv("ROOT_PATH", "")
@@ -327,4 +347,5 @@ app.include_router(sync_controller.router)
 app.include_router(ventas_controller.router)
 app.include_router(estadisticas_controller.router)
 app.include_router(kpi_controller.router)
+app.include_router(costos_bodega_controller.router)
 

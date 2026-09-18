@@ -128,6 +128,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
         )}
 
+        {(permissions.includes("VIEW_COSTOS") || isUserAdmin) && (
+          <button
+            className={`${styles.navItem} ${isActive("costos-bodega") ? styles.active : ""}`}
+            onClick={() => goTo("costos-bodega")}
+          >
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style={{ flexShrink: 0 }}><path d="M3 7.5 10 3l7 4.5v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-9Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/><path d="M7.5 17.5v-5h5v5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round"/></svg>
+            <span className="flex-1">Costos por Sucursal</span>
+          </button>
+        )}
+
         {permissions.includes("VIEW_LOGS") && (
           <button
             className={`${styles.navItem} ${isActive("logs") ? styles.active : ""}`}

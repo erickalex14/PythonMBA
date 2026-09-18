@@ -23,6 +23,7 @@ class Settings:
     MBA3_BASE_URL_PROD: str = os.getenv("MBA3_BASE_URL_PROD", "")
     MBA3_CODIGO_SERVICIO_PROD: str = os.getenv("MBA3_CODIGO_SERVICIO_PROD", "")
     MBA3_PASSWORD_SERVICIO_PROD: str = os.getenv("MBA3_PASSWORD_SERVICIO_PROD", "")
+
     
     @property
     def ACTIVE_BASE_URL(self) -> str:
@@ -48,5 +49,7 @@ class Settings:
     @property
     def MBA3_URL_CONSULTA(self) -> str:
         return f"{self.ACTIVE_BASE_URL}/ws2_mba3_serv_Consultas_Externas_/"
+
+    
 
 settings = Settings()

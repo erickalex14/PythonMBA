@@ -45,11 +45,18 @@ export function MultiSelect({ options, selected, onChange, placeholder = "Todas.
     onChange(selected.includes(opt) ? selected.filter((o) => o !== opt) : [...selected, opt]);
   };
 
-  const triggerLabel = selected.length === 0
-    ? placeholder
-    : selected.length === 1
-      ? selected[0]
-      : `${selected.length} seleccionadas`;
+  // Con 2-3 seleccionadas se listan los nombres reales (la caja es angosta,
+  // asi que el propio text-overflow:ellipsis de .triggerLabel corta si no
+  // entra) en vez de un numero ciego - "N seleccionadas" obligaba a abrir el
+  // dropdown solo para saber cuales. El title completo cubre el caso en que
+  // la elipsis se coma parte de la lista.
+  const MAX_NOMBRES = 2;
+  const triggerLabel =
+    selected.length === 0
+      ? placeholder
+      : selected.length <= MAX_NOMBRES
+        ? selected.join(", ")
+        : `${selected.slice(0, MAX_NOMBRES).join(", ")} +${selected.length - MAX_NOMBRES}`;
 
   return (
     <div className={styles.wrapper} ref={wrapperRef}>
@@ -58,7 +65,10 @@ export function MultiSelect({ options, selected, onChange, placeholder = "Todas.
         className={`${styles.trigger} ${abierto ? styles.triggerOpen : ""}`}
         onClick={() => setAbierto((v) => !v)}
       >
-        <span className={`${styles.triggerLabel} ${selected.length === 0 ? styles.triggerPlaceholder : ""}`}>
+        <span
+          className={`${styles.triggerLabel} ${selected.length === 0 ? styles.triggerPlaceholder : ""}`}
+          title={selected.length > MAX_NOMBRES ? selected.join(", ") : undefined}
+        >
           {triggerLabel}
         </span>
         {selected.length > 0 && <span className={styles.triggerCount}>{selected.length}</span>}

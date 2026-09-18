@@ -13,7 +13,7 @@ class IMba3Repository(ABC):
         pass
         
     @abstractmethod
-    def ejecutar_consulta(self, token: str, select: str, table: str, where: Optional[str] = None, limit: Optional[int] = None, env: Optional[str] = None) -> List[Dict]:
+    def ejecutar_consulta(self, token: str, select: str, table: str, where: Optional[str] = None, order_by: Optional[str] = None, limit: Optional[int] = None, offset: Optional[int] = None, env: Optional[str] = None) -> List[Dict]:
         pass
 
 ENTORNOS_VALIDOS = ("PRUEBAS", "PROD")
@@ -121,18 +121,24 @@ class Mba3Repository(IMba3Repository):
             return None
 
     #EJECUTAR LA CONSULTA EXTERNA NECESARIA PARA EL REPORTE
-    def ejecutar_consulta(self, token: str, select: str, table: str, where: Optional[str] = None, limit: Optional[int] = None, env: Optional[str] = None, estricto: bool = False):
+    def ejecutar_consulta(self, token: str, select: str, table: str, where: Optional[str] = None, order_by: Optional[str] = None, limit: Optional[int] = None, offset: Optional[int] = None, env: Optional[str] = None, estricto: bool = False):
         """
         estricto=False (por defecto): un fallo de comunicacion devuelve []
         (comportamiento historico; el llamador no distingue de "sin registros").
         estricto=True: un fallo devuelve None, y solo una respuesta 200 real
         devuelve lista (aunque sea []). Lo usan los syncs para NO borrar el
         staging de un dia cuando el ERP no contesto.
+
+        order_by/offset: paginacion por limit+offset. Confirmado contra el
+        servidor real (Backend/scripts/investigar_paginacion_saldos.py) que el
+        servicio los acepta y que, con un order_by unico, no repite ni salta
+        filas entre paginas. Un order_by NO unico (ej. WARE_CODE) si corrompe
+        la paginacion -- responsabilidad del llamador pasar una columna unica.
         """
         target_env = _resolver_env(env)
 
         logging.info(f"Repository: Ejecutando consulta sobre la tabla {table} (Entorno: {target_env})")
-        
+
         base_url = settings.MBA3_BASE_URL_PROD if target_env == "PROD" else settings.MBA3_BASE_URL_TEST
         url_consulta = f"{base_url}/ws2_mba3_serv_Consultas_Externas_/"
 
@@ -142,8 +148,12 @@ class Mba3Repository(IMba3Repository):
         }
         if where:
             payload["where"] = where
+        if order_by:
+            payload["orderBy"] = order_by
         if limit:
             payload["limit"] = str(limit)
+        if offset:
+            payload["offset"] = str(offset)
 
         # Un 401 (token de caché ya vencido) se reintenta UNA vez con login fresco.
         # Antes solo se invalidaba la caché y se devolvía [], que los servicios no

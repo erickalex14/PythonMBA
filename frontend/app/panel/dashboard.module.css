@@ -775,6 +775,7 @@ select.selectFilter {
   color: var(--color-text-primary);
   margin: 0;
   letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 
 .kpiCard span {
@@ -1294,6 +1295,10 @@ select.selectFilter {
   border-collapse: collapse;
   text-align: left;
   font-size: 0.85rem;
+  /* Digitos de ancho fijo: en columnas numericas (montos, %, cantidades) el
+     kerning proporcional hace que un "1" ocupe menos que un "8" y las cifras
+     no queden alineadas entre filas - dificulta escanear una tabla densa. */
+  font-variant-numeric: tabular-nums;
 }
 
 .table th {

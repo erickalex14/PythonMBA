@@ -465,6 +465,93 @@ class ExcelService:
             inicio, fin, columnas, money_cols, bool_cols=bool_cols, resumen=resumen, anchos=anchos
         )
 
+    def generar_reporte_costos_bodega(self, df_resumen: pd.DataFrame, df_detalle: pd.DataFrame,
+                                      inicio: str, fin: str) -> io.BytesIO:
+        """Reporte completo de Costo de Inventario por Sucursal, EN UNA SOLA
+        DESCARGA con 2 hojas -- pedido explicito (2026-09-16) para que se vea
+        como el reporte nativo de MBA3 que usaba Contabilidad antes de este
+        sistema ("Saldos y Costos Por Bodega" = detalle producto x bodega,
+        "Hoja1" = SUCURSALES/COSTO ya resuelto con formulas): antes esto salia
+        en 2 descargas separadas (Resumen y Detalle), pero el flujo real de
+        Contabilidad siempre junta el detalle CON el resumen en el mismo
+        libro. `inicio`/`fin` son la misma fecha (es un corte, no un rango).
+        """
+        columnas_resumen = [
+            ("corp", "Empresa"), ("sucursal", "Bodega Principal"), ("ciudad", "Ciudad"),
+            ("total_subbodegas", "Sub-Bodegas"), ("costo_total", "Costo de Inventario"),
+        ]
+        money_cols_resumen = {"costo_total"}
+        qty_cols_resumen = {"total_subbodegas"}
+
+        def num(df, col):
+            return pd.to_numeric(df[col], errors='coerce').fillna(0) if col in df.columns else pd.Series([0] * len(df))
+        resumen_encabezado = [
+            ("Total General", float(num(df_resumen, "costo_total").sum())),
+            ("Bodegas Principales", len(df_resumen)),
+        ]
+        anchos_resumen = {"sucursal": 32, "corp": 10, "ciudad": 16}
+
+        columnas_detalle = [
+            ("corp", "Empresa"), ("bodega_principal", "Bodega Principal"),
+            ("ware_code", "Cód. Sub-Bodega"), ("sub_bodega_nombre", "Sub-Bodega"),
+            ("sub_bodega_tipo", "Tipo"), ("product_id_corp", "Código Producto"),
+            ("producto_nombre", "Producto"), ("grupo", "Grupo"), ("subgrupo", "Subgrupo"),
+            ("marca", "Marca"), ("oh", "Existencia"), ("costo_unitario", "Costo Unitario"),
+            ("costo_total", "Costo Total"),
+        ]
+        money_cols_detalle = {"costo_unitario", "costo_total"}
+        qty_cols_detalle = {"oh"}
+        detalle_encabezado = [
+            ("Total Líneas", len(df_detalle)),
+            ("Costo Total", float(num(df_detalle, "costo_total").sum())),
+        ]
+        anchos_detalle = {"bodega_principal": 26, "sub_bodega_nombre": 22, "producto_nombre": 34, "product_id_corp": 16}
+
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            if "Sheet" in writer.book.sheetnames:
+                del writer.book["Sheet"]
+            self._escribir_hoja_corporativa(
+                writer.book, df_resumen, "Resumen por Bodega", "Costo de Inventario por Sucursal - Resumen",
+                inicio, fin, columnas_resumen, money_cols_resumen, qty_cols=qty_cols_resumen,
+                resumen=resumen_encabezado, anchos=anchos_resumen
+            )
+            self._escribir_hoja_corporativa(
+                writer.book, df_detalle, "Detalle", "Costo de Inventario por Sucursal - Detalle (bodega x producto)",
+                inicio, fin, columnas_detalle, money_cols_detalle, qty_cols=qty_cols_detalle,
+                resumen=detalle_encabezado, anchos=anchos_detalle
+            )
+        output.seek(0)
+        return output
+
+    def generar_reporte_costos_bodega_detalle(self, df: pd.DataFrame, inicio: str, fin: str) -> io.BytesIO:
+        """Detalle linea por linea (bodega x producto) de Costos por Sucursal,
+        mismo formato corporativo -- puede traer hasta ~157k filas, exportadas
+        completas (no solo la pagina que se ve en pantalla)."""
+        columnas = [
+            ("corp", "Empresa"), ("bodega_principal", "Bodega Principal"),
+            ("ware_code", "Cód. Sub-Bodega"), ("sub_bodega_nombre", "Sub-Bodega"),
+            ("sub_bodega_tipo", "Tipo"), ("product_id_corp", "Código Producto"),
+            ("producto_nombre", "Producto"), ("grupo", "Grupo"), ("subgrupo", "Subgrupo"),
+            ("marca", "Marca"), ("oh", "Existencia"), ("costo_unitario", "Costo Unitario"),
+            ("costo_total", "Costo Total"),
+        ]
+        money_cols = {"costo_unitario", "costo_total"}
+        qty_cols = {"oh"}
+
+        def num(col):
+            return pd.to_numeric(df[col], errors='coerce').fillna(0) if col in df.columns else pd.Series([0] * len(df))
+        resumen = [
+            ("Total Líneas", len(df)),
+            ("Costo Total", float(num("costo_total").sum())),
+        ]
+        anchos = {"bodega_principal": 26, "sub_bodega_nombre": 22, "producto_nombre": 34, "product_id_corp": 16}
+
+        return self._generar_reporte_corporativo(
+            df, "Detalle", "Costo de Inventario por Sucursal - Detalle",
+            inicio, fin, columnas, money_cols, qty_cols=qty_cols, resumen=resumen, anchos=anchos
+        )
+
     def generar_reporte_kpi_sobre_plantilla(self, plantilla: bytes, seguimiento: dict,
                                             presupuesto: list, lineas: list) -> io.BytesIO:
         """Escribe el reporte ENCIMA del ultimo archivo que subio Contabilidad.

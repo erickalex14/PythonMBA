@@ -1,3 +1,5 @@
+from typing import Optional
+
 from fastapi import APIRouter, Depends, Query, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
@@ -5,13 +7,14 @@ import datetime
 import logging
 import pandas as pd
 from app.core.security import verify_api_key
-from app.dependencies import get_movimientos_service, get_liquidaciones_service, get_ats_service, get_excel_service, get_ventas_service, get_estadisticas_service, get_db
+from app.dependencies import get_movimientos_service, get_liquidaciones_service, get_ats_service, get_excel_service, get_ventas_service, get_estadisticas_service, get_costos_bodega_service, get_db
 from app.services.movimientos_service import MovimientosService
 from app.services.liquidaciones_service import LiquidacionesService
 from app.services.ats_service import AtsService
 from app.services.excel_service import ExcelService
 from app.services.ventas_service import VentasService
 from app.services.estadisticas_service import EstadisticasVentasService
+from app.services.costos_bodega_service import CORPS_SOPORTADOS, CostosBodegaService
 
 
 router = APIRouter(prefix="/api/v1/excel", tags=["Excel Export"])
@@ -153,8 +156,78 @@ def download_estadisticas_ventas(
     )
 
 
+@router.get("/costos-bodega", dependencies=[Depends(verify_api_key)])
+def download_costos_bodega(
+    corp: Optional[str] = Query(None, pattern="^(" + "|".join(CORPS_SOPORTADOS) + ")$"),
+    costos_bodega_service: CostosBodegaService = Depends(get_costos_bodega_service),
+    excel_service: ExcelService = Depends(get_excel_service),
+):
+    """
+    Descarga el reporte COMPLETO de Costos por Sucursal en UN SOLO archivo con
+    2 hojas (Resumen por Bodega + Detalle producto x bodega) -- pedido
+    explicito para que se vea como el reporte nativo de MBA3 que usaba
+    Contabilidad antes ("Saldos y Costos Por Bodega" + su propia hoja de
+    SUMIF por sucursal), en vez de dos descargas separadas.
+    """
+    resumen = costos_bodega_service.obtener_costos_por_sucursal(corp=corp)
+    if not resumen["sucursales"]:
+        raise HTTPException(status_code=404, detail="No hay datos sincronizados para exportar.")
+
+    detalle = costos_bodega_service.obtener_detalle(corp=corp, limit=200000, offset=0)
+
+    df_resumen = pd.DataFrame(resumen["sucursales"])
+    df_detalle = pd.DataFrame(detalle["lineas"])
+    hoy = datetime.date.today().isoformat()
+    excel_file = excel_service.generar_reporte_costos_bodega(df_resumen, df_detalle, hoy, hoy)
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"Reporte_Costos_Bodega_{timestamp}.xlsx"
+
+    return StreamingResponse(
+        excel_file,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}", "X-Record-Count": str(len(df_detalle))}
+    )
+
+
+@router.get("/costos-bodega-detalle", dependencies=[Depends(verify_api_key)])
+def download_costos_bodega_detalle(
+    corp: Optional[str] = Query(None, pattern="^(" + "|".join(CORPS_SOPORTADOS) + ")$"),
+    bodega_principal: Optional[str] = Query(None),
+    sub_bodega: Optional[str] = Query(None),
+    grupo: Optional[str] = Query(None),
+    marca: Optional[str] = Query(None),
+    q: Optional[str] = Query(None),
+    costos_bodega_service: CostosBodegaService = Depends(get_costos_bodega_service),
+    excel_service: ExcelService = Depends(get_excel_service),
+):
+    """
+    Descarga el DETALLE COMPLETO de Costos por Sucursal (bodega x producto) con
+    los filtros dados -- a diferencia de GET /api/v1/costos-bodega/detalle, sin
+    limit/offset: puede haber ~157k lineas, y la exportacion tiene que traerlas
+    todas, no solo la pagina que se ve en pantalla.
+    """
+    resultado = costos_bodega_service.obtener_detalle(
+        corp=corp, bodega_principal=bodega_principal, sub_bodega=sub_bodega,
+        grupo=grupo, marca=marca, q=q, limit=200000, offset=0,
+    )
+    if not resultado["lineas"]:
+        raise HTTPException(status_code=404, detail="No hay líneas para exportar con estos filtros.")
+
+    df = pd.DataFrame(resultado["lineas"])
+    hoy = datetime.date.today().isoformat()
+    excel_file = excel_service.generar_reporte_costos_bodega_detalle(df, hoy, hoy)
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"Reporte_Costos_Bodega_Detalle_{timestamp}.xlsx"
+
+    return StreamingResponse(
+        excel_file,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}", "X-Record-Count": str(len(df))}
+    )
+
+
 from pydantic import BaseModel
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
 class CustomExportRequest(BaseModel):
     sheet_name: str

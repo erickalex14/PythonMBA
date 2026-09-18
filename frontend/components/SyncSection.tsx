@@ -80,6 +80,150 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
   const [verificando, setVerificando] = useState(false);
   const [errorCobertura, setErrorCobertura] = useState<string | null>(null);
 
+  // Costos por Sucursal: sync aparte, sin rango de fechas (trae la foto
+  // completa de saldos, no dias sueltos) - no encaja en el loop dia a dia de
+  // handleSync. El backend la corre en background; a diferencia del resto,
+  // ahora expone un estado REAL de "en curso" (GET /sincronizar/estado, ver
+  // costos_bodega_controller.py) en vez de que el front tenga que adivinar
+  // que ya termino viendo si las filas dejaron de crecer.
+  //
+  // `disparandoCostos`: breve, solo mientras dura el POST que dispara la
+  // sincronizacion (milisegundos). `sincronizandoEnCurso`: el estado REAL de
+  // fondo, true desde que se dispara hasta que el backend confirma que
+  // termino -- esto es lo que deshabilita el boton (no `disparandoCostos`,
+  // que ya volvio a false apenas el POST respondio).
+  const [disparandoCostos, setDisparandoCostos] = useState(false);
+  const [sincronizandoEnCurso, setSincronizandoEnCurso] = useState(false);
+  const [mensajeCostos, setMensajeCostos] = useState<string | null>(null);
+  const [errorCostos, setErrorCostos] = useState<string | null>(null);
+
+  const [filasCostos, setFilasCostos] = useState<number | null>(null);
+  const [ultimaSincronizacionCostos, setUltimaSincronizacionCostos] = useState<string | null>(null);
+  const [ultimaActualizacionCostos, setUltimaActualizacionCostos] = useState<Date | null>(null);
+  const pollCostosRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Filas cargadas hasta el momento (para el panel de arriba) -- separado del
+  // estado de "en curso", que viene de un endpoint distinto.
+  const consultarFilasCostos = async () => {
+    try {
+      const res = await fetch("/api/data/costos-bodega");
+      const json = await res.json();
+      if (res.ok) {
+        setFilasCostos(json.filas_procesadas ?? null);
+        setUltimaSincronizacionCostos(json.ultima_sincronizacion ?? null);
+        setUltimaActualizacionCostos(new Date());
+      }
+    } catch {
+      // silencioso: es solo un indicador de avance, un fallo puntual de
+      // polling no debe interrumpir nada ni mostrarse como error real.
+    }
+  };
+
+  const detenerSeguimientoCostos = () => {
+    if (pollCostosRef.current) clearInterval(pollCostosRef.current);
+    pollCostosRef.current = null;
+  };
+
+  // Sondea el estado REAL del backend. Cuando `en_curso` pasa a false, PARA
+  // SOLA -- ya no hace falta que nadie la detenga a mano ni esperar a que el
+  // numero de filas "deje de subir" un par de minutos para adivinar que ya
+  // termino.
+  const iniciarSeguimientoCostos = () => {
+    detenerSeguimientoCostos();
+    setSincronizandoEnCurso(true);
+    const consultar = async () => {
+      consultarFilasCostos();
+      try {
+        const res = await fetch("/api/data/costos-bodega?recurso=sincronizar-estado");
+        const estado = await res.json();
+        if (!res.ok) return;
+        if (!estado.en_curso) {
+          detenerSeguimientoCostos();
+          setSincronizandoEnCurso(false);
+          if (estado.error) {
+            setErrorCostos(`La sincronización terminó con un error: ${estado.error}`);
+            setMensajeCostos(null);
+          } else if (estado.resultado) {
+            // bodegas/productos/saldos ahora vienen como {vistas, cambiadas}
+            // (saldos ademas trae "eliminadas") -- "cambiadas" son SOLO las
+            // filas nuevas o realmente distintas (el backend ya no reescribe
+            // updated_at si el valor no cambio, ver SQL_UPSERT_* con WHERE
+            // IS DISTINCT FROM). Si nada cambio en ninguna tabla de ninguna
+            // empresa, avisar eso en vez de un numero que no dice nada.
+            let vistas = 0, cambiadas = 0, eliminadas = 0;
+            for (const r of Object.values(estado.resultado as Record<string, any>)) {
+              for (const tabla of ["bodegas", "productos", "saldos"]) {
+                vistas += r?.[tabla]?.vistas || 0;
+                cambiadas += r?.[tabla]?.cambiadas || 0;
+              }
+              eliminadas += r?.saldos?.eliminadas || 0;
+            }
+            if (cambiadas === 0 && eliminadas === 0) {
+              setMensajeCostos(`Sincronización completada: no había nada nuevo que sincronizar (${vistas.toLocaleString("es-EC")} filas revisadas, todas iguales a lo que ya había).`);
+            } else {
+              setMensajeCostos(
+                `Sincronización completada: ${cambiadas.toLocaleString("es-EC")} filas nuevas o actualizadas` +
+                (eliminadas > 0 ? `, ${eliminadas.toLocaleString("es-EC")} eliminadas por quedar en 0` : "") +
+                ` (de ${vistas.toLocaleString("es-EC")} revisadas).`
+              );
+            }
+            setErrorCostos(null);
+          }
+        }
+      } catch {
+        // silencioso: un fallo puntual de polling no debe cortar el seguimiento.
+      }
+    };
+    consultar();
+    pollCostosRef.current = setInterval(consultar, 8000);
+    // Corte de seguridad: si el estado nunca vuelve a en_curso=false (ej. el
+    // backend se reinicio a mitad de la corrida y perdio el estado en
+    // memoria), no seguir sondeando para siempre.
+    setTimeout(() => { detenerSeguimientoCostos(); setSincronizandoEnCurso(false); }, 60 * 60 * 1000);
+  };
+
+  useEffect(() => {
+    // Al abrir la pantalla: filas actuales (para el panel de arriba) + chequear
+    // si YA hay una sincronizacion en curso -- disparada desde otra pestaña, o
+    // esta misma pantalla recargada a mitad de camino. Si la hay, retomar el
+    // seguimiento y dejar el boton deshabilitado en vez de permitir un segundo
+    // disparo.
+    consultarFilasCostos();
+    (async () => {
+      try {
+        const res = await fetch("/api/data/costos-bodega?recurso=sincronizar-estado");
+        const estado = await res.json();
+        if (res.ok && estado.en_curso) iniciarSeguimientoCostos();
+      } catch {
+        // silencioso
+      }
+    })();
+    return () => detenerSeguimientoCostos();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Siempre las dos empresas (NVC01 y ENV01) -- ya no se puede elegir una
+  // sola, para no dejar a alguien sincronizando "solo NVC01" sin darse cuenta.
+  const handleSyncCostos = async () => {
+    if (sincronizandoEnCurso || disparandoCostos) return; // el boton ya deberia estar deshabilitado, doble resguardo
+    setDisparandoCostos(true);
+    setMensajeCostos(null);
+    setErrorCostos(null);
+    try {
+      const res = await fetch(`/api/data/costos-bodega?env=${selectedEnv}`, { method: "POST" });
+      const json = await res.json();
+      // 409 = ya habia una en curso (otra pestaña, o el guard del backend) --
+      // se trata igual que un error: no arranca un segundo seguimiento.
+      if (!res.ok || json.error) throw new Error(json.error || "Error al iniciar la sincronización.");
+      setMensajeCostos(`Sincronización iniciada en el servidor (ambiente ${selectedEnv}, ambas empresas). Puede tardar varios minutos.`);
+      iniciarSeguimientoCostos();
+    } catch (err: any) {
+      setErrorCostos(err.message || "No se pudo iniciar la sincronización.");
+    } finally {
+      setDisparandoCostos(false);
+    }
+  };
+
   const consoleEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll de la consola
@@ -301,7 +445,11 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
 
         <div style={{ display: "grid", gap: "0.5rem" }}>
           {cobertura.map((c, i) => {
-            const completo = c.dias_faltantes.length === 0 && !c.error;
+            // dias_faltantes puede venir ausente cuando el backend devuelve
+            // `error` (ej. Postgres no responde) -- sin este resguardo,
+            // .length sobre undefined tumbaba toda la pantalla de sync.
+            const diasFaltantes = c.dias_faltantes || [];
+            const completo = diasFaltantes.length === 0 && !c.error;
             // Solo las tablas diarias tienen que estar completas; en las esporadicas
             // (liquidaciones, ATS) un dia sin registros es normal y no es un hueco.
             const esAlerta = !completo && !c.error && c.frecuencia === "diaria";
@@ -332,23 +480,23 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
                       Sincronizado hasta <strong>{c.ultimo_dia_sincronizado || "sin datos"}</strong>
                     </span>
                     <span style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
-                      {c.dias_con_datos}/{c.dias_esperados} días · {c.filas_en_rango.toLocaleString()} filas
+                      {c.dias_con_datos ?? 0}/{c.dias_esperados ?? 0} días · {(c.filas_en_rango ?? 0).toLocaleString()} filas
                     </span>
                     {completo ? (
                       <span style={{ fontSize: "0.8rem", color: "#2e7d32", fontWeight: 700 }}>Sin huecos</span>
                     ) : esAlerta ? (
                       <span style={{ fontSize: "0.8rem", color: "#e67e22", fontWeight: 700 }}>
-                        Faltan {c.dias_faltantes.length} día(s): {agruparEnRangos(c.dias_faltantes).join(" · ")}
+                        Faltan {diasFaltantes.length} día(s): {agruparEnRangos(diasFaltantes).join(" · ")}
                       </span>
                     ) : (
                       <span style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
-                        {c.dias_faltantes.length} día(s) sin registros (normal: no ocurre todos los días)
+                        {diasFaltantes.length} día(s) sin registros (normal: no ocurre todos los días)
                       </span>
                     )}
                     {esAlerta && (
                       <Button
                         onClick={() => {
-                          const orden = [...c.dias_faltantes].sort();
+                          const orden = [...diasFaltantes].sort();
                           setStartDate(orden[0]);
                           setEndDate(orden[orden.length - 1]);
                           addLog(`Rango ajustado al hueco de ${ETIQUETAS_TIPO[c.tipo] || c.tipo}: ${orden[0]} a ${orden[orden.length - 1]}. Ejecuta la sincronización de ese tipo.`);
@@ -365,11 +513,56 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
               </motion.div>
             );
           })}
+
+          {/* Costos por Sucursal: no tiene rango de fechas (es una foto del
+              datawarehouse, no dias sueltos), por eso no sale de `cobertura`
+              -- pero va en el mismo panel/lista, como pediste, en vez de un
+              boton de "ver avance" aparte. Mientras esta corriendo (en ESTA
+              pestaña) muestra las filas cargadas hasta el momento; si no,
+              muestra la ultima sincronizacion conocida. */}
+          <motion.div
+            key="costos-bodega"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: cobertura.length * 0.06, ease: "easeOut" }}
+            whileHover={{ x: 2 }}
+            style={{
+              display: "flex", flexWrap: "wrap", alignItems: "center", gap: "0.75rem",
+              padding: "0.5rem 0.75rem", borderRadius: "6px",
+              borderLeft: `4px solid ${sincronizandoEnCurso ? "#e67e22" : "#2e7d32"}`,
+              background: "var(--color-bg-subtle, rgba(0,0,0,0.03))",
+            }}
+          >
+            <strong style={{ minWidth: "110px", fontSize: "0.85rem" }}>Costos x Sucursal</strong>
+
+            {sincronizandoEnCurso ? (
+              <>
+                <span style={{ fontSize: "0.8rem", color: "#e67e22", fontWeight: 700 }}>
+                  Sincronizando... {filasCostos !== null ? `${filasCostos.toLocaleString("es-EC")} filas cargadas hasta ahora` : "consultando avance..."}
+                </span>
+                <span style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
+                  {ultimaActualizacionCostos && `actualizado ${ultimaActualizacionCostos.toLocaleTimeString("es-EC")} · `}
+                  esto se actualiza solo cuando termine
+                </span>
+              </>
+            ) : (
+              <>
+                <span style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
+                  Sincronizado hasta <strong>{ultimaSincronizacionCostos ? new Date(ultimaSincronizacionCostos).toLocaleString("es-EC") : "nunca"}</strong>
+                </span>
+                {filasCostos !== null && (
+                  <span style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
+                    {filasCostos.toLocaleString("es-EC")} filas de inventario
+                  </span>
+                )}
+              </>
+            )}
+          </motion.div>
         </div>
       </div>
 
       {/* Botonera de Acción */}
-      <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+      <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", marginBottom: "1rem" }}>
         {[
           { type: "movimientos" as const, label: "Sincronizar Movimientos", color: "var(--color-brand-primary)" },
           { type: "liquidaciones" as const, label: "Sincronizar Liquidaciones", color: "var(--color-accent-violet)" },
@@ -391,7 +584,31 @@ export const SyncSection: React.FC<SyncSectionProps> = ({ styles }) => {
             {b.label}
           </motion.button>
         ))}
+
+        {/* Costos por Sucursal: mismo boton/estilo que el resto, pero sin
+            rango de fechas (trae la foto completa de saldos, no dias
+            sueltos) -- por eso no entra en el array de arriba ni en
+            handleSync. Usa el mismo AMBIENTE DEL ERP ORIGEN de arriba;
+            la empresa (Ambas/NVC01/ENV01) se elige en el selector de abajo. */}
+        <motion.button
+          type="button"
+          onClick={handleSyncCostos}
+          disabled={disparandoCostos || sincronizandoEnCurso}
+          className={styles.submitBtn}
+          style={{ background: "var(--color-success-dark)", flex: "1 1 180px", border: "none" }}
+          whileHover={(disparandoCostos || sincronizandoEnCurso) ? undefined : { y: -2, boxShadow: "0 8px 18px rgba(0,0,0,0.18)" }}
+          whileTap={(disparandoCostos || sincronizandoEnCurso) ? undefined : { scale: 0.97 }}
+        >
+          {disparandoCostos ? "Iniciando..." : sincronizandoEnCurso ? "Sincronizando..." : `Sincronizar Costos (${selectedEnv})`}
+        </motion.button>
       </div>
+
+      {mensajeCostos && (
+        <p style={{ fontSize: "0.85rem", color: "#2e7d32", marginBottom: "0.75rem" }}>{mensajeCostos}</p>
+      )}
+      {errorCostos && (
+        <p style={{ fontSize: "0.85rem", color: "var(--color-danger, #c0392b)", marginBottom: "0.75rem" }}>{errorCostos}</p>
+      )}
 
       {/* Indicadores de Progreso */}
       <AnimatePresence>

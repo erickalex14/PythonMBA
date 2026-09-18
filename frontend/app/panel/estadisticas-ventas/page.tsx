@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { Poppins } from "next/font/google";
 import { motion } from "framer-motion";
 import styles from "../dashboard.module.css";
+import { LoadingState, EmptyState } from "../../../components/ui/StatusArea";
 import { KPICards, TotalesRango } from "../../../components/KPICards";
 import { EstadisticasVentasCharts } from "../../../components/EstadisticasVentasCharts";
 import { ReportTable } from "../../../components/ReportTable";
@@ -275,18 +276,13 @@ export default function EstadisticasVentasPage() {
         {error && <div className={styles.errorAlert}>{error}</div>}
 
         {loading && (
-          <div className={styles.loaderArea}>
-            <div className={styles.spinner}></div>
-            <p>Consultando base transaccional...</p>
+          <LoadingState styles={styles} label="Consultando base transaccional...">
             <button type="button" className={styles.progressCancelBtn} onClick={cancelQuery}>Cancelar</button>
-          </div>
+          </LoadingState>
         )}
 
         {!loading && filteredData.length === 0 && !error && (
-          <div className={styles.noDataArea}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-            <p>No se encontraron registros para el rango de fechas seleccionado.</p>
-          </div>
+          <EmptyState styles={styles} message="No se encontraron registros para el rango de fechas seleccionado." />
         )}
 
         {panel.reportConfig && filteredData.length > 0 && !loading && (

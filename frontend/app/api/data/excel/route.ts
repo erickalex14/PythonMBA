@@ -14,16 +14,9 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const type = searchParams.get("type"); // "movimientos", "liquidaciones", "ats"
+  const type = searchParams.get("type"); // "movimientos", "liquidaciones", "ats"...
   const inicio = searchParams.get("inicio");
   const fin = searchParams.get("fin");
-
-  if (!type || !inicio || !fin) {
-    return new Response(JSON.stringify({ error: "Parámetros faltantes (type, inicio, fin)." }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" }
-    });
-  }
 
   // Mapear rutas de FastAPI
   let endpoint = "";
@@ -32,6 +25,8 @@ export async function GET(request: Request) {
   else if (type === "ats") endpoint = "ats";
   else if (type === "ventas") endpoint = "ventas";
   else if (type === "estadisticas-ventas") endpoint = "estadisticas-ventas";
+  else if (type === "costos-bodega") endpoint = "costos-bodega";
+  else if (type === "costos-bodega-detalle") endpoint = "costos-bodega-detalle";
   else {
     return new Response(JSON.stringify({ error: "Tipo de reporte no válido." }), {
       status: 400,
@@ -39,7 +34,22 @@ export async function GET(request: Request) {
     });
   }
 
-  const backendUrl = `${process.env.BACKEND_API_URL}/api/v1/excel/${endpoint}?inicio=${inicio}&fin=${fin}`;
+  // Costos por Sucursal no tiene rango de fechas (es una foto del
+  // datawarehouse, no un reporte por período) -- se filtra por
+  // corp (y, para el Detalle solo, bodega_principal/sub_bodega/grupo/marca/q)
+  // reenviados tal cual. El resto de tipos SI necesitan inicio/fin.
+  const esCostosBodegaSinFechas = type === "costos-bodega" || type === "costos-bodega-detalle";
+  if (!type || (!esCostosBodegaSinFechas && (!inicio || !fin))) {
+    return new Response(JSON.stringify({ error: "Parámetros faltantes (type, inicio, fin)." }), {
+      status: 400,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  const qs = esCostosBodegaSinFechas
+    ? (() => { const p = new URLSearchParams(searchParams); p.delete("type"); return p.toString(); })()
+    : `inicio=${inicio}&fin=${fin}`;
+  const backendUrl = `${process.env.BACKEND_API_URL}/api/v1/excel/${endpoint}?${qs}`;
 
   try {
     // 2. Consultar el Excel al microservicio FastAPI
@@ -67,7 +77,7 @@ export async function GET(request: Request) {
       data: {
         userId: session.user.id,
         reportType: type,
-        dateRange: `${inicio} a ${fin}`,
+        dateRange: esCostosBodegaSinFechas ? `filtros: ${qs || "ninguno"}` : `${inicio} a ${fin}`,
         recordsCount: Number.isFinite(recordsCount) ? recordsCount : null,
       },
     });

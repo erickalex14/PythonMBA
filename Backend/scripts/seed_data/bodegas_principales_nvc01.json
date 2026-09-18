@@ -1,0 +1,1934 @@
+[
+  {
+    "codigo_local": null,
+    "nombre_principal": null,
+    "ware_code": "TRN",
+    "tipo": "Tránsito"
+  },
+  {
+    "codigo_local": null,
+    "nombre_principal": null,
+    "ware_code": "RCP",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "PRI",
+    "nombre_principal": "001 RIO COCA",
+    "ware_code": "1VT",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "15",
+    "nombre_principal": "015 NV  MACHALA ORO PLAZA",
+    "ware_code": "15C",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "10",
+    "nombre_principal": "010 IMP NOVOA MANTA",
+    "ware_code": "MTS",
+    "tipo": "Soporte / Servicio Técnico"
+  },
+  {
+    "codigo_local": "2",
+    "nombre_principal": "002 CARACOL",
+    "ware_code": "2VT",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "145",
+    "nombre_principal": "CLOSE 145 NV AZOGUES",
+    "ware_code": "145",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "5",
+    "nombre_principal": "005 NV RECREO 1",
+    "ware_code": "5VT",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "2",
+    "nombre_principal": "002 CARACOL",
+    "ware_code": "2VC",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "6",
+    "nombre_principal": "006 NNUU",
+    "ware_code": "6VT",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "PRI",
+    "nombre_principal": "001 RIO COCA",
+    "ware_code": "RCE",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "8",
+    "nombre_principal": "008 CITY MALL",
+    "ware_code": "8VT",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "32",
+    "nombre_principal": "032 FCO ORELLANA 2",
+    "ware_code": "32C",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "10",
+    "nombre_principal": "010 IMP NOVOA MANTA",
+    "ware_code": "10V",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "POT",
+    "nombre_principal": "ADMIN PORTAL",
+    "ware_code": "98",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "11",
+    "nombre_principal": "011 NOVICOMPU 1 - GUAL PORTOVIEJO",
+    "ware_code": "11V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "2",
+    "nombre_principal": "002 CARACOL",
+    "ware_code": "GGC",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "12",
+    "nombre_principal": "012 AMBATO",
+    "ware_code": "12V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "13",
+    "nombre_principal": "013 MALL DEL SUR",
+    "ware_code": "MSC",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "13",
+    "nombre_principal": "013 MALL DEL SUR",
+    "ware_code": "13V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "12",
+    "nombre_principal": "012 AMBATO",
+    "ware_code": "AMC",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "15",
+    "nombre_principal": "015 NV  MACHALA ORO PLAZA",
+    "ware_code": "15V",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "10",
+    "nombre_principal": "010 IMP NOVOA MANTA",
+    "ware_code": "MTC",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "18",
+    "nombre_principal": "018 FCO ORELLANA 1",
+    "ware_code": "18V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "8",
+    "nombre_principal": "008 CITY MALL",
+    "ware_code": "CMC",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "19",
+    "nombre_principal": "019 9 DE OCTUBRE",
+    "ware_code": "19V",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "5",
+    "nombre_principal": "005 NV RECREO 1",
+    "ware_code": "RRC",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "21",
+    "nombre_principal": "021 NV CUENCA 1",
+    "ware_code": "21V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "PRI",
+    "nombre_principal": "001 RIO COCA",
+    "ware_code": "RCC",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "22",
+    "nombre_principal": "022 S. DOM TSACHILAS",
+    "ware_code": "22V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "18",
+    "nombre_principal": "018 FCO ORELLANA 1",
+    "ware_code": "18E",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "25",
+    "nombre_principal": "025 E-commerce",
+    "ware_code": "25V",
+    "tipo": "E-Commerce"
+  },
+  {
+    "codigo_local": "18",
+    "nombre_principal": "018 FCO ORELLANA 1",
+    "ware_code": "18G",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "26V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "26M",
+    "tipo": "Mayorista"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27V",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "18",
+    "nombre_principal": "018 FCO ORELLANA 1",
+    "ware_code": "18U",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "28",
+    "nombre_principal": "028 LOJA",
+    "ware_code": "28V",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "31",
+    "nombre_principal": "031 ADMIN UIO",
+    "ware_code": "31S",
+    "tipo": "Soporte / Servicio Técnico"
+  },
+  {
+    "codigo_local": "29",
+    "nombre_principal": "029 QUEVEDO",
+    "ware_code": "29V",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "26F",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "30",
+    "nombre_principal": "030 RIOBAMBA",
+    "ware_code": "30V",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "26T",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "31",
+    "nombre_principal": "031 ADMIN UIO",
+    "ware_code": "31V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "26P",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "32",
+    "nombre_principal": "032 FCO ORELLANA 2",
+    "ware_code": "32V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "22",
+    "nombre_principal": "022 S. DOM TSACHILAS",
+    "ware_code": "22C",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "21",
+    "nombre_principal": "021 NV CUENCA 1",
+    "ware_code": "21C",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "18",
+    "nombre_principal": "018 FCO ORELLANA 1",
+    "ware_code": "18C",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "PRI",
+    "nombre_principal": "001 RIO COCA",
+    "ware_code": "RCN",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "PRI",
+    "nombre_principal": "001 RIO COCA",
+    "ware_code": "RCS",
+    "tipo": "Soporte / Servicio Técnico"
+  },
+  {
+    "codigo_local": "PRI",
+    "nombre_principal": "001 RIO COCA",
+    "ware_code": "RCQ",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "6",
+    "nombre_principal": "006 NNUU",
+    "ware_code": "6VG",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27C",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27L",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27G",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27M",
+    "tipo": "Mayorista"
+  },
+  {
+    "codigo_local": "18",
+    "nombre_principal": "018 FCO ORELLANA 1",
+    "ware_code": "18O",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "18",
+    "nombre_principal": "018 FCO ORELLANA 1",
+    "ware_code": "18S",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "18",
+    "nombre_principal": "018 FCO ORELLANA 1",
+    "ware_code": "18N",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "18",
+    "nombre_principal": "018 FCO ORELLANA 1",
+    "ware_code": "18A",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "32",
+    "nombre_principal": "032 FCO ORELLANA 2",
+    "ware_code": "32O",
+    "tipo": "Soporte / Servicio Técnico"
+  },
+  {
+    "codigo_local": "18",
+    "nombre_principal": "018 FCO ORELLANA 1",
+    "ware_code": "18R",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "19",
+    "nombre_principal": "019 9 DE OCTUBRE",
+    "ware_code": "19C",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "12",
+    "nombre_principal": "012 AMBATO",
+    "ware_code": "12H",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "26C",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27O",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "10",
+    "nombre_principal": "010 IMP NOVOA MANTA",
+    "ware_code": "MTO",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27F",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "33",
+    "nombre_principal": "033 GANACELL PLAZA QUIL",
+    "ware_code": "33V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27U",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "31",
+    "nombre_principal": "031 ADMIN UIO",
+    "ware_code": "31I",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "34",
+    "nombre_principal": "CLOSE-034 URDESA",
+    "ware_code": "34V",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "35",
+    "nombre_principal": "035 MANTA",
+    "ware_code": "35V",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "36",
+    "nombre_principal": "036 NV MACHALA CENTRO",
+    "ware_code": "36V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "37",
+    "nombre_principal": "037 AV6 DE DICIEMBRE",
+    "ware_code": "37V",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "38",
+    "nombre_principal": "038 AV DEL MAESTRO",
+    "ware_code": "38V",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "39",
+    "nombre_principal": "039 GANACELL PASAJE MERCY",
+    "ware_code": "39V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "40",
+    "nombre_principal": "040 GANACELL RIO COCA",
+    "ware_code": "40V",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "39",
+    "nombre_principal": "039 GANACELL PASAJE MERCY",
+    "ware_code": "162",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "163",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "41",
+    "nombre_principal": "041 NOVICOMPU UNICENTRO",
+    "ware_code": "41V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "42",
+    "nombre_principal": "CLOSE 042 IMPORTADORA NOVOA FICUS",
+    "ware_code": "42V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "34",
+    "nombre_principal": "CLOSE-034 URDESA",
+    "ware_code": "34I",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "43",
+    "nombre_principal": "CLOSE 043 IMP NOVOA URDESA",
+    "ware_code": "43V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "44",
+    "nombre_principal": "044 NV LATACUNGA",
+    "ware_code": "44V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "45",
+    "nombre_principal": "CLOSE - 045 GANACELL MANTA",
+    "ware_code": "45V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "35",
+    "nombre_principal": "035 MANTA",
+    "ware_code": "35R",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "32",
+    "nombre_principal": "032 FCO ORELLANA 2",
+    "ware_code": "32L",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "46",
+    "nombre_principal": "046 NOVI  P. TRIANGULO",
+    "ware_code": "46V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "47",
+    "nombre_principal": "047 GANACELL PORTOVIEJO",
+    "ware_code": "47V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "48",
+    "nombre_principal": "048 ESCOBEDO Y 9 OCT",
+    "ware_code": "48V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "50",
+    "nombre_principal": "CLOSE 050 GANACELL IBARRA",
+    "ware_code": "50V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "51",
+    "nombre_principal": "051 GANACELL MANTA 2",
+    "ware_code": "51V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "52",
+    "nombre_principal": "CLOSE-052 NOVICOMPU STO DOMINGO 2",
+    "ware_code": "52V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "53",
+    "nombre_principal": "053 GANACELL PORTOVIEJO 2",
+    "ware_code": "53V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "49",
+    "nombre_principal": "049 IMP NOVOA CUENCA",
+    "ware_code": "49V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "54",
+    "nombre_principal": "054 GANACELL ROTONDA",
+    "ware_code": "54V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "55",
+    "nombre_principal": "055 NOVICOMPU 2 - 18OCT PTOVIEJO",
+    "ware_code": "55V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "31",
+    "nombre_principal": "031 ADMIN UIO",
+    "ware_code": "31R",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "56",
+    "nombre_principal": "056 IMP NOVOA PORTOVIEJO",
+    "ware_code": "56V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "57",
+    "nombre_principal": "CLOSE 057 RECREO 2",
+    "ware_code": "57V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "58",
+    "nombre_principal": "058 MILAGRO",
+    "ware_code": "58V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "59",
+    "nombre_principal": "059 BUENAVISTA MACHALA 2",
+    "ware_code": "59V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "60",
+    "nombre_principal": "CLOSE 060 NV PORTOVIEJO 4",
+    "ware_code": "60V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "61",
+    "nombre_principal": "061 NV CUENCA 2",
+    "ware_code": "61V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "62",
+    "nombre_principal": "062 IMP NOVOA CITY MALL",
+    "ware_code": "62V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "63",
+    "nombre_principal": "CLOSE-063 EL BOSQUE",
+    "ware_code": "214",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "64",
+    "nombre_principal": "064 NV  BABAHOYO 2",
+    "ware_code": "215",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "65",
+    "nombre_principal": "CLOSE-065 NV IBARRA",
+    "ware_code": "216",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "31",
+    "nombre_principal": "031 ADMIN UIO",
+    "ware_code": "31J",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "66",
+    "nombre_principal": "066 NV LA LIBERTAD 2",
+    "ware_code": "66",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "67",
+    "nombre_principal": "067 IMP PORTOVIEJO 2",
+    "ware_code": "67",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "69",
+    "nombre_principal": "069 AMBATO 2",
+    "ware_code": "69V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "68",
+    "nombre_principal": "068 NOVICOMPU - MILAGRO 2",
+    "ware_code": "68V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "70",
+    "nombre_principal": "070 IMP NOVOA RECREO",
+    "ware_code": "70V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "32",
+    "nombre_principal": "032 FCO ORELLANA 2",
+    "ware_code": "32M",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "71",
+    "nombre_principal": "CLOSE 071 NOVI ESMERALDAS",
+    "ware_code": "71V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "72",
+    "nombre_principal": "072 IMP NOV BABAHOYO",
+    "ware_code": "72V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "73",
+    "nombre_principal": "CLOSE 073 NV STO DOMINGO 2",
+    "ware_code": "73V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "74",
+    "nombre_principal": "074 IMP NOVOA MALL DEL RIO GYE",
+    "ware_code": "74V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "75",
+    "nombre_principal": "075 NARANJAL",
+    "ware_code": "75V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "76",
+    "nombre_principal": "076 GANACELL PORTOVIEJO 3",
+    "ware_code": "76V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "77",
+    "nombre_principal": "CLOSE 077 NV RIOBAMBA 2",
+    "ware_code": "77V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "32",
+    "nombre_principal": "032 FCO ORELLANA 2",
+    "ware_code": "MRK",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "78",
+    "nombre_principal": "078 NOVICOMPU CHONE",
+    "ware_code": "78V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "32",
+    "nombre_principal": "032 FCO ORELLANA 2",
+    "ware_code": "32W",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "79",
+    "nombre_principal": "079 NOVICOMPU CARAPUNGO",
+    "ware_code": "79V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "80",
+    "nombre_principal": "CLOSE 080 VALLE DE LOS CHILLOS",
+    "ware_code": "80V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "81",
+    "nombre_principal": "081 TENA",
+    "ware_code": "81V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "31",
+    "nombre_principal": "031 ADMIN UIO",
+    "ware_code": "31C",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "82",
+    "nombre_principal": "CLOSE-082 IMPORTADORA NOVOA LIBERTAD",
+    "ware_code": "244",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "83",
+    "nombre_principal": "CLOSE 083 NV CALDERON 2",
+    "ware_code": "83",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "84",
+    "nombre_principal": "CLOSE-084 MOVIL TECH MANTA",
+    "ware_code": "84",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "85",
+    "nombre_principal": "085 NV CARACOL  3",
+    "ware_code": "85V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "86",
+    "nombre_principal": "086 NV SANGOLQUI",
+    "ware_code": "86V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "87",
+    "nombre_principal": "CLOSE 087 GANACELL AMBATO",
+    "ware_code": "87V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "88",
+    "nombre_principal": "088 NV MALL DEL FORTIN",
+    "ware_code": "88V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "18",
+    "nombre_principal": "018 FCO ORELLANA 1",
+    "ware_code": "18W",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "42",
+    "nombre_principal": "CLOSE 042 IMPORTADORA NOVOA FICUS",
+    "ware_code": "42W",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "89",
+    "nombre_principal": "089 NV MAGDALENA",
+    "ware_code": "89V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "90",
+    "nombre_principal": "CLOSE-090 GANACELL CHONE",
+    "ware_code": "90V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "91",
+    "nombre_principal": "091 NV MALL DEL RIO GYE",
+    "ware_code": "91V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27Z",
+    "tipo": "Consignación"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27Y",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27X",
+    "tipo": "Mayorista"
+  },
+  {
+    "codigo_local": "92",
+    "nombre_principal": "092 NV ESMERALDAS 2",
+    "ware_code": "92V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "26N",
+    "tipo": "Mayorista"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "26I",
+    "tipo": "Mayorista"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27I",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "14",
+    "nombre_principal": "014 NV MALL DEL NORTE",
+    "ware_code": "14",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "16",
+    "nombre_principal": "016 NOVICOMPU PORTAL",
+    "ware_code": "16",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "17",
+    "nombre_principal": "017 IMP MALL DEL NORTE",
+    "ware_code": "17",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "20",
+    "nombre_principal": "020 NV QUICENTRO SUR",
+    "ware_code": "271",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "23",
+    "nombre_principal": "023 GN MALL DEL NORTE",
+    "ware_code": "23",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "24",
+    "nombre_principal": "024 NV PASAJE MERCY",
+    "ware_code": "24",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "93",
+    "nombre_principal": "093 NV CARACOL 2",
+    "ware_code": "93V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "4",
+    "nombre_principal": "004 MOVIL TECH RECREO",
+    "ware_code": "4V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "3",
+    "nombre_principal": "003 GN RECREO",
+    "ware_code": "3V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "7",
+    "nombre_principal": "007 IMP FORTIN",
+    "ware_code": "7V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "9",
+    "nombre_principal": "009 NV PLAYAS 1",
+    "ware_code": "9V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27A",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "94",
+    "nombre_principal": "094 ENV TECH CARACOL",
+    "ware_code": "94V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "95",
+    "nombre_principal": "095 NOVIGAME",
+    "ware_code": "95V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "96",
+    "nombre_principal": "096 NV PLAZA MAYOR GYE",
+    "ware_code": "96V",
+    "tipo": "Mayorista"
+  },
+  {
+    "codigo_local": "QUI",
+    "nombre_principal": "ADMIN QUICENTRO SUR",
+    "ware_code": "99",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "31",
+    "nombre_principal": "031 ADMIN UIO",
+    "ware_code": "31A",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "97",
+    "nombre_principal": "097 NV LA PRENSA",
+    "ware_code": "97V",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "99",
+    "nombre_principal": "099 GANACELL MANTA 3",
+    "ware_code": "V99",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "98",
+    "nombre_principal": "098 NV EL PUYO",
+    "ware_code": "V98",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "100",
+    "nombre_principal": "100 NV EL CARMEN",
+    "ware_code": "100",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "101",
+    "nombre_principal": "101 GN BABAHOYO",
+    "ware_code": "101",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "102",
+    "nombre_principal": "CLOSE-102 NV TENA 2",
+    "ware_code": "102",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "103",
+    "nombre_principal": "CLOSE-103 MOVILTECH PORTOVIEJO",
+    "ware_code": "103",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "104",
+    "nombre_principal": "CLOSE-104 NV EL TRIUNFO",
+    "ware_code": "104",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "105",
+    "nombre_principal": "105 NV VINCES",
+    "ware_code": "105",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "106",
+    "nombre_principal": "CLOSE-106 NV PLAYAS 2 INACTIVA",
+    "ware_code": "106",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "107",
+    "nombre_principal": "107 NV DAULE",
+    "ware_code": "107",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "108",
+    "nombre_principal": "108 IMP QUEVEDO",
+    "ware_code": "108",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "109",
+    "nombre_principal": "109 NV MANTA 2",
+    "ware_code": "109",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "110",
+    "nombre_principal": "110 NV PLAZA QUIL",
+    "ware_code": "110",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "111",
+    "nombre_principal": "111 NV ATAHUALPA",
+    "ware_code": "111",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "112",
+    "nombre_principal": "close 112 NV CHONE 2",
+    "ware_code": "112",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "114",
+    "nombre_principal": "114 GANACELL FORTIN",
+    "ware_code": "114",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "113",
+    "nombre_principal": "113 GANACELL QUICENTRO SUR",
+    "ware_code": "113",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "GQU",
+    "nombre_principal": "ADMIN GANACELL QUICENTRO SUR",
+    "ware_code": "998",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "115",
+    "nombre_principal": "115 NV  BABAHOYO 1",
+    "ware_code": "115",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "116",
+    "nombre_principal": "116 NV MALL DEL PACIFICO - MANTA",
+    "ware_code": "116",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "MPA",
+    "nombre_principal": "ADMIN NV MANTA MALL DEL PACIFICO",
+    "ware_code": "997",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "117",
+    "nombre_principal": "117 NOVICOMPU CEIBOS",
+    "ware_code": "117",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "118",
+    "nombre_principal": "CLOSE-118 GN RUMICHACA",
+    "ware_code": "118",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "119",
+    "nombre_principal": "119 NV RECREO 2",
+    "ware_code": "119",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "120",
+    "nombre_principal": "CLOSE -120 NOVICOMPU  RECREO ISLA 3",
+    "ware_code": "120",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27J",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "32",
+    "nombre_principal": "032 FCO ORELLANA 2",
+    "ware_code": "32J",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "31",
+    "nombre_principal": "031 ADMIN UIO",
+    "ware_code": "31G",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "121",
+    "nombre_principal": "121 NV POLICENTRO",
+    "ware_code": "121",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "122",
+    "nombre_principal": "CLOSE 122 GANACELL PLAYAS",
+    "ware_code": "122",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "123",
+    "nombre_principal": "CLOSE-123 NV TERM DE MILAGRO",
+    "ware_code": "123",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "124",
+    "nombre_principal": "124 NV JIPIJAPA",
+    "ware_code": "124",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "125",
+    "nombre_principal": "125 NV MACHACHI",
+    "ware_code": "125",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "126",
+    "nombre_principal": "126 NV TUMBACO",
+    "ware_code": "126",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "127",
+    "nombre_principal": "CLOSE -127 NV SANTA ANA",
+    "ware_code": "127",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "67",
+    "nombre_principal": "067 IMP PORTOVIEJO 2",
+    "ware_code": "67S",
+    "tipo": "Soporte / Servicio Técnico"
+  },
+  {
+    "codigo_local": "128",
+    "nombre_principal": "close 128 NV RACAR",
+    "ware_code": "128",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "129",
+    "nombre_principal": "129 NV EL COCA",
+    "ware_code": "129",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "130",
+    "nombre_principal": "130 NV LA ROTONDA",
+    "ware_code": "130",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "131",
+    "nombre_principal": "CLOSE - 131 NV OTAVALO",
+    "ware_code": "131",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "25",
+    "nombre_principal": "025 E-commerce",
+    "ware_code": "25S",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "25",
+    "nombre_principal": "025 E-commerce",
+    "ware_code": "255",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "132",
+    "nombre_principal": "132 NV CALCETA",
+    "ware_code": "132",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "133",
+    "nombre_principal": "133 GN CITY MALL",
+    "ware_code": "133",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "134",
+    "nombre_principal": "CLOSE-134 MOVIL TECH CITY MALL",
+    "ware_code": "134",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "135",
+    "nombre_principal": "CLOSE - 135 NV CENTRO HISTORICO",
+    "ware_code": "135",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "136",
+    "nombre_principal": "136 MOVIL TECH FORTIN",
+    "ware_code": "136",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "137",
+    "nombre_principal": "137 NV LAGO AGRIO",
+    "ware_code": "137",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "138",
+    "nombre_principal": "138 NV JOYA DE SACHAS",
+    "ware_code": "138",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "139",
+    "nombre_principal": "CLOSE - 139 NV CARMEN 2",
+    "ware_code": "139",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "141",
+    "nombre_principal": "CLOSE 141 GANACELL PLAZA MAYOR",
+    "ware_code": "141",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "32",
+    "nombre_principal": "032 FCO ORELLANA 2",
+    "ware_code": "329",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "140",
+    "nombre_principal": "140 NV LAGUNA MALL",
+    "ware_code": "140",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "142",
+    "nombre_principal": "CLOSE - 142 NV ISLA RECREO 4",
+    "ware_code": "142",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "143",
+    "nombre_principal": "CLOSE - 143 NV PELILEO",
+    "ware_code": "143",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "144",
+    "nombre_principal": "144 NV ARENILLAS",
+    "ware_code": "144",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "146",
+    "nombre_principal": "146 IMP PORTAL",
+    "ware_code": "146",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "147",
+    "nombre_principal": "147 NV PEDERNALES",
+    "ware_code": "147",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "146",
+    "nombre_principal": "146 IMP PORTAL",
+    "ware_code": "641",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "148",
+    "nombre_principal": "CLOSE 148 NV SHUSHUFINDI",
+    "ware_code": "148",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "149",
+    "nombre_principal": "149 NV 2 QUICENTRO SUR",
+    "ware_code": "149",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "IMP",
+    "nombre_principal": "ADMIN IMPORTADORA PORTAL",
+    "ware_code": "644",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "IQS",
+    "nombre_principal": "ADMIN NV1 QUICENTRO SUR",
+    "ware_code": "941",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "150",
+    "nombre_principal": "CLOSE 150 NV SANTA ROSA",
+    "ware_code": "150",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "151",
+    "nombre_principal": "151 ENV CARACOL 2",
+    "ware_code": "151",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "152",
+    "nombre_principal": "152 NV PASAJE",
+    "ware_code": "152",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "153",
+    "nombre_principal": "153 NV C.J. AROSEMENA",
+    "ware_code": "153",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "154",
+    "nombre_principal": "154 NV BATAN SHOPPING",
+    "ware_code": "154",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "155",
+    "nombre_principal": "155 NV TERM TERRESTRE GYE",
+    "ware_code": "155",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "156",
+    "nombre_principal": "CLOSE 156 IMP DAULE",
+    "ware_code": "156",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "157",
+    "nombre_principal": "157 NV SHOPPING AMBATO",
+    "ware_code": "157",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "158",
+    "nombre_principal": "158 NV GRAN PIAZZA MACHALA",
+    "ware_code": "158",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "159",
+    "nombre_principal": "159 NV LA TRONCAL",
+    "ware_code": "159",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "160",
+    "nombre_principal": "160 NV RECREO 3",
+    "ware_code": "160",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "161",
+    "nombre_principal": "161 IMP TUMBACO",
+    "ware_code": "161",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "31",
+    "nombre_principal": "031 ADMIN UIO",
+    "ware_code": "31D",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "26D",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27D",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27K",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "162",
+    "nombre_principal": "162 ENV BOMBOLI",
+    "ware_code": "612",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "163",
+    "nombre_principal": "163 IMP BOMBOLI",
+    "ware_code": "631",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27N",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "26J",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "164",
+    "nombre_principal": "164 NV BOMBOLI",
+    "ware_code": "164",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "26L",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "162",
+    "nombre_principal": "162 ENV BOMBOLI",
+    "ware_code": "SBO",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "163",
+    "nombre_principal": "163 IMP BOMBOLI",
+    "ware_code": "SBM",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "164",
+    "nombre_principal": "164 NV BOMBOLI",
+    "ware_code": "SBI",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "157",
+    "nombre_principal": "157 NV SHOPPING AMBATO",
+    "ware_code": "ADM",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "165",
+    "nombre_principal": "165 NV MALT. PLAZA LATACUNGA",
+    "ware_code": "165",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "NVL",
+    "nombre_principal": "ADMIN NV MALT. PLAZA LATACUNGA",
+    "ware_code": "NVL",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "NVA",
+    "nombre_principal": "ADMIN NV SHOPPING AMBATO",
+    "ware_code": "NVA",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "166",
+    "nombre_principal": "166 ENV TECH FORTIN",
+    "ware_code": "166",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "26S",
+    "tipo": "Ventas / Operativa"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27P",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "ENB",
+    "nombre_principal": "ADMIN ENV BOMBOLI",
+    "ware_code": "ENB",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "IPB",
+    "nombre_principal": "ADMIN IMP BOMBOLI",
+    "ware_code": "IMB",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "NVB",
+    "nombre_principal": "ADMIN NV BOMBOLI",
+    "ware_code": "NVB",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27Q",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27W",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "25",
+    "nombre_principal": "025 E-commerce",
+    "ware_code": "25M",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "167",
+    "nombre_principal": "167 ENV RECREO 1",
+    "ware_code": "167",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "169",
+    "nombre_principal": "169 NV MERCADO LIBRE",
+    "ware_code": "169",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "26R",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27R",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "168",
+    "nombre_principal": "168 ENV RECREO 2",
+    "ware_code": "168",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "31",
+    "nombre_principal": "031 ADMIN UIO",
+    "ware_code": "31P",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "25",
+    "nombre_principal": "025 E-commerce",
+    "ware_code": "25E",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27H",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "170",
+    "nombre_principal": "170 NV MIRACIELO",
+    "ware_code": "170",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27S",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27B",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27E",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "171",
+    "nombre_principal": "171 NV HIPER MILAGRO",
+    "ware_code": "171",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "172",
+    "nombre_principal": "172 NV CAYAMBE",
+    "ware_code": "172",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "32",
+    "nombre_principal": "032 FCO ORELLANA 2",
+    "ware_code": "32N",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "27T",
+    "tipo": "E-Commerce"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "26Q",
+    "tipo": "E-Commerce"
+  },
+  {
+    "codigo_local": "173",
+    "nombre_principal": "173 IMP C.J. AROSEMENA",
+    "ware_code": "173",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "174",
+    "nombre_principal": "174 ENV C.J. AROSEMENA",
+    "ware_code": "174",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "175",
+    "nombre_principal": "175 IMP T. TERRESTRE",
+    "ware_code": "175",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "D27",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "176",
+    "nombre_principal": "176 NV CARACOL 4",
+    "ware_code": "176",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "177",
+    "nombre_principal": "177 NV GRANADO PLAZA",
+    "ware_code": "177",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "A27",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "31",
+    "nombre_principal": "031 ADMIN UIO",
+    "ware_code": "31M",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "31",
+    "nombre_principal": "031 ADMIN UIO",
+    "ware_code": "31L",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "31",
+    "nombre_principal": "031 ADMIN UIO",
+    "ware_code": "31N",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "25",
+    "nombre_principal": "025 E-commerce",
+    "ware_code": "25C",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "32",
+    "nombre_principal": "032 FCO ORELLANA 2",
+    "ware_code": "32R",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "FRG",
+    "nombre_principal": "FERIAS NOVI",
+    "ware_code": "FRG",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "178",
+    "nombre_principal": "178 NV THE VIEW TC",
+    "ware_code": "178",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "C26",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "179",
+    "nombre_principal": "179 NOVIREPUESTOS",
+    "ware_code": "179",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "180",
+    "nombre_principal": "180 NV SHOPPING PLAYAS",
+    "ware_code": "180",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "32",
+    "nombre_principal": "032 FCO ORELLANA 2",
+    "ware_code": "32F",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "NVG",
+    "nombre_principal": "ADMIN 177 GRANADOS PLAZA",
+    "ware_code": "NVG",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "H26",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "Y26",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "181",
+    "nombre_principal": "181 NV VIVANTINO",
+    "ware_code": "181",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "182",
+    "nombre_principal": "182 ENV VIVANTINO",
+    "ware_code": "182",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "183",
+    "nombre_principal": "183 NV RECREO 4",
+    "ware_code": "183",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "B27",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "C27",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "E27",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "F27",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "G27",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "27",
+    "nombre_principal": "027 C LOGISTICO GYE",
+    "ware_code": "H27",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "M26",
+    "tipo": "Demo / Pruebas"
+  },
+  {
+    "codigo_local": "184",
+    "nombre_principal": "184 DROPSHIPPING",
+    "ware_code": "184",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "185",
+    "nombre_principal": "185 NV MALL DEL SOL",
+    "ware_code": "185",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "186",
+    "nombre_principal": "186 IMP LIBERTAD",
+    "ware_code": "186",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "187",
+    "nombre_principal": "187 NV ISORA PLAZA",
+    "ware_code": "187",
+    "tipo": "General / Otra"
+  },
+  {
+    "codigo_local": "26",
+    "nombre_principal": "026 C.LOG QUITO",
+    "ware_code": "26U",
+    "tipo": "Demo / Pruebas"
+  }
+]

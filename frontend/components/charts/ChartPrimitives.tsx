@@ -1,5 +1,10 @@
 import React, { useState, useRef, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
+
+// Transition final cuando el sistema pide reduced motion: duration 0 salta
+// directo al estado final (sin spring/stagger/pathLength dibujandose) sin
+// tener que reescribir initial/animate de cada pieza por separado.
+const NO_MOTION = { duration: 0 } as const;
 
 // Mide el ancho real en px del contenedor via ResizeObserver - se usa para
 // que el viewBox del SVG coincida exactamente con el ancho renderizado (en
@@ -70,6 +75,7 @@ export function RankedBarChart({
   maxVisibleItems?: number;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
+  const reduceMotion = useReducedMotion();
   const visibleItems = maxVisibleItems ? items.slice(0, maxVisibleItems) : items;
   const hiddenCount = items.length - visibleItems.length;
   const max = Math.max(...items.map((it) => it.total), 1);
@@ -91,7 +97,7 @@ export function RankedBarChart({
               style={{ cursor: "pointer" }}
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.35, delay: index * 0.03, ease: "easeOut" }}
+              transition={reduceMotion ? NO_MOTION : { duration: 0.35, delay: index * 0.03, ease: "easeOut" }}
             >
               <rect x="0" y={y - 2} width="500" height="19" fill="transparent" />
               <text x="5" y={y + 11} fill="var(--color-text-tertiary)" fontSize="9" fontWeight="600">
@@ -102,7 +108,7 @@ export function RankedBarChart({
                 x="90" y={y} height="13" rx="4" fill={color}
                 initial={{ width: 0 }}
                 animate={{ width: barWidth, fillOpacity: opacity }}
-                transition={{ width: { duration: 0.5, delay: 0.1 + index * 0.03, ease: "easeOut" }, fillOpacity: { duration: 0.15 } }}
+                transition={reduceMotion ? NO_MOTION : { width: { duration: 0.5, delay: 0.1 + index * 0.03, ease: "easeOut" }, fillOpacity: { duration: 0.15 } }}
               />
               <text x={95 + barWidth} y={y + 11} fill="var(--color-text-tertiary)" fontSize="8.5" fontWeight="700">
                 {formatter(p.total)}
@@ -183,14 +189,15 @@ export function TwoBarComparison({
   compact?: boolean;
 }) {
   const max = Math.max(valueA, valueB, 1);
+  const reduceMotion = useReducedMotion();
   return (
     <motion.div
       initial="hidden"
       animate="show"
-      variants={{ hidden: {}, show: { transition: { staggerChildren: 0.12, delayChildren: 0.05 } } }}
+      variants={{ hidden: {}, show: { transition: reduceMotion ? NO_MOTION : { staggerChildren: 0.12, delayChildren: 0.05 } } }}
       style={{ display: "flex", flexDirection: "column", gap: compact ? "0.6rem" : "0.9rem", marginTop: compact ? "0.25rem" : "0.5rem" }}
     >
-      <motion.div variants={{ hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0 } }} transition={{ duration: 0.3 }}>
+      <motion.div variants={{ hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0 } }} transition={reduceMotion ? NO_MOTION : { duration: 0.3 }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", color: "var(--color-text-muted)", marginBottom: 4 }}>
           <span>{labelA}</span>
           <span style={{ fontWeight: 700, color: "var(--color-text-primary)" }}>{formatter(valueA)}</span>
@@ -199,11 +206,11 @@ export function TwoBarComparison({
           <motion.div
             style={{ height: "100%", background: "var(--color-chart-accent)", borderRadius: 6 }}
             initial={{ width: 0 }} animate={{ width: `${(valueA / max) * 100}%` }}
-            transition={{ duration: 0.6, delay: 0.15, ease: "easeOut" }}
+            transition={reduceMotion ? NO_MOTION : { duration: 0.6, delay: 0.15, ease: "easeOut" }}
           />
         </div>
       </motion.div>
-      <motion.div variants={{ hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0 } }} transition={{ duration: 0.3 }}>
+      <motion.div variants={{ hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0 } }} transition={reduceMotion ? NO_MOTION : { duration: 0.3 }}>
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", color: "var(--color-text-muted)", marginBottom: 4 }}>
           <span>{labelB}</span>
           <span style={{ fontWeight: 700, color: "var(--color-text-primary)" }}>{formatter(valueB)}</span>
@@ -212,7 +219,7 @@ export function TwoBarComparison({
           <motion.div
             style={{ height: "100%", background: "var(--color-text-faint)", borderRadius: 6 }}
             initial={{ width: 0 }} animate={{ width: `${(valueB / max) * 100}%` }}
-            transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+            transition={reduceMotion ? NO_MOTION : { duration: 0.6, delay: 0.3, ease: "easeOut" }}
           />
         </div>
       </motion.div>
@@ -275,6 +282,7 @@ export function ParetoChart({
   height?: number;
 }) {
   const [hovered, setHovered] = useState<number | null>(null);
+  const reduceMotion = useReducedMotion();
   const total = items.reduce((a, i) => a + i.value, 0) || 1;
   let acc = 0;
   const withCum = items.map((it) => {
@@ -316,7 +324,7 @@ export function ParetoChart({
           <motion.line
             x1={toXCenter(cutIdx)} y1={pad} x2={toXCenter(cutIdx)} y2={H - pad}
             stroke="var(--color-warning)" strokeDasharray="4 4" strokeWidth="1.3"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5, duration: 0.4 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={reduceMotion ? NO_MOTION : { delay: 0.5, duration: 0.4 }}
           />
         )}
         <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="var(--color-border-strong)" strokeWidth="1" />
@@ -337,7 +345,7 @@ export function ParetoChart({
               fill="var(--color-brand-primary)"
               initial={{ height: 0, y: H - pad, fillOpacity: 0.7 }}
               animate={{ height: H - pad - y, y, fillOpacity: isHovered ? 1 : 0.7 }}
-              transition={{
+              transition={reduceMotion ? NO_MOTION : {
                 height: { duration: 0.55, delay: i * 0.035, ease: "easeOut" },
                 y: { duration: 0.55, delay: i * 0.035, ease: "easeOut" },
                 fillOpacity: { duration: 0.15 },
@@ -350,13 +358,13 @@ export function ParetoChart({
         {areaPath && (
           <motion.path
             d={areaPath} fill="url(#paretoAreaFill)" stroke="none"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3, duration: 0.6 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={reduceMotion ? NO_MOTION : { delay: 0.3, duration: 0.6 }}
           />
         )}
         {linePath && (
           <motion.path
             d={linePath} fill="none" stroke="var(--color-chart-accent)" strokeWidth="2.25" strokeLinecap="round"
-            initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.9, ease: "easeOut" }}
+            initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={reduceMotion ? NO_MOTION : { duration: 0.9, ease: "easeOut" }}
           />
         )}
         {withCum.map((it, i) => (
@@ -373,7 +381,7 @@ export function ParetoChart({
               cx={toXCenter(i)} cy={toY(it.cumPct)}
               r={hovered === i ? 4.5 : 2.5} fill="var(--color-chart-accent)" stroke="var(--color-surface)" strokeWidth={hovered === i ? 1.5 : 0}
               initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.5 + i * 0.03, duration: 0.3, r: { duration: 0.12 } }}
+              transition={reduceMotion ? NO_MOTION : { delay: 0.5 + i * 0.03, duration: 0.3, r: { duration: 0.12 } }}
               style={{ pointerEvents: "none" }}
             />
           </g>
@@ -398,6 +406,57 @@ export function ParetoChart({
           <br />Acumulado: {withCum[hovered].cumPct.toFixed(1)}%
         </ChartTooltip>
       )}
+    </div>
+  );
+}
+
+// Bullet chart compacto para "real vs meta" en celdas de tabla (Seguimiento
+// KPI): una franja + marcador de meta dice de un vistazo si vas por debajo/
+// en/sobre meta sin abrir el tooltip de cada celda. El color nunca es el
+// unico indicador: el % numerico va siempre al lado.
+export function BulletKpi({
+  meta,
+  cumplimiento,
+  width = 60,
+  height = 16,
+}: {
+  meta: number | null | undefined;
+  cumplimiento: number | null | undefined;
+  width?: number;
+  height?: number;
+}) {
+  const reduceMotion = useReducedMotion();
+  if (meta === null || meta === undefined) {
+    return <span style={{ fontSize: "0.72rem", color: "var(--color-text-faint)" }}>—</span>;
+  }
+  const ratio = cumplimiento ?? 0;
+  const pctFill = Math.min(Math.max(ratio, 0), 1) * 100;
+  const overshoot = ratio > 1;
+  // Zonas: rojo por debajo del 70% de la meta, ambar entre 70-100%, verde en
+  // meta o por encima - mismos tokens de estado que StatGauge/RadialGauge.
+  const color =
+    ratio >= 1 ? "var(--color-success-dark)" : ratio >= 0.7 ? "var(--color-warning)" : "var(--color-danger)";
+  const barH = 8;
+  const targetX = width - 2;
+
+  return (
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ flexShrink: 0, overflow: "visible" }}>
+        <rect x="0" y={(height - barH) / 2} width={width} height={barH} rx={barH / 2} fill="var(--color-surface-subtle)" />
+        <motion.rect
+          x="0" y={(height - barH) / 2} height={barH} rx={barH / 2}
+          fill={color}
+          initial={{ width: 0 }}
+          animate={{ width: (pctFill / 100) * width }}
+          transition={reduceMotion ? NO_MOTION : { duration: 0.5, ease: "easeOut" }}
+        />
+        {/* Marcador de meta: siempre al 100% del ancho (la meta es el propio tope del track). */}
+        <line x1={targetX} y1="0" x2={targetX} y2={height} stroke="var(--color-text-primary)" strokeWidth="2" />
+        {overshoot && <circle cx={targetX} cy={height / 2} r="2.5" fill="var(--color-success-dark)" />}
+      </svg>
+      <span style={{ fontSize: "0.72rem", fontWeight: 700, color, minWidth: 32, textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
+        {(ratio * 100).toFixed(0)}%
+      </span>
     </div>
   );
 }
@@ -525,6 +584,7 @@ export function RadialGauge({
   const isGood = goodDirection === "low" ? pct <= 10 : pct >= 90;
   const isWarn = goodDirection === "low" ? pct <= 25 : pct >= 75;
   const color = isGood ? "var(--color-success-dark)" : isWarn ? "var(--color-warning)" : "var(--color-danger)";
+  const reduceMotion = useReducedMotion();
 
   const R = 54, CX = 65, CY = 65;
   const startAngle = 135, sweep = 270;
@@ -545,17 +605,17 @@ export function RadialGauge({
       style={{ display: "flex", alignItems: "center", gap: "1.25rem", flexWrap: "wrap" }}
       initial={{ opacity: 0, scale: 0.92 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.4, ease: "easeOut" }}
+      transition={reduceMotion ? NO_MOTION : { duration: 0.4, ease: "easeOut" }}
     >
       <svg width="130" height="120" viewBox="0 0 130 120" style={{ flexShrink: 0 }}>
         <path d={describeArc(1)} fill="none" stroke="var(--color-surface-subtle)" strokeWidth="12" strokeLinecap="round" />
         <motion.path
           d={describeArc(Math.min(pct, 100) / 100)} fill="none" stroke={color} strokeWidth="12" strokeLinecap="round"
-          initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.9, delay: 0.15, ease: "easeOut" }}
+          initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={reduceMotion ? NO_MOTION : { duration: 0.9, delay: 0.15, ease: "easeOut" }}
         />
         <motion.text
           x={CX} y={CY + 6} textAnchor="middle" fontSize="20" fontWeight="800" fill={color}
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.7 }}
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={reduceMotion ? NO_MOTION : { duration: 0.4, delay: 0.7 }}
         >
           {pct.toFixed(1)}%
         </motion.text>
@@ -634,6 +694,7 @@ export function Treemap({
   height?: number;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
+  const reduceMotion = useReducedMotion();
   const [containerRef, W] = useMeasuredWidth(500);
   const H = height;
   const sorted = [...items].filter((i) => i.value > 0).sort((a, b) => b.value - a.value).map((i, idx) => ({ ...i, key: `${i.label}-${idx}` }));
@@ -679,7 +740,7 @@ export function Treemap({
                 fill={shade}
                 initial={{ opacity: 0, scale: 0.88 }}
                 animate={{ opacity: 1, scale: isHovered ? 1.02 : 1 }}
-                transition={{
+                transition={reduceMotion ? NO_MOTION : {
                   opacity: { duration: 0.4, delay: i * 0.03, ease: "easeOut" },
                   scale: { duration: 0.18, ease: "easeOut" },
                 }}
@@ -742,6 +803,7 @@ export function ScatterXY({
   height?: number;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
+  const reduceMotion = useReducedMotion();
   const W = 500, H = height, pad = 40;
 
   if (points.length === 0) {
@@ -792,7 +854,7 @@ export function ScatterXY({
               fillOpacity: hovered === p.key ? 0.95 : 0.5,
               strokeWidth: hovered === p.key ? 2 : 1,
             }}
-            transition={{
+            transition={reduceMotion ? NO_MOTION : {
               r: { type: "spring", stiffness: 260, damping: 14, delay: i * 0.045 },
               opacity: { duration: 0.25, delay: i * 0.045 },
               fillOpacity: { duration: 0.15 },

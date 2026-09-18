@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import styles from "../../dashboard.module.css";
 import { GooeySearchBar } from "../../../../components/ui/GooeySearchBar";
+import { LoadingState, EmptyState } from "../../../../components/ui/StatusArea";
 
 const poppins = Poppins({ weight: ["600", "700"], subsets: ["latin"] });
 
@@ -30,6 +31,8 @@ export default function MetasKpiPage() {
   const [editadas, setEditadas] = useState<Record<string, number>>({});
   const [bodegas, setBodegas] = useState<any[]>([]);
   const [bodegasEditadas, setBodegasEditadas] = useState<Record<string, string>>({});
+  const [seleccionadas, setSeleccionadas] = useState<Set<string>>(new Set());
+  const [sucursalMasiva, setSucursalMasiva] = useState("");
 
   const [busqueda, setBusqueda] = useState("");
   const [loading, setLoading] = useState(false);
@@ -51,6 +54,7 @@ export default function MetasKpiPage() {
     setAviso(null);
     setEditadas({});
     setBodegasEditadas({});
+    setSeleccionadas(new Set());
     try {
       const [defRes, sucRes, metRes, bodRes] = await Promise.all([
         fetch("/api/data/kpi?recurso=definicion"),
@@ -158,6 +162,42 @@ export default function MetasKpiPage() {
 
   const pendientes = Object.keys(editadas).length + Object.keys(bodegasEditadas).length;
 
+  const todasSeleccionadas =
+    bodegasFiltradas.length > 0 && bodegasFiltradas.every((b) => seleccionadas.has(b.ware_code));
+
+  const alternarTodas = () => {
+    setSeleccionadas((prev) => {
+      if (todasSeleccionadas) return new Set();
+      return new Set(bodegasFiltradas.map((b) => b.ware_code));
+    });
+  };
+
+  const alternarUna = (ware_code: string) => {
+    setSeleccionadas((prev) => {
+      const next = new Set(prev);
+      if (next.has(ware_code)) next.delete(ware_code);
+      else next.add(ware_code);
+      return next;
+    });
+  };
+
+  // Aplica la misma sucursal a todas las bodegas seleccionadas de una sola vez
+  // (staged, igual que editar una por una): 329 bodegas fila por fila es
+  // tedioso cuando varias comparten la misma tienda real.
+  const aplicarSucursalMasiva = () => {
+    const valor = sucursalMasiva.trim();
+    if (!valor || seleccionadas.size === 0) return;
+    setBodegasEditadas((prev) => {
+      const next = { ...prev };
+      seleccionadas.forEach((ware_code) => {
+        next[ware_code] = valor;
+      });
+      return next;
+    });
+    setSeleccionadas(new Set());
+    setSucursalMasiva("");
+  };
+
   return (
     <>
       <header className={styles.contentHeader}>
@@ -223,14 +263,9 @@ export default function MetasKpiPage() {
 
       <section className={styles.reportSection}>
         {error && <div className={styles.errorAlert}>{error}</div>}
-        {aviso && <div className={styles.noDataArea}><p>{aviso}</p></div>}
+        {aviso && <EmptyState styles={styles} message={aviso} icon={null} />}
 
-        {loading && (
-          <div className={styles.loaderArea}>
-            <div className={styles.spinner}></div>
-            <p>Cargando...</p>
-          </div>
-        )}
+        {loading && <LoadingState styles={styles} label="Cargando..." />}
 
         {!loading && vista === "metas" && sucursalesFiltradas.length > 0 && (
           <>
@@ -300,10 +335,59 @@ export default function MetasKpiPage() {
                 quedan fuera del reporte
               </span>
             </div>
+
+            {seleccionadas.size > 0 && (
+              <div
+                style={{
+                  display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap",
+                  padding: "0.6rem 0.8rem", marginBottom: "0.6rem", borderRadius: 10,
+                  background: "var(--color-surface-tint)", border: "1px solid var(--color-border-strong)",
+                }}
+              >
+                <strong style={{ fontSize: "0.8rem" }}>{seleccionadas.size} seleccionadas</strong>
+                <input
+                  type="text"
+                  placeholder="Sucursal (ej. 008)"
+                  value={sucursalMasiva}
+                  onChange={(e) => setSucursalMasiva(e.target.value)}
+                  style={{
+                    width: 100, padding: "0.3rem 0.5rem", borderRadius: 6,
+                    border: "1px solid var(--color-border-strong)",
+                    background: "var(--color-surface)", color: "var(--color-text-primary)",
+                  }}
+                />
+                <motion.button
+                  type="button"
+                  className={styles.movToolbarBtn}
+                  onClick={aplicarSucursalMasiva}
+                  disabled={!sucursalMasiva.trim()}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  Asignar a {seleccionadas.size}
+                </motion.button>
+                <button
+                  type="button"
+                  onClick={() => setSeleccionadas(new Set())}
+                  style={{ background: "none", border: "none", color: "var(--color-text-faint)", cursor: "pointer", fontSize: "0.78rem" }}
+                >
+                  Cancelar selección
+                </button>
+              </div>
+            )}
+
             <div className={styles.tableWrapper}>
               <table className={styles.table}>
                 <thead>
                   <tr>
+                    <th style={{ width: 32 }}>
+                      <input
+                        type="checkbox"
+                        checked={todasSeleccionadas}
+                        onChange={alternarTodas}
+                        aria-label="Seleccionar todas las bodegas filtradas"
+                      />
+                    </th>
                     <th>Bodega</th>
                     <th>Nombre</th>
                     <th>Empresa</th>
@@ -314,6 +398,14 @@ export default function MetasKpiPage() {
                 <tbody>
                   {bodegasFiltradas.map((b) => (
                     <tr key={b.ware_code}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={seleccionadas.has(b.ware_code)}
+                          onChange={() => alternarUna(b.ware_code)}
+                          aria-label={`Seleccionar bodega ${b.ware_code}`}
+                        />
+                      </td>
                       <td><strong>{b.ware_code}</strong></td>
                       <td>{b.ware_name || "—"}</td>
                       <td>{b.corp}</td>
