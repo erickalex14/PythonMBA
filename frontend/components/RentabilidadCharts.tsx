@@ -304,7 +304,10 @@ function TreemapGrupoSubgrupo({ data, expanded }: { data: any[]; expanded?: bool
               {hasHeader && (
                 <>
                   <rect x={0} y={y0} width={W} height={HEADER_H} fill="var(--color-chart-accent)" />
-                  <text x={6} y={y0 + 11} fontSize="8.5" fontWeight="700" fill="#ffffff">{g.label}</text>
+                  <text x={6} y={y0 + 11} fontSize="8.5" fontWeight="700" fill="var(--pill-text-color, #ffffff)">{g.label}</text>
+                  <text x={W - 6} y={y0 + 11} textAnchor="end" fontSize="8" fill="var(--pill-text-color, #ffffff)" fillOpacity="0.85">
+                    {fmtMoney(g.total)}
+                  </text>
                 </>
               )}
               {g.children.map((c) => {
@@ -327,11 +330,11 @@ function TreemapGrupoSubgrupo({ data, expanded }: { data: any[]; expanded?: bool
                     />
                     {w > 55 && cellH > 20 && (
                       <>
-                        <text x={x0 + 6} y={cellY + 15} fontSize="9" fontWeight="700" fill="#ffffff">
+                        <text x={x0 + 6} y={cellY + 15} fontSize="9" fontWeight="700" fill="var(--pill-text-color, #ffffff)">
                           {c.label.substring(0, Math.floor(w / 6))}
                         </text>
                         {cellH > 34 && (
-                          <text x={x0 + 6} y={cellY + 28} fontSize="8" fill="rgba(255,255,255,0.85)">
+                          <text x={x0 + 6} y={cellY + 28} fontSize="8" fill="var(--pill-text-color, #ffffff)" fillOpacity="0.85">
                             {fmtPct(pct)}
                           </text>
                         )}

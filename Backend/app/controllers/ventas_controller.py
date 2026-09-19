@@ -86,6 +86,7 @@ def read_ventas(
         "PRODUCTO": "producto",
         "GRUPO": "grupo",
         "SUBGRUPO": "subgrupo",
+        "MARCA": "marca",
         "UNIDAD": "unidad",
         "CANTIDAD": "cantidad",
         "PRECIO VENTA": "precio_venta",

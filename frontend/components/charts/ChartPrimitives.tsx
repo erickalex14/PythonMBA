@@ -135,7 +135,8 @@ export function RankedBarChart({
             transform: "translateY(-100%)",
           }}
         >
-          {visibleItems[hovered].label}
+          <strong>{visibleItems[hovered].label}</strong>
+          <br />{formatter(visibleItems[hovered].total)}
         </ChartTooltip>
       )}
     </div>
@@ -561,6 +562,7 @@ export function DonutChart({
             <span style={{ fontSize: compact ? "0.7rem" : "0.76rem", color: "var(--color-text-tertiary)", flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
               {a.label}
             </span>
+            <span style={{ fontSize: compact ? "0.68rem" : "0.72rem", color: "var(--color-text-faint)", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{a.pct.toFixed(0)}%</span>
             <span style={{ fontSize: compact ? "0.7rem" : "0.76rem", fontWeight: 700, color: "var(--color-text-primary)", flexShrink: 0 }}>{formatter(a.value)}</span>
           </div>
         ))}
@@ -906,11 +908,28 @@ export function TrendLine({
   }
 
   const path = `M ${points.map((p, i) => `${toX(i)} ${toY(p.y)}`).join(" L ")}`;
+  // Area suave debajo de la linea (mismo relleno degradado que el Pareto) -
+  // sin esto la linea flota sin referencia visual de "hacia donde baja".
+  const areaPath = `${path} L ${toX(points.length - 1)} ${H - pad} L ${toX(0)} ${H - pad} Z`;
 
   return (
     <div style={{ position: "relative", width: "100%" }}>
       <svg viewBox={`0 0 ${W} ${H}`} style={{ width: "100%", height: "auto", overflow: "visible" }}>
+        <defs>
+          <linearGradient id="trendLineAreaFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.14} />
+            <stop offset="100%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        {/* Referencia de escala en el eje Y: sin esto la linea no dice nada
+            de magnitud hasta que se pasa el mouse punto por punto. x=46,
+            justo antes de donde arranca la linea (toX usa margen izq. 50). */}
+        <text x="46" y={toY(maxY) + 3} textAnchor="end" fontSize="8" fill="var(--color-text-faint)">{formatter(maxY)}</text>
+        {minY !== maxY && (
+          <text x="46" y={toY(minY) + 3} textAnchor="end" fontSize="8" fill="var(--color-text-faint)">{formatter(minY)}</text>
+        )}
         <line x1="50" y1={H - pad} x2={W - 20} y2={H - pad} stroke="var(--color-border)" strokeWidth="1" />
+        <path d={areaPath} fill="url(#trendLineAreaFill)" stroke="none" />
         <path d={path} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" />
         {points.map((p, i) => (
           <circle

@@ -134,6 +134,7 @@ export const REPORTS_CONFIG: Record<string, ReportConfig> = {
       { key: "producto", label: "Producto", type: "text" },
       { key: "grupo", label: "Grupo", type: "text" },
       { key: "subgrupo", label: "Subgrupo", type: "text" },
+      { key: "marca", label: "Marca", type: "text" },
       { key: "nombre_cliente", label: "Cliente", type: "text" },
       { key: "unidad", label: "Unidad", type: "text" },
       { key: "cantidad", label: "Cantidad", type: "number" },

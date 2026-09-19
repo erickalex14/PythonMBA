@@ -181,7 +181,7 @@ class ExcelService:
         rename_dto = {
             "factura_final": "# de factura", "fecha": "FECHA", "empresa": "EMPRESA",
             "sucursal": "SUCURSAL", "codigo": "CODIGO", "producto": "PRODUCTO",
-            "grupo": "GRUPO", "subgrupo": "SUBGRUPO", "unidad": "UNIDAD", "cantidad": "CANTIDAD",
+            "grupo": "GRUPO", "subgrupo": "SUBGRUPO", "marca": "MARCA", "unidad": "UNIDAD", "cantidad": "CANTIDAD",
             "precio_venta": "PRECIO VENTA", "subtotal": "SUBTOTAL (C*PV)",
             "descuento_aplicado": "DESCUENTO APLICADO", "total_linea": "TOTAL LINEA",
             "bodega": "BODEGA", "bodega_nombre": "BODEGA NOMBRE", "codigo_cliente": "CODIGO CLIENTE",
@@ -195,7 +195,7 @@ class ExcelService:
         columnas = [
             ("# de factura", "# de factura"), ("FECHA", "Fecha"), ("EMPRESA", "Empresa"),
             ("SUCURSAL", "Sucursal"), ("CODIGO", "Código"), ("PRODUCTO", "Producto"),
-            ("GRUPO", "Grupo"), ("SUBGRUPO", "Subgrupo"), ("UNIDAD", "Unidad"),
+            ("GRUPO", "Grupo"), ("SUBGRUPO", "Subgrupo"), ("MARCA", "Marca"), ("UNIDAD", "Unidad"),
             ("CANTIDAD", "Cantidad"), ("PRECIO VENTA", "Precio Venta"),
             ("SUBTOTAL (C*PV)", "SubTotal (C*PV)"), ("DESCUENTO APLICADO", "Descuento Aplicado"),
             ("TOTAL LINEA", "Total Linea"), ("BODEGA", "Bodega"), ("BODEGA NOMBRE", "Bodega Nombre"),
@@ -222,7 +222,7 @@ class ExcelService:
             ("Unidades vendidas", float(num("CANTIDAD").sum())),
         ]
         anchos = {"# de factura": 18, "PRODUCTO": 38, "CODIGO": 16, "GRUPO": 10, "SUBGRUPO": 10,
-                  "EMPRESA": 12, "SUCURSAL": 10, "FECHA": 12, "BODEGA NOMBRE": 22, "NOMBRE CLIENTE": 28}
+                  "MARCA": 14, "EMPRESA": 12, "SUCURSAL": 10, "FECHA": 12, "BODEGA NOMBRE": 22, "NOMBRE CLIENTE": 28}
 
         return self._generar_reporte_corporativo(
             df, "Detalle Productos - Periodo", "Reporte de Ventas - Detalle Productos por Período",

@@ -26,6 +26,7 @@ export default function VentasPage() {
 
   const [selectedProducts, setSelectedProducts] = useState<string[]>(panel.initialProductoFromUrl ? [panel.initialProductoFromUrl] : []);
   const [selectedBranches, setSelectedBranches] = useState<string[]>([]);
+  const [selectedMarcas, setSelectedMarcas] = useState<string[]>([]);
   const [selectedEmpresas, setSelectedEmpresas] = useState<string[]>(panel.initialEmpresaFromUrl ? [panel.initialEmpresaFromUrl] : []);
   const [codigoSearch, setCodigoSearch] = useState("");
   const [totales, setTotales] = useState<TotalesRango | null>(null);
@@ -53,7 +54,7 @@ export default function VentasPage() {
 
   useEffect(() => {
     panel.setCurrentPage(1);
-  }, [selectedProducts, selectedBranches, selectedEmpresas, codigoSearch]);
+  }, [selectedProducts, selectedBranches, selectedMarcas, selectedEmpresas, codigoSearch]);
 
   const handleQuery = () => {
     fetchReportData("ventas", panel.startDate, panel.endDate);
@@ -66,11 +67,12 @@ export default function VentasPage() {
     return data.filter((row) => {
       if (selectedProducts.length > 0 && !selectedProducts.includes(String(row.producto).trim())) return false;
       if (selectedBranches.length > 0 && !selectedBranches.includes(String(row.grupo).trim())) return false;
+      if (selectedMarcas.length > 0 && !selectedMarcas.includes(String(row.marca || "").trim())) return false;
       if (selectedEmpresas.length > 0 && !selectedEmpresas.includes(String(row.empresa || "").trim())) return false;
       if (codigoSearch && !String(row.codigo || "").toLowerCase().includes(codigoSearch.trim().toLowerCase())) return false;
       return true;
     });
-  }, [data, selectedProducts, selectedBranches, selectedEmpresas, codigoSearch]);
+  }, [data, selectedProducts, selectedBranches, selectedMarcas, selectedEmpresas, codigoSearch]);
 
   const paginatedData = useMemo(() => {
     const start = (panel.currentPage - 1) * panel.itemsPerPage;
@@ -80,15 +82,18 @@ export default function VentasPage() {
   const filterOptions = useMemo(() => {
     const products = new Set<string>();
     const branches = new Set<string>();
+    const marcas = new Set<string>();
     const empresas = new Set<string>();
     data.forEach((row) => {
       if (row.producto) products.add(String(row.producto).trim());
       if (row.grupo) branches.add(String(row.grupo).trim());
+      if (row.marca) marcas.add(String(row.marca).trim());
       if (row.empresa) empresas.add(String(row.empresa).trim());
     });
     return {
       products: Array.from(products).sort(),
       branches: Array.from(branches).sort(),
+      marcas: Array.from(marcas).sort(),
       empresas: Array.from(empresas).sort(),
     };
   }, [data]);
@@ -98,6 +103,7 @@ export default function VentasPage() {
     { label: "Filtrar por Empresa", value: selectedEmpresas, onChange: setSelectedEmpresas, placeholder: "Todas las Empresas...", options: filterOptions.empresas, type: "multiselect" },
     { label: "Filtrar por Producto", value: selectedProducts, onChange: setSelectedProducts, placeholder: "Todos los Productos...", options: filterOptions.products, type: "multiselect" },
     { label: "Filtrar por Grupo", value: selectedBranches, onChange: setSelectedBranches, placeholder: "Todos los Grupos...", options: filterOptions.branches, type: "multiselect" },
+    { label: "Filtrar por Marca", value: selectedMarcas, onChange: setSelectedMarcas, placeholder: "Todas las Marcas...", options: filterOptions.marcas, type: "multiselect" },
   ];
 
   const totalQty = useMemo(() => data.reduce((acc, row) => acc + (Number(row.cantidad) || Number(row.CANTIDAD) || 0), 0), [data]);

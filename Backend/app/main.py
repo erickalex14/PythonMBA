@@ -176,7 +176,7 @@ async def lifespan(app: FastAPI):
 
             # DROP antes de CREATE: al cambiar columnas, CREATE OR REPLACE falla.
             connection.execute(text("DROP VIEW IF EXISTS view_ventas_espejo_reporte CASCADE;"))
-            sql_view_ventas = """
+            sql_view_ventas = f"""
             CREATE VIEW view_ventas_espejo_reporte AS
             SELECT
                 f.numero_factura AS factura_final,
@@ -185,6 +185,7 @@ async def lifespan(app: FastAPI):
                 UPPER(TRIM(k.product_name)) AS producto,
                 COALESCE(k.codigo_grupo, 'GENERAL') AS grupo,
                 COALESCE(k.codigo_subgrupo, 'GENERAL') AS subgrupo,
+                COALESCE(pm.codigo_marca, 'SIN MARCA') AS marca,
                 UPPER(TRIM(k.um)) AS unidad,
                 k.cantidad_real AS cantidad,
                 ROUND((k.net_line_total + k.discount_amount) / NULLIF(k.cantidad_real, 0), 4) AS precio_venta,
@@ -223,6 +224,14 @@ async def lifespan(app: FastAPI):
             ) k
             INNER JOIN ventas_facturas_staging f
                 ON k.origin_ref = f.numero_factura
+            -- Marca no vive en el kardex de MBA3: se resuelve por JOIN contra el
+            -- catalogo de productos ya sincronizado para Costos por Sucursal
+            -- (mismo product_id_corp, normalizado igual que "codigo" arriba porque
+            -- MBA3 a veces devuelve ese campo con ".0" de sobra en un lado y no en
+            -- el otro). Retroactivo: cubre todo el historico ya sincronizado, sin
+            -- volver a pedirle nada a MBA3.
+            LEFT JOIN {SCHEMA_COSTOS_BODEGA}.productos pm
+                ON UPPER(regexp_replace(pm.product_id_corp, '\\.0$', '')) = UPPER(regexp_replace(k.product_id_corp, '\\.0$', ''))
             WHERE k.origin_memo = 'CLIENTES'
               AND k.anulada = false
               AND f.anulada = false

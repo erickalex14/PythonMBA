@@ -10,6 +10,7 @@ class VentasDTO(BaseModel):
     producto: Optional[str] = Field(None, description="Nombre de producto")
     grupo: Optional[str] = Field(None, description="Grupo")
     subgrupo: Optional[str] = Field(None, description="Subgrupo")
+    marca: Optional[str] = Field(None, description="Marca del producto")
     unidad: Optional[str] = Field(None, description="Unidad de medida")
     cantidad: int = Field(0, description="Cantidad vendida")
     precio_venta: float = Field(0.0, description="Precio unitario de venta")

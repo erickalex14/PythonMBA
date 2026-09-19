@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.database import SessionLocal
 from typing import Optional
 from app.repositories.mba3_repository import IMba3Repository
+from app.models.costos_bodega import SCHEMA_COSTOS_BODEGA
 
 # Productos que ensucian los rankings: material promocional/regalo, servicios
 # y bolsas de despacho. Salen en cantidades enormes o con montos irrisorios y
@@ -99,6 +100,7 @@ class VentasService:
                         producto AS "PRODUCTO",
                         grupo AS "GRUPO",
                         subgrupo AS "SUBGRUPO",
+                        marca AS "MARCA",
                         unidad AS "UNIDAD",
                         cantidad AS "CANTIDAD",
                         precio_venta AS "PRECIO VENTA",
@@ -303,6 +305,28 @@ class VentasService:
                         df_realtime['PRODUCTO'] = df_filtrado['PRODUCTO_INT']
                         df_realtime['GRUPO'] = df_filtrado['GRUPO_INT'].fillna('GENERAL')
                         df_realtime['SUBGRUPO'] = df_filtrado['SUBGRUPO_INT'].fillna('GENERAL')
+                        # Marca no viene en el Kardex de MBA3 (igual que en la vista SQL del
+                        # historico): se resuelve contra el catalogo ya sincronizado para
+                        # Costos por Sucursal, por los pocos codigos que aparecen hoy. El
+                        # nombre del schema es una constante fija del codigo (no input de
+                        # usuario), se concatena aparte del SQL parametrizado por claridad.
+                        marcas_dict = {}
+                        codigos_hoy = [c for c in df_filtrado['CODIGO_INT'].dropna().unique().tolist() if c]
+                        if codigos_hoy:
+                            db_marca = SessionLocal()
+                            try:
+                                sql_marca = text(
+                                    "SELECT UPPER(regexp_replace(product_id_corp, '\\.0$', '')) AS codigo_norm, codigo_marca "
+                                    "FROM " + SCHEMA_COSTOS_BODEGA + ".productos "
+                                    "WHERE UPPER(regexp_replace(product_id_corp, '\\.0$', '')) = ANY(:codigos)"
+                                )
+                                filas_marca = db_marca.execute(sql_marca, {"codigos": codigos_hoy}).fetchall()
+                                marcas_dict = {r[0]: r[1] for r in filas_marca}
+                            except Exception as e:
+                                logging.error(f"VentasService: No se pudo resolver marca de productos de hoy: {e}")
+                            finally:
+                                db_marca.close()
+                        df_realtime['MARCA'] = df_filtrado['CODIGO_INT'].map(marcas_dict).fillna('SIN MARCA')
                         df_realtime['UNIDAD'] = df_filtrado['UM_INT']
                         df_realtime['CANTIDAD'] = df_filtrado['CANTIDAD_INT']
                         df_realtime['PRECIO VENTA'] = df_filtrado['PRECIO_INT'].round(4)
